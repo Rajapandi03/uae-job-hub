@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     apply_url    TEXT,
     source       TEXT NOT NULL CHECK (source IN (
         'linkedin', 'indeed', 'google', 'bayt',
-        'naukrigulf', 'gulftalent', 'career_page'
+        'naukrigulf', 'gulftalent', 'career_page', 'employer'
     )),
     posted_at    TIMESTAMPTZ,
     first_seen   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -37,12 +37,19 @@ CREATE POLICY "Public can read active jobs"
     FOR SELECT
     USING (true);
 
--- 5. Service-role write policy (only the service_role key can insert/update/delete)
+-- 5. Public job submission policy (allows recruiters to post jobs)
+CREATE POLICY "Allow employer job submissions"
+    ON jobs
+    FOR INSERT
+    WITH CHECK (source = 'employer');
+
+-- 6. Service-role write policy (only the service_role key can manage all jobs)
 CREATE POLICY "Service role can manage jobs"
     ON jobs
     FOR ALL
     USING (auth.role() = 'service_role')
     WITH CHECK (auth.role() = 'service_role');
+
 
 -- ============================================================
 -- 6. Create the events table

@@ -20,6 +20,9 @@ import {
   Globe,
   Tag,
   Ticket,
+  X,
+  PlusCircle,
+  CheckCircle,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { jobs as staticJobs, companies, events as staticEvents, resources, browseCategories } from './data/jobs'
@@ -49,6 +52,7 @@ function sourceLabel(source) {
     naukrigulf: 'Naukrigulf',
     gulftalent: 'GulfTalent',
     career_page: 'Company Site',
+    employer: 'Direct Employer',
   }
   return labels[source] || source
 }
@@ -150,6 +154,73 @@ function App() {
   // State for live events
   const [eventsList, setEventsList] = useState(staticEvents)
   const [eventsLoading, setEventsLoading] = useState(true)
+
+  // Recruiter Post Job Modal state
+  const [showPostJobModal, setShowPostJobModal] = useState(false)
+  const [postingJob, setPostingJob] = useState(false)
+  const [postJobSuccess, setPostJobSuccess] = useState(false)
+  const [postJobData, setPostJobData] = useState({
+    title: '',
+    company: '',
+    location: 'Dubai',
+    applyUrl: '',
+    description: '',
+    recruiterEmail: '',
+  })
+
+  // Submit job from Recruiter form
+  async function handlePostJobSubmit(e) {
+    e.preventDefault()
+    if (!postJobData.title || !postJobData.company || !postJobData.applyUrl) return
+
+    setPostingJob(true)
+    try {
+      const hashSeed = `${postJobData.title.toLowerCase().trim()}|${postJobData.company.toLowerCase().trim()}|${postJobData.location.toLowerCase().trim()}|${Date.now()}`
+      let hash = 0
+      for (let i = 0; i < hashSeed.length; i++) {
+        hash = ((hash << 5) - hash) + hashSeed.charCodeAt(i)
+        hash |= 0
+      }
+      const jobHash = `employer_${Math.abs(hash)}_${Date.now()}`
+
+      const newJobDb = {
+        job_hash: jobHash,
+        title: postJobData.title.trim(),
+        company: postJobData.company.trim(),
+        location: postJobData.location,
+        url: postJobData.applyUrl.trim(),
+        apply_url: postJobData.applyUrl.trim(),
+        source: 'employer',
+        posted_at: new Date().toISOString(),
+        first_seen: new Date().toISOString(),
+        description: postJobData.description
+          ? `${postJobData.description.trim()}\n\nContact: ${postJobData.recruiterEmail}`
+          : `Posted directly by recruiter (${postJobData.recruiterEmail})`,
+        active: true
+      }
+
+      if (supabase) {
+        const { error } = await supabase.from('jobs').insert([newJobDb])
+        if (error) console.warn('Supabase job insert warning:', error.message)
+      }
+
+      // Add to local state immediately so user sees it right away
+      const newJobFormatted = mapDbJob(newJobDb)
+      setLiveJobs(prev => [newJobFormatted, ...prev])
+      setDbConnected(true)
+      setPostJobSuccess(true)
+
+      setTimeout(() => {
+        setShowPostJobModal(false)
+        setPostJobSuccess(false)
+        setPostJobData({ title: '', company: '', location: 'Dubai', applyUrl: '', description: '', recruiterEmail: '' })
+      }, 1800)
+    } catch (err) {
+      console.error('Error submitting job:', err)
+    } finally {
+      setPostingJob(false)
+    }
+  }
 
   // Job Filter state
   const [searchTerm, setSearchTerm] = useState('')
@@ -428,8 +499,8 @@ function App() {
           <a href="#">Resources</a>
         </div>
         <div className="nav-actions">
-          <button className="btn-dashboard">
-            <LayoutDashboard size={16} /> Dashboard
+          <button className="btn-dashboard" onClick={() => setShowPostJobModal(true)}>
+            <PlusCircle size={16} /> Post a Job
           </button>
           <Bell size={20} className="nav-bell" />
           <div className="avatar">RB</div>
@@ -872,8 +943,8 @@ function App() {
             <h2>Build your AI dream team, right here in the UAE</h2>
             <p>Join 65+ companies already hiring through AIJobsUAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
             <div className="cta-buttons">
-              <button className="btn-cta-primary">Post Your First Job</button>
-              <button className="btn-cta-outline">Let's Chat</button>
+              <button className="btn-cta-primary" onClick={() => setShowPostJobModal(true)}>Post Your First Job</button>
+              <button className="btn-cta-outline" onClick={() => setShowPostJobModal(true)}>Recruiter Portal</button>
             </div>
           </section>
 
@@ -925,8 +996,8 @@ function App() {
           </div>
           <div className="footer-col">
             <h4>For Employers</h4>
-            <a href="#">Post Jobs</a>
-            <a href="#">Company Profiles</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setShowPostJobModal(true) }}>Post Jobs</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setShowPostJobModal(true) }}>Company Profiles</a>
           </div>
           <div className="footer-col">
             <h4>Support</h4>
@@ -953,6 +1024,122 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* ===== RECRUITER POST A JOB MODAL ===== */}
+      {showPostJobModal && (
+        <div className="modal-overlay" onClick={() => setShowPostJobModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Post a Job (Recruiter Portal)</h3>
+              <button className="modal-close-btn" onClick={() => setShowPostJobModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {postJobSuccess ? (
+              <div className="modal-body" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+                <CheckCircle size={48} style={{ color: '#16a34a', marginBottom: '1rem' }} />
+                <h4 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Job Submitted Successfully!</h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                  Your listing is now active on the AIJobsUAE portal. Candidates can apply immediately.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handlePostJobSubmit}>
+                <div className="modal-body">
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label className="form-label">Job Title *</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. Senior AI Engineer"
+                        required
+                        value={postJobData.title}
+                        onChange={(e) => setPostJobData({ ...postJobData, title: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Company Name *</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. Careem / G42"
+                        required
+                        value={postJobData.company}
+                        onChange={(e) => setPostJobData({ ...postJobData, company: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Location / Emirate *</label>
+                      <select
+                        className="form-select"
+                        value={postJobData.location}
+                        onChange={(e) => setPostJobData({ ...postJobData, location: e.target.value })}
+                      >
+                        <option value="Dubai">Dubai</option>
+                        <option value="Abu Dhabi">Abu Dhabi</option>
+                        <option value="Sharjah">Sharjah</option>
+                        <option value="Ajman">Ajman</option>
+                        <option value="Ras Al Khaimah">Ras Al Khaimah</option>
+                        <option value="Remote UAE">Remote UAE</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Application Link or Email *</label>
+                      <input
+                        type="url"
+                        className="form-input"
+                        placeholder="https://company.com/careers/job123"
+                        required
+                        value={postJobData.applyUrl}
+                        onChange={(e) => setPostJobData({ ...postJobData, applyUrl: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label className="form-label">Recruiter Contact Email (Optional)</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        placeholder="recruiter@company.com"
+                        value={postJobData.recruiterEmail}
+                        onChange={(e) => setPostJobData({ ...postJobData, recruiterEmail: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label className="form-label">Job Description / Requirements</label>
+                      <textarea
+                        className="form-textarea"
+                        placeholder="Describe key responsibilities, required AI/ML stack, and benefits..."
+                        value={postJobData.description}
+                        onChange={(e) => setPostJobData({ ...postJobData, description: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    onClick={() => setShowPostJobModal(false)}
+                    disabled={postingJob}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={postingJob}
+                  >
+                    {postingJob ? 'Submitting Job...' : 'Publish Job Listing'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
