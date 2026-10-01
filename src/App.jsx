@@ -268,7 +268,7 @@ function App() {
       </section>
 
       {/* ===== LATEST JOBS ===== */}
-      <section className="section-jobs">
+      <section className="section-jobs" id="jobs-section">
         <div className="section-title">
           <h2>Latest AI Opportunities</h2>
           <p>Discover roles that match your expertise and aspirations</p>
@@ -384,7 +384,15 @@ function App() {
         </div>
         <div className="companies-grid">
           {topCompanies.map((c) => (
-            <div className="company-card" key={c.id}>
+            <div 
+              className="company-card" 
+              key={c.id}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setSearchTerm(c.name)
+                document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            >
               <div className="company-card-icon" style={{ background: c.color }}>
                 {c.initial}
               </div>
