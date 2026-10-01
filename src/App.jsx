@@ -96,6 +96,7 @@ function App() {
   const [locationFilter, setLocationFilter] = useState('All Emirates')
   const [sourceFilter, setSourceFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
+  const [levelFilter, setLevelFilter] = useState('all')
 
   // Fetch jobs from Supabase
   useEffect(() => {
@@ -192,13 +193,31 @@ function App() {
       })
     }
 
+    // Level filter
+    if (levelFilter !== 'all') {
+      const seniorKeywords = ['senior', 'sr', 'sr.', 'lead', 'principal', 'manager', 'director', 'head', 'chief', 'vp', 'architect']
+      const entryKeywords = ['junior', 'jr', 'jr.', 'entry', 'intern', 'associate', 'graduate', 'fresher', 'trainee']
+      
+      result = result.filter(j => {
+        const title = j.title.toLowerCase()
+        // Boundary enforcement: make sure we're matching whole words loosely if possible, but basic includes works fine for now
+        const isSenior = seniorKeywords.some(kw => title.includes(kw))
+        const isEntry = entryKeywords.some(kw => title.includes(kw))
+        
+        if (levelFilter === 'senior') return isSenior
+        if (levelFilter === 'entry') return isEntry
+        if (levelFilter === 'mid') return !isSenior && !isEntry
+        return true
+      })
+    }
+
     return result
-  }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter])
+  }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
   // Reset visible jobs count when filters change
   useEffect(() => {
     setVisibleJobsCount(10)
-  }, [searchTerm, locationFilter, sourceFilter, timeFilter])
+  }, [searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
   // Unique sources for filter dropdown
   const availableSources = useMemo(() => {
@@ -291,6 +310,12 @@ function App() {
                 {availableSources.map(s => (
                   <option key={s} value={s}>{sourceLabel(s)}</option>
                 ))}
+              </select>
+              <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
+                <option value="all">All Levels</option>
+                <option value="entry">Entry Level</option>
+                <option value="mid">Mid Level</option>
+                <option value="senior">Senior Level</option>
               </select>
               <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
                 <option value="all">All Time</option>
