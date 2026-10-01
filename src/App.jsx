@@ -1396,18 +1396,19 @@ function App() {
                 <h3>Upcoming AI Events</h3>
                 {eventsList.slice(0, 3).map((event) => (
                   <div 
-                    className="event-card" 
+                    className="resource-card" 
                     key={event.event_hash || event.title}
                     onClick={() => setCurrentView('events')}
                     style={{ cursor: 'pointer' }}
                   >
-                    <div className="event-icon"><Calendar size={20} /></div>
-                    <div>
-                      <div className="event-title">{event.title}</div>
-                      <div className="event-meta">
-                        <span><Calendar size={13} /> {formatEventDateDisplay(event.start_date, event.end_date)}</span>
-                        <span><MapPin size={13} /> {event.city}</span>
+                    <div className="resource-icon"><Calendar size={22} /></div>
+                    <div className="resource-content">
+                      <div className="resource-title">{event.title}</div>
+                      <div className="resource-desc" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.8rem' }}>
+                        <span><Calendar size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> {formatEventDateDisplay(event.start_date, event.end_date)}</span>
+                        <span><MapPin size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> {event.city}</span>
                       </div>
+                      <span className="resource-link">View Event Details <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
                     </div>
                   </div>
                 ))}
