@@ -131,6 +131,26 @@ function App() {
   const totalJobs = allJobs.length
   const totalCompanies = new Set(allJobs.map(j => j.company)).size
 
+  // Dynamic top companies from live data
+  const COMPANY_COLORS = ['#1f2937','#6d28d9','#0ea5e9','#16a34a','#f97316','#7c3aed','#dc2626','#0d9488']
+  const topCompanies = useMemo(() => {
+    if (!dbConnected) return companies
+    const counts = {}
+    allJobs.forEach(j => {
+      if (j.company) counts[j.company] = (counts[j.company] || 0) + 1
+    })
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, count], i) => ({
+        id: i + 1,
+        name,
+        initial: name.substring(0, 2).toUpperCase(),
+        openRoles: count,
+        color: COMPANY_COLORS[i % COMPANY_COLORS.length],
+      }))
+  }, [allJobs, dbConnected])
+
   // Apply filters
   const filteredJobs = useMemo(() => {
     let result = allJobs
@@ -363,13 +383,13 @@ function App() {
           <p>Discover the innovative organisations shaping the future</p>
         </div>
         <div className="companies-grid">
-          {companies.map((c) => (
+          {topCompanies.map((c) => (
             <div className="company-card" key={c.id}>
               <div className="company-card-icon" style={{ background: c.color }}>
                 {c.initial}
               </div>
               <div className="company-card-name">{c.name}</div>
-              <div className="company-card-roles">{c.openRoles} open roles</div>
+              <div className="company-card-roles">{c.openRoles} open {c.openRoles === 1 ? 'role' : 'roles'}</div>
             </div>
           ))}
         </div>
