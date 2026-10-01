@@ -89,6 +89,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [dbConnected, setDbConnected] = useState(false)
   const [showAllCompanies, setShowAllCompanies] = useState(false)
+  const [visibleJobsCount, setVisibleJobsCount] = useState(10)
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState('')
@@ -193,6 +194,11 @@ function App() {
 
     return result
   }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter])
+
+  // Reset visible jobs count when filters change
+  useEffect(() => {
+    setVisibleJobsCount(10)
+  }, [searchTerm, locationFilter, sourceFilter, timeFilter])
 
   // Unique sources for filter dropdown
   const availableSources = useMemo(() => {
@@ -317,7 +323,7 @@ function App() {
           )}
 
           {/* Job Cards */}
-          {!loading && filteredJobs.map((job) => (
+          {!loading && filteredJobs.slice(0, visibleJobsCount).map((job) => (
             <div className="job-card" key={job.id}>
               <div className="company-logo">{job.companyInitial}</div>
               <div className="job-details">
@@ -367,10 +373,23 @@ function App() {
             </div>
           ))}
 
-          {filteredJobs.length > 0 && (
+          {filteredJobs.length > visibleJobsCount && (
             <div className="btn-outline-center">
-              <button className="btn-outline">
-                View All {totalJobs} Jobs →
+              <button 
+                className="btn-outline"
+                onClick={() => setVisibleJobsCount(filteredJobs.length)}
+              >
+                View All {filteredJobs.length} Jobs →
+              </button>
+            </div>
+          )}
+          {filteredJobs.length > 0 && filteredJobs.length <= visibleJobsCount && filteredJobs.length > 10 && (
+            <div className="btn-outline-center">
+              <button 
+                className="btn-outline"
+                onClick={() => setVisibleJobsCount(10)}
+              >
+                Show Less ↑
               </button>
             </div>
           )}
