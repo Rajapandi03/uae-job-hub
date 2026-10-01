@@ -23,7 +23,7 @@ try:
 except ImportError:
     pass
 
-from common import logger, deactivate_stale_jobs
+from common import logger, deactivate_stale_jobs, remove_duplicates
 
 DRY_RUN = "--dry" in sys.argv
 
@@ -71,6 +71,12 @@ def main():
             deactivate_stale_jobs(days=7)
         except Exception as e:
             logger.error(f"Stale job cleanup failed: {e}")
+            
+        logger.info("\n>>> Removing duplicate jobs")
+        try:
+            remove_duplicates()
+        except Exception as e:
+            logger.error(f"Duplicate cleanup failed: {e}")
 
     # ---------------------------------------------------------------
     # Phase 4: Resources (News, Courses, Salary)

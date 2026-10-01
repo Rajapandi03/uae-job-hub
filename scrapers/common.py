@@ -106,3 +106,89 @@ def deactivate_stale_jobs(days: int = 7):
     if count:
         logger.info(f"Deactivated {count} stale jobs (older than {days} days).")
     return count
+
+
+# ---------------------------------------------------------------------------
+# Remove duplicate jobs based on title and company
+# ---------------------------------------------------------------------------
+def remove_duplicates():
+    """
+    Finds currently active jobs and marks duplicates as inactive.
+    Duplicates are identified by having the same sanitized title and company.
+    """
+    sb = get_supabase()
+    
+    limit = 1000
+    offset = 0
+    all_jobs = []
+    
+    logger.info("Fetching active jobs to check for duplicates...")
+    while True:
+        res = (
+            sb.table("jobs")
+            .select("job_hash, title, company, posted_at, first_seen")
+            .eq("active", True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        data = res.data
+        if not data:
+            break
+        all_jobs.extend(data)
+        if len(data) < limit:
+            break
+        offset += limit
+        
+    if not all_jobs:
+        logger.info("No active jobs to deduplicate.")
+        return 0
+        
+    import re
+    from collections import defaultdict
+    
+    def sanitize(text):
+        if not text:
+            return ""
+        # Remove non-alphanumeric and standardize lowercase
+        return re.sub(r'[^a-z0-9]', '', str(text).lower())
+        
+    grouped = defaultdict(list)
+    for job in all_jobs:
+        comp = sanitize(job.get("company"))
+        title = sanitize(job.get("title"))
+        if not comp or not title:
+            continue
+        key = f"{comp}|{title}"
+        grouped[key].append(job)
+        
+    duplicates_to_deactivate = []
+    
+    for key, jobs in grouped.items():
+        if len(jobs) > 1:
+            # Sort by posted_at (if available), then first_seen, keeping most recent
+            def get_sort_key(j):
+                pa = j.get("posted_at") or ""
+                fs = j.get("first_seen") or ""
+                return (pa, fs)
+                
+            jobs.sort(key=get_sort_key, reverse=True)
+            # Keep the first (newest), deactivate the rest
+            duplicates = [j["job_hash"] for j in jobs[1:]]
+            duplicates_to_deactivate.extend(duplicates)
+            
+    if not duplicates_to_deactivate:
+        logger.info("No duplicate jobs found.")
+        return 0
+        
+    logger.info(f"Found {len(duplicates_to_deactivate)} duplicate jobs. Deactivating...")
+    
+    chunk_size = 100
+    for i in range(0, len(duplicates_to_deactivate), chunk_size):
+        chunk = duplicates_to_deactivate[i:i+chunk_size]
+        try:
+            sb.table("jobs").update({"active": False}).in_("job_hash", chunk).execute()
+        except Exception as e:
+            logger.error(f"Error deactivating duplicates chunk: {e}")
+            
+    logger.info("Duplicate jobs successfully deactivated.")
+    return len(duplicates_to_deactivate)
