@@ -1149,11 +1149,11 @@ function App() {
 
               <div className="hero-stats">
                 <div className="stat">
-                  <h3>{totalJobs}+ Active AI Jobs</h3>
+                  <h3>{loading ? '...' : `${totalJobs}+`} Active AI Jobs</h3>
                   <p>Live opportunities</p>
                 </div>
                 <div className="stat">
-                  <h3>{totalCompanies}+ Companies Hiring</h3>
+                  <h3>{loading ? '...' : `${totalCompanies}+`} Companies Hiring</h3>
                   <p>Actively recruiting</p>
                 </div>
               </div>
