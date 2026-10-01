@@ -777,27 +777,15 @@ function App() {
               {/* Job Cards */}
               {!loading && filteredJobs.slice(0, visibleJobsCount).map((job) => (
                 <div className="job-card" key={job.id}>
-                  <div className="company-logo">{job.companyInitial}</div>
-                  <div className="job-details">
+                  <div className="job-card-top">
+                    <div className="company-logo">{job.companyInitial}</div>
                     <div className="job-header">
-                      <div>
-                        <h3 className="job-title">{job.title}</h3>
-                        <div className="job-company">{job.company} • {job.industry}</div>
-                      </div>
-                      <div className="job-actions">
-                        <button className="icon-btn"><Heart size={20} /></button>
-                        <button className="icon-btn whatsapp"><MessageCircle size={20} /></button>
-                        <a
-                          href={job.applyUrl || job.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-apply"
-                        >
-                          {job.source ? applyLabel(job.source) : 'Apply Now'}
-                          <ExternalLink size={14} style={{ marginLeft: 4 }} />
-                        </a>
-                      </div>
+                      <h3 className="job-title">{job.title}</h3>
+                      <div className="job-company">{job.company} • {job.industry}</div>
                     </div>
+                  </div>
+
+                  <div className="job-details">
                     <div className="job-meta">
                       <div className="meta-item"><MapPin size={14} /> {job.location}</div>
                       {job.source && (
@@ -811,9 +799,13 @@ function App() {
                         <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
                       )}
                     </div>
+
                     {job.description && (
-                      <p className="job-desc">{job.description.substring(0, 250)}...</p>
+                      <p className="job-desc">
+                        {job.description.replace(/\*\*/g, '').substring(0, 200)}...
+                      </p>
                     )}
+
                     {job.tags && job.tags.length > 0 && (
                       <div className="job-tags">
                         {job.tags.map((tag, i) => (
@@ -821,6 +813,22 @@ function App() {
                         ))}
                       </div>
                     )}
+
+                    <div className="job-card-footer">
+                      <div className="job-social-actions">
+                        <button className="icon-btn" title="Save Job"><Heart size={18} /></button>
+                        <button className="icon-btn whatsapp" title="Share on WhatsApp"><MessageCircle size={18} /></button>
+                      </div>
+                      <a
+                        href={job.applyUrl || job.url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-apply"
+                      >
+                        {job.source ? applyLabel(job.source) : 'Apply Now'}
+                        <ExternalLink size={14} style={{ marginLeft: 4 }} />
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
