@@ -90,9 +90,9 @@ def upsert_jobs(jobs: list[dict]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Mark stale jobs as inactive (older than 30 days)
+# Mark stale jobs as inactive (older than 7 days)
 # ---------------------------------------------------------------------------
-def deactivate_stale_jobs(days: int = 30):
+def deactivate_stale_jobs(days: int = 7):
     sb = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
     result = (

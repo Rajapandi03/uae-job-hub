@@ -1,0 +1,44 @@
+[
+  {
+    "title": "AI / Machine Learning Engineer",
+    "min_aed": 22000,
+    "max_aed": 45000,
+    "source": "Glassdoor & Gulf Talent 2026",
+    "summary": "Monthly compensation package for mid to senior AI/ML engineers in Dubai & Abu Dhabi."
+  },
+  {
+    "title": "Senior Data Scientist",
+    "min_aed": 25000,
+    "max_aed": 48000,
+    "source": "Hays Middle East 2026",
+    "summary": "Experienced data science practitioners leading analytics, predictive modeling, and data pipelines."
+  },
+  {
+    "title": "Generative AI & LLM Specialist",
+    "min_aed": 30000,
+    "max_aed": 55000,
+    "source": "Cooper Fitch UAE 2026",
+    "summary": "Engineers specializing in RAG architecture, LLM fine-tuning, prompt engineering, and AI agents."
+  },
+  {
+    "title": "Computer Vision Engineer",
+    "min_aed": 22000,
+    "max_aed": 42000,
+    "source": "Michael Page UAE 2026",
+    "summary": "Engineers building spatial computing, image recognition, and autonomous vision systems."
+  },
+  {
+    "title": "AI Solutions Architect",
+    "min_aed": 35000,
+    "max_aed": 65000,
+    "source": "Adecco Middle East 2026",
+    "summary": "Architects designing enterprise scalable AI infrastructure and cloud platform integrations."
+  },
+  {
+    "title": "Head of AI / VP of Data",
+    "min_aed": 60000,
+    "max_aed": 110000,
+    "source": "Executive Search UAE 2026",
+    "summary": "Executive leadership directing enterprise AI strategy, data governance, and technology teams."
+  }
+]

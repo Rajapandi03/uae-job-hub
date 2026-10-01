@@ -32,7 +32,7 @@ LOCATIONS = ["Dubai", "Abu Dhabi", "Sharjah", "UAE"]
 # linkedin, indeed, google, bayt (bayt is built into JobSpy)
 SITES = ["indeed", "linkedin", "google", "bayt"]
 
-HOURS_OLD = 72          # only jobs posted in the last 72 hours
+HOURS_OLD = 24          # only jobs posted in the last 24 hours
 RESULTS_PER_QUERY = 25  # per site per search term
 
 

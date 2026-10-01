@@ -99,3 +99,40 @@ CREATE POLICY "Service role can manage events"
     USING (auth.role() = 'service_role')
     WITH CHECK (auth.role() = 'service_role');
 
+
+-- ============================================================
+-- 7. Create the resource_items table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS resource_items (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    type         TEXT NOT NULL CHECK (type IN ('news', 'course', 'salary')),
+    title        TEXT NOT NULL,
+    summary      TEXT,
+    link         TEXT UNIQUE,
+    source       TEXT,
+    price_text   TEXT,
+    published_at TIMESTAMPTZ,
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_resource_items_type ON resource_items (type);
+CREATE INDEX IF NOT EXISTS idx_resource_items_published ON resource_items (published_at DESC NULLS LAST);
+
+-- Enable Row Level Security
+ALTER TABLE resource_items ENABLE ROW LEVEL SECURITY;
+
+-- Public read-only policy (uses the anon key)
+CREATE POLICY "Public can read resource_items"
+    ON resource_items
+    FOR SELECT
+    USING (true);
+
+-- Service-role write policy (only the service_role key can manage resource items)
+CREATE POLICY "Service role can manage resource_items"
+    ON resource_items
+    FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+

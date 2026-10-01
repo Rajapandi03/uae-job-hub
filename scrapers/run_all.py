@@ -14,6 +14,7 @@ Environment variables required:
 import sys
 import os
 import time
+from datetime import datetime, timezone
 
 # Load .env file if present (for local development)
 try:
@@ -65,11 +66,49 @@ def main():
 
     # Deactivate stale jobs
     if not DRY_RUN:
-        logger.info("\n>>> Deactivating stale jobs (>30 days)")
+        logger.info("\n>>> Deactivating stale jobs (>7 days)")
         try:
-            deactivate_stale_jobs()
+            deactivate_stale_jobs(days=7)
         except Exception as e:
             logger.error(f"Stale job cleanup failed: {e}")
+
+    # ---------------------------------------------------------------
+    # Phase 4: Resources (News, Courses, Salary)
+    # Runs AFTER all job scrapers. A failure here never stops jobs.
+    # ---------------------------------------------------------------
+    logger.info("\n>>> Phase 4: Career Resources")
+    now_utc = datetime.now(timezone.utc)
+    resource_counts = {}
+
+    # 4a. News - runs every time
+    try:
+        from resources_scraper import run_news
+        cnt = run_news(dry_run=DRY_RUN)
+        resource_counts["news"] = cnt
+    except Exception as e:
+        logger.error(f"Resource news scraper failed: {e}")
+
+    # 4b. Courses - only on Mondays (weekday 0)
+    if now_utc.weekday() == 0:
+        try:
+            from resources_scraper import run_courses
+            cnt = run_courses(dry_run=DRY_RUN)
+            resource_counts["courses"] = cnt
+        except Exception as e:
+            logger.error(f"Resource courses scraper failed: {e}")
+    else:
+        logger.info("  Courses scraper skipped (only runs on Mondays).")
+
+    # 4c. Salary - only on the 1st of the month
+    if now_utc.day == 1:
+        try:
+            from resources_scraper import run_salary
+            cnt = run_salary(dry_run=DRY_RUN)
+            resource_counts["salary"] = cnt
+        except Exception as e:
+            logger.error(f"Resource salary scraper failed: {e}")
+    else:
+        logger.info("  Salary scraper skipped (only runs on the 1st).")
 
     # Summary
     elapsed = time.time() - start
@@ -80,6 +119,8 @@ def main():
     logger.info(f"Total unique jobs: {total}")
     for src, cnt in sorted(all_counts.items()):
         logger.info(f"  {src}: {cnt}")
+    if resource_counts:
+        logger.info(f"Resources: {resource_counts}")
     logger.info("=" * 60)
 
 

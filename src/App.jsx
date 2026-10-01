@@ -27,9 +27,23 @@ import {
   User as UserIcon,
   LogIn,
   UserCheck,
+  GraduationCap,
+  DollarSign,
+  Newspaper,
+  BookOpen,
+  Award,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
-import { jobs as staticJobs, companies, events as staticEvents, resources, browseCategories } from './data/jobs'
+import {
+  jobs as staticJobs,
+  companies,
+  events as staticEvents,
+  resources,
+  browseCategories,
+  staticCertificates,
+  staticSalaries,
+  staticNews,
+} from './data/jobs'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -141,12 +155,95 @@ function mapDbJob(job) {
   }
 }
 
+function formatDateLabel(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return null
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function getInitialView() {
+  const path = window.location.pathname
+  if (path === '/certificates') return 'certificates'
+  if (path === '/salary-report') return 'salary'
+  if (path === '/news') return 'news'
+  if (path === '/events') return 'events'
+  return 'jobs'
+}
+
+const viewToPath = {
+  jobs: '/',
+  events: '/events',
+  certificates: '/certificates',
+  salary: '/salary-report',
+  news: '/news',
+}
+
 // ---------------------------------------------------------------------------
 // App Component
 // ---------------------------------------------------------------------------
 function App() {
-  // Navigation view: 'jobs' | 'events'
-  const [currentView, setCurrentView] = useState('jobs')
+  // Navigation view: 'jobs' | 'events' | 'certificates' | 'salary' | 'news'
+  const [currentView, setCurrentView] = useState(getInitialView)
+
+  const navigateTo = (view) => {
+    setCurrentView(view)
+    const path = viewToPath[view] || '/'
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path)
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentView(getInitialView())
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  // Resources state (fetched from Supabase table `resource_items` with static fallbacks)
+  const [resourcesList, setResourcesList] = useState({
+    certificates: staticCertificates,
+    salary: staticSalaries,
+    news: staticNews,
+  })
+  const [resourcesLoading, setResourcesLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchResources() {
+      if (!supabase) {
+        setResourcesLoading(false)
+        return
+      }
+      try {
+        const { data, error } = await supabase
+          .from('resource_items')
+          .select('*')
+          .order('published_at', { ascending: false, nullsFirst: false })
+          .order('updated_at', { ascending: false })
+
+        if (error) throw error
+        if (data && data.length > 0) {
+          const certs = data.filter(item => item.type === 'course')
+          const salaries = data.filter(item => item.type === 'salary')
+          const newsItems = data.filter(item => item.type === 'news')
+
+          setResourcesList({
+            certificates: certs.length > 0 ? certs : staticCertificates,
+            salary: salaries.length > 0 ? salaries : staticSalaries,
+            news: newsItems.length > 0 ? newsItems : staticNews,
+          })
+        }
+      } catch (err) {
+        console.warn('Supabase resource_items fetch error, using static fallback:', err.message)
+      } finally {
+        setResourcesLoading(false)
+      }
+    }
+    fetchResources()
+  }, [])
 
   // Auth State
   const [user, setUser] = useState(null)
@@ -668,15 +765,15 @@ function App() {
 
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
-        <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
+        <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigateTo('jobs')}>
           <span className="nav-brand-icon">AI</span>
           JobsUAE
         </div>
         <div className="nav-links">
-          <a href="#" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); setCurrentView('jobs') }}>Find Jobs</a>
-          <a href="#companies-section" onClick={(e) => { e.preventDefault(); setCurrentView('jobs'); setTimeout(() => document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' }), 100) }}>Companies</a>
-          <a href="#" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); setCurrentView('events') }}>Events</a>
-          <a href="#">Resources</a>
+          <a href="/" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('jobs') }}>Find Jobs</a>
+          <a href="#companies-section" onClick={(e) => { e.preventDefault(); navigateTo('jobs'); setTimeout(() => document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' }), 100) }}>Companies</a>
+          <a href="/events" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('events') }}>Events</a>
+          <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
         <div className="nav-actions">
           {user && (
@@ -873,6 +970,174 @@ function App() {
             ))}
           </div>
         </section>
+      ) : currentView === 'certificates' ? (
+        /* ==================== CERTIFICATES PAGE ==================== */
+        <section className="section-resource-page">
+          <div className="resource-view-container">
+            <button className="events-nav-back" onClick={() => navigateTo('jobs')}>
+              <ArrowLeft size={16} /> Back to Jobs
+            </button>
+
+            <div className="section-title" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+              <h2><GraduationCap size={28} style={{ verticalAlign: 'middle', marginRight: '8px', color: '#7c3aed' }} /> Free & Paid AI Certificates</h2>
+              <p>Verified cloud & AI certifications from Google, AWS, Microsoft, and DeepLearning.AI</p>
+            </div>
+
+            <div className="resource-subnav">
+              <button className="subnav-btn active" onClick={() => navigateTo('certificates')}>Certificates</button>
+              <button className="subnav-btn" onClick={() => navigateTo('salary')}>Salary Report 2026</button>
+              <button className="subnav-btn" onClick={() => navigateTo('news')}>Daily UAE News</button>
+            </div>
+
+            {resourcesLoading ? (
+              <div className="loading-state">
+                <Loader2 size={24} className="spin" />
+                <p>Loading certificate programs...</p>
+              </div>
+            ) : resourcesList.certificates.length === 0 ? (
+              <div className="empty-state">
+                <GraduationCap size={48} />
+                <h3>No certificate resources found</h3>
+                <p>Check back soon for new AI course updates.</p>
+              </div>
+            ) : (
+              <div className="resource-items-grid">
+                {resourcesList.certificates.map((cert, idx) => (
+                  <div className="resource-detail-card" key={cert.id || idx}>
+                    <div className="resource-card-header">
+                      <span className="resource-source-badge">{cert.source || 'Cloud Certification'}</span>
+                      {cert.price_text ? (
+                        <span className="resource-price-badge">{cert.price_text}</span>
+                      ) : (
+                        <span className="resource-price-badge unknown">Check website</span>
+                      )}
+                    </div>
+                    <h3 className="resource-card-title">{cert.title}</h3>
+                    {cert.summary && <p className="resource-card-summary">{cert.summary}</p>}
+                    <div className="resource-card-footer">
+                      <span className="resource-updated-label">
+                        {cert.updated_at ? `Updated ${formatDateLabel(cert.updated_at)}` : ''}
+                      </span>
+                      {cert.link && (
+                        <a href={cert.link} target="_blank" rel="noopener noreferrer" className="btn-resource-action">
+                          Explore Course <ExternalLink size={14} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : currentView === 'salary' ? (
+        /* ==================== SALARY REPORT PAGE ==================== */
+        <section className="section-resource-page">
+          <div className="resource-view-container">
+            <button className="events-nav-back" onClick={() => navigateTo('jobs')}>
+              <ArrowLeft size={16} /> Back to Jobs
+            </button>
+
+            <div className="section-title" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+              <h2><DollarSign size={28} style={{ verticalAlign: 'middle', marginRight: '8px', color: '#16a34a' }} /> UAE AI Salary Report 2026</h2>
+              <p>Monthly compensation benchmarks for AI, Machine Learning, and Data Science roles in the UAE</p>
+            </div>
+
+            <div className="resource-subnav">
+              <button className="subnav-btn" onClick={() => navigateTo('certificates')}>Certificates</button>
+              <button className="subnav-btn active" onClick={() => navigateTo('salary')}>Salary Report 2026</button>
+              <button className="subnav-btn" onClick={() => navigateTo('news')}>Daily UAE News</button>
+            </div>
+
+            {resourcesLoading ? (
+              <div className="loading-state">
+                <Loader2 size={24} className="spin" />
+                <p>Loading salary benchmarks...</p>
+              </div>
+            ) : resourcesList.salary.length === 0 ? (
+              <div className="empty-state">
+                <DollarSign size={48} />
+                <h3>No salary data found</h3>
+                <p>Updating latest market figures...</p>
+              </div>
+            ) : (
+              <div className="resource-items-grid">
+                {resourcesList.salary.map((sal, idx) => (
+                  <div className="resource-detail-card salary-card" key={sal.id || idx}>
+                    <div className="resource-card-header">
+                      <span className="resource-source-badge">{sal.source || 'Industry Benchmark'}</span>
+                    </div>
+                    <h3 className="resource-card-title">{sal.title}</h3>
+                    <div className="salary-amount-display">{sal.price_text}</div>
+                    {sal.summary && <p className="resource-card-summary">{sal.summary}</p>}
+                    <div className="resource-card-footer">
+                      <span className="resource-updated-label">
+                        {sal.updated_at ? `Updated ${formatDateLabel(sal.updated_at)}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : currentView === 'news' ? (
+        /* ==================== DAILY UAE NEWS PAGE ==================== */
+        <section className="section-resource-page">
+          <div className="resource-view-container">
+            <button className="events-nav-back" onClick={() => navigateTo('jobs')}>
+              <ArrowLeft size={16} /> Back to Jobs
+            </button>
+
+            <div className="section-title" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+              <h2><Newspaper size={28} style={{ verticalAlign: 'middle', marginRight: '8px', color: '#0ea5e9' }} /> Daily UAE AI & Tech News</h2>
+              <p>Latest headlines and coverage on UAE artificial intelligence, tech investments, and hiring</p>
+            </div>
+
+            <div className="resource-subnav">
+              <button className="subnav-btn" onClick={() => navigateTo('certificates')}>Certificates</button>
+              <button className="subnav-btn" onClick={() => navigateTo('salary')}>Salary Report 2026</button>
+              <button className="subnav-btn active" onClick={() => navigateTo('news')}>Daily UAE News</button>
+            </div>
+
+            {resourcesLoading ? (
+              <div className="loading-state">
+                <Loader2 size={24} className="spin" />
+                <p>Fetching latest tech news...</p>
+              </div>
+            ) : resourcesList.news.length === 0 ? (
+              <div className="empty-state">
+                <Newspaper size={48} />
+                <h3>No news stories available</h3>
+                <p>Check back shortly for news updates.</p>
+              </div>
+            ) : (
+              <div className="news-items-list">
+                {resourcesList.news.map((item, idx) => (
+                  <div className="news-detail-card" key={item.id || idx}>
+                    <div className="news-card-meta">
+                      <span className="news-source">{item.source || 'Google News'}</span>
+                      {item.published_at && (
+                        <span className="news-time"><Clock size={12} /> {timeAgo(item.published_at)}</span>
+                      )}
+                    </div>
+                    <h3 className="news-card-title">{item.title}</h3>
+                    <div className="news-card-footer">
+                      <span className="resource-updated-label">
+                        {item.updated_at ? `Updated ${formatDateLabel(item.updated_at)}` : ''}
+                      </span>
+                      {item.link && (
+                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="btn-read-news">
+                          Read Original Article <ExternalLink size={14} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       ) : (
         /* ==================== HOMEPAGE (JOBS VIEW) ==================== */
         <>
@@ -916,6 +1181,33 @@ function App() {
             </div>
             <div className="hero-image">
               <img src="/dubai-skyline.png" alt="Dubai Skyline at Night" />
+            </div>
+          </section>
+
+          {/* ===== HOW IT WORKS / WHY WE'RE BEST ===== */}
+          <section className="section-features">
+            <div className="features-grid">
+              <div className="feature-card">
+                 <div className="feature-icon"><Clock size={24} /></div>
+                 <div>
+                   <h4>100% Automated</h4>
+                   <p>Jobs update automatically 4 times every day.</p>
+                 </div>
+              </div>
+              <div className="feature-card">
+                 <div className="feature-icon"><Briefcase size={24} /></div>
+                 <div>
+                   <h4>All Top Sources</h4>
+                   <p>Aggregating LinkedIn, Indeed, GulfTalent & more.</p>
+                 </div>
+              </div>
+              <div className="feature-card">
+                 <div className="feature-icon"><CheckCircle size={24} /></div>
+                 <div>
+                   <h4>AI & Tech Only</h4>
+                   <p>Strictly curated roles for tech professionals.</p>
+                 </div>
+              </div>
             </div>
           </section>
 
@@ -1122,14 +1414,25 @@ function App() {
               </div>
               <div className="resources-col">
                 <h3>Career Resources</h3>
-                {resources.map((res) => (
-                  <div className="resource-card" key={res.id}>
-                    <div className="resource-icon">{res.icon}</div>
-                    <div className="resource-title">{res.title}</div>
-                    <div className="resource-desc">{res.description}</div>
-                    <a href="#" className="resource-link">{res.linkText}</a>
-                  </div>
-                ))}
+                {resources.map((res) => {
+                  const IconLookup = { GraduationCap, DollarSign, Newspaper }
+                  const IconComponent = IconLookup[res.iconName] || BookOpen
+                  return (
+                    <div 
+                      className="resource-card" 
+                      key={res.id} 
+                      onClick={() => navigateTo(res.view)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="resource-icon"><IconComponent size={22} /></div>
+                      <div className="resource-content">
+                        <div className="resource-title">{res.title}</div>
+                        <div className="resource-desc">{res.description}</div>
+                        <span className="resource-link">{res.linkText} <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </section>
@@ -1162,13 +1465,17 @@ function App() {
               <p>Find the right AI role wherever you are in the UAE</p>
             </div>
             <div className="browse-grid">
-              {browseCategories.map((cat, i) => (
-                <div className="browse-card" key={i}>
-                  <div className="browse-emoji">{cat.emoji}</div>
-                  <div className="browse-title">{cat.title}</div>
-                  <div className="browse-desc">{cat.description}</div>
-                </div>
-              ))}
+              {browseCategories.map((cat, i) => {
+                const BrowseIconMap = { Building2, Briefcase, LayoutDashboard, Globe, MapPin, Search }
+                const BrowseIcon = BrowseIconMap[cat.iconName] || Briefcase
+                return (
+                  <div className="browse-card" key={i}>
+                    <div className="browse-emoji"><BrowseIcon size={24} /></div>
+                    <div className="browse-title">{cat.title}</div>
+                    <div className="browse-desc">{cat.description}</div>
+                  </div>
+                )
+              })}
             </div>
           </section>
 
