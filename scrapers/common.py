@@ -32,8 +32,13 @@ def get_supabase() -> Client:
 # ---------------------------------------------------------------------------
 # Job hash: deterministic primary key from title|company|location
 # ---------------------------------------------------------------------------
-def make_job_hash(title: str, company: str, location: str) -> str:
-    raw = f"{title.strip().lower()}|{company.strip().lower()}|{location.strip().lower()}"
+def make_job_hash(title: str, company: str, location: str = "") -> str:
+    """Deterministic hash from title + company only.
+    Location is intentionally excluded so the same job discovered via
+    different location queries (e.g. 'Dubai' vs 'UAE') collapses into
+    one row instead of creating duplicates.
+    """
+    raw = f"{title.strip().lower()}|{company.strip().lower()}"
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
 

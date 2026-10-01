@@ -1,0 +1,23 @@
+name: Keep Workflows Alive
+
+# This workflow prevents GitHub from automatically disabling
+# scheduled workflows after 60 days of repository inactivity.
+# It runs once a month and makes a harmless API call to keep
+# the repository "active" in GitHub's eyes.
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'   # 1st of every month at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep workflows alive
+        uses: liskin/gh-workflow-keepalive@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
