@@ -1449,17 +1449,6 @@ function App() {
             </div>
           </section>
 
-          {/* ===== TESTIMONIAL ===== */}
-          <section className="section-testimonial">
-            <div className="testimonial-card">
-              <p className="testimonial-text">
-                "We filled our Senior ML Engineer role within 2 weeks. The quality of candidates was outstanding."
-              </p>
-              <div className="testimonial-author">Sarah Al-Mansoori</div>
-              <div className="testimonial-role">Head of AI, Dubai FinTech Co.</div>
-            </div>
-          </section>
-
           {/* ===== EMPLOYER CTA ===== */}
           <section className="section-employer-cta">
             <h2>Build your AI dream team, right here in the UAE</h2>
