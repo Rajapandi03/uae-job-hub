@@ -249,12 +249,21 @@ export const staticCertificates = [
 
 export const staticSalaries = [
   {
+    id: 0,
+    type: 'salary',
+    title: 'Junior AI Engineer / Fresher',
+    summary: 'Entry-level compensation for fresh graduates and associate AI/data roles.',
+    source: 'Employee Feedback 2026',
+    price_text: '6,000 - 12,000 AED / month',
+    updated_at: '2026-10-01T00:00:00Z',
+  },
+  {
     id: 1,
     type: 'salary',
     title: 'AI / Machine Learning Engineer',
     summary: 'Monthly compensation package for mid to senior AI/ML engineers across Dubai & Abu Dhabi.',
-    source: 'Glassdoor & Gulf Talent 2026',
-    price_text: '22,000 - 45,000 AED / month',
+    source: 'Employee Feedback 2026',
+    price_text: '15,000 - 30,000 AED / month',
     updated_at: '2026-10-01T00:00:00Z',
   },
   {
@@ -262,8 +271,8 @@ export const staticSalaries = [
     type: 'salary',
     title: 'Senior Data Scientist',
     summary: 'Experienced data science practitioners leading analytics and predictive modeling.',
-    source: 'Hays Middle East 2026',
-    price_text: '25,000 - 48,000 AED / month',
+    source: 'Employee Feedback 2026',
+    price_text: '20,000 - 35,000 AED / month',
     updated_at: '2026-10-01T00:00:00Z',
   },
   {
@@ -271,8 +280,8 @@ export const staticSalaries = [
     type: 'salary',
     title: 'Generative AI & LLM Specialist',
     summary: 'Engineers specializing in RAG, fine-tuning LLMs, and agentic workflows.',
-    source: 'Cooper Fitch UAE 2026',
-    price_text: '30,000 - 55,000 AED / month',
+    source: 'Employee Feedback 2026',
+    price_text: '25,000 - 45,000 AED / month',
     updated_at: '2026-10-01T00:00:00Z',
   },
   {
@@ -280,8 +289,8 @@ export const staticSalaries = [
     type: 'salary',
     title: 'Head of AI / VP of Data & AI',
     summary: 'Executive leadership directing enterprise AI strategy, infrastructure, and team growth.',
-    source: 'Michael Page UAE 2026',
-    price_text: '60,000 - 110,000 AED / month',
+    source: 'Employee Feedback 2026',
+    price_text: '45,000 - 75,000 AED / month',
     updated_at: '2026-10-01T00:00:00Z',
   },
 ]
