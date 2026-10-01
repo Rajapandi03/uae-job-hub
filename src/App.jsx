@@ -1146,28 +1146,7 @@ function App() {
             <div className="hero-content">
               <h1>Your AI career in the <br /><span className="highlight">UAE</span> starts here</h1>
               <p>Explore every AI career opportunity in the UAE—all in one place. Save time, stop the search, and focus on your next step.</p>
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Search AI jobs by title, skill"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <select
-                  value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
-                >
-                  <option>All Emirates</option>
-                  <option>Dubai</option>
-                  <option>Abu Dhabi</option>
-                  <option>Sharjah</option>
-                  <option>Ajman</option>
-                  <option>Ras Al Khaimah</option>
-                </select>
-                <button className="btn-primary" onClick={() => {}}>
-                  <Search size={16} /> Search Jobs
-                </button>
-              </div>
+
               <div className="hero-stats">
                 <div className="stat">
                   <h3>{totalJobs}+ Active AI Jobs</h3>
@@ -1216,6 +1195,30 @@ function App() {
             <div className="section-title">
               <h2>Latest AI Opportunities</h2>
               <p>Discover roles that match your expertise and aspirations</p>
+            </div>
+
+            {/* Global Search Bar */}
+            <div className="search-box" style={{ maxWidth: '800px', margin: '0 auto 2rem auto' }}>
+              <input
+                type="text"
+                placeholder="Search AI jobs by title, skill"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+              >
+                <option>All Emirates</option>
+                <option>Dubai</option>
+                <option>Abu Dhabi</option>
+                <option>Sharjah</option>
+                <option>Ajman</option>
+                <option>Ras Al Khaimah</option>
+              </select>
+              <button className="btn-primary" onClick={() => {}}>
+                <Search size={16} /> Search Jobs
+              </button>
             </div>
 
             {/* Filter bar */}
@@ -1455,27 +1458,6 @@ function App() {
             <div className="cta-buttons">
               <button className="btn-cta-primary" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('signup'); setShowAuthModal(true) } }}>Post Your First Job</button>
               <button className="btn-cta-outline" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('login'); setShowAuthModal(true) } }}>Recruiter Portal</button>
-            </div>
-          </section>
-
-          {/* ===== BROWSE BY LOCATION & SPECIALTY ===== */}
-          <section className="section-browse">
-            <div className="section-title">
-              <h2>Browse AI Jobs by Location & Specialty</h2>
-              <p>Find the right AI role wherever you are in the UAE</p>
-            </div>
-            <div className="browse-grid">
-              {browseCategories.map((cat, i) => {
-                const BrowseIconMap = { Building2, Briefcase, LayoutDashboard, Globe, MapPin, Search }
-                const BrowseIcon = BrowseIconMap[cat.iconName] || Briefcase
-                return (
-                  <div className="browse-card" key={i}>
-                    <div className="browse-emoji"><BrowseIcon size={24} /></div>
-                    <div className="browse-title">{cat.title}</div>
-                    <div className="browse-desc">{cat.description}</div>
-                  </div>
-                )
-              })}
             </div>
           </section>
 
