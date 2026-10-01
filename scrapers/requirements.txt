@@ -1,0 +1,6 @@
+python-jobspy>=1.1.75
+scrapling>=0.2.9
+supabase>=2.0.0
+python-dotenv>=1.0.0
+# Phase 3 (career pages) - install separately if needed:
+# scrapegraphai>=1.0.0
