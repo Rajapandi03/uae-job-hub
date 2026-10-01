@@ -626,7 +626,7 @@ function App() {
       const now = new Date()
       const cutoff = new Date()
       if (timeFilter === '24h') cutoff.setHours(now.getHours() - 24)
-      else if (timeFilter === '7d') cutoff.setDate(now.getDate() - 7)
+      else if (timeFilter === '3d') cutoff.setDate(now.getDate() - 3)
 
       result = result.filter(j => {
         const d = j.posted_at ? new Date(j.posted_at) : (j.first_seen ? new Date(j.first_seen) : null)
@@ -1239,9 +1239,9 @@ function App() {
                     <option value="senior">Senior Level</option>
                   </select>
                   <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
-                    <option value="all">All Time</option>
-                    <option value="24h">Last 24 Hours</option>
-                    <option value="7d">Last 7 Days</option>
+                    <option value="all">Last 7 Days (Max)</option>
+                    <option value="3d">3 Days Ago</option>
+                    <option value="24h">1 Day Ago (24h)</option>
                   </select>
                   {dbConnected && (
                     <span className="filter-live-badge">● Live from DB</span>
