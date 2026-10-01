@@ -1198,16 +1198,19 @@ function App() {
             </div>
 
             {/* Global Search Bar */}
-            <div className="search-box" style={{ maxWidth: '800px', margin: '0 auto 2rem auto' }}>
+            <div className="search-box" style={{ maxWidth: '800px', margin: '0 auto 2rem auto', paddingLeft: '1rem' }}>
+              <Search size={20} style={{ color: '#94a3b8' }} />
               <input
                 type="text"
-                placeholder="Search AI jobs by title, skill"
+                placeholder="Search AI jobs by title, skill..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: '0.75rem' }}
               />
               <select
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
+                style={{ borderLeft: '1px solid var(--border)' }}
               >
                 <option>All Emirates</option>
                 <option>Dubai</option>
@@ -1216,9 +1219,6 @@ function App() {
                 <option>Ajman</option>
                 <option>Ras Al Khaimah</option>
               </select>
-              <button className="btn-primary" onClick={() => {}}>
-                <Search size={16} /> Search Jobs
-              </button>
             </div>
 
             {/* Filter bar */}
