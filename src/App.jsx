@@ -1145,7 +1145,7 @@ function App() {
           <section className="hero">
             <div className="hero-content">
               <h1>Your AI career in the <br /><span className="highlight">UAE</span> starts here</h1>
-              <p>Explore every AI career opportunity in the UAE—all in one place. Save time, stop the search, and focus on your next step.</p>
+              <p>Explore every AI career opportunity in the UAE all in one place. Save time, stop the search, and focus on your next step.</p>
 
               <div className="hero-stats">
                 <div className="stat">
