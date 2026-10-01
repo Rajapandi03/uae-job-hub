@@ -767,7 +767,7 @@ function App() {
       <nav className="navbar">
         <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigateTo('jobs')}>
           <span className="nav-brand-icon">AI</span>
-          JobsUAE
+          JobHub UAE
         </div>
         <div className="nav-links">
           <a href="/" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('jobs') }}>Find Jobs</a>
@@ -1452,7 +1452,7 @@ function App() {
           {/* ===== EMPLOYER CTA ===== */}
           <section className="section-employer-cta">
             <h2>Build your AI dream team, right here in the UAE</h2>
-            <p>Join 65+ companies already hiring through AIJobsUAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
+            <p>Join 65+ companies already hiring through AI JobHub UAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
             <div className="cta-buttons">
               <button className="btn-cta-primary" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('signup'); setShowAuthModal(true) } }}>Post Your First Job</button>
               <button className="btn-cta-outline" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('login'); setShowAuthModal(true) } }}>Recruiter Portal</button>
@@ -1489,7 +1489,7 @@ function App() {
         <div className="footer-top">
           <div>
             <div className="nav-brand" style={{ color: 'white', marginBottom: '0.75rem', cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
-              <span className="nav-brand-icon">AI</span> JobsUAE
+              <span className="nav-brand-icon">AI</span> JobHub UAE
             </div>
             <p className="footer-brand-desc">
               Connecting AI talent with opportunities across the United Arab Emirates.
@@ -1521,7 +1521,7 @@ function App() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© 2026 AIJobsUAE. All rights reserved. Empowering AI careers across the Emirates.</p>
+          <p>© 2026 AI JobHub UAE. All rights reserved. Empowering AI careers across the Emirates.</p>
           <div className="footer-links-bottom">
             <a href="#">AI Jobs in Dubai</a>
             <a href="#">ML Jobs Dubai</a>
