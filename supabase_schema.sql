@@ -43,3 +43,52 @@ CREATE POLICY "Service role can manage jobs"
     FOR ALL
     USING (auth.role() = 'service_role')
     WITH CHECK (auth.role() = 'service_role');
+
+-- ============================================================
+-- 6. Create the events table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS events (
+    event_hash        TEXT PRIMARY KEY,
+    title             TEXT NOT NULL,
+    start_date        DATE NOT NULL,
+    end_date          DATE,
+    city              TEXT NOT NULL,
+    venue             TEXT,
+    url               TEXT NOT NULL,
+    registration_url  TEXT,
+    source            TEXT NOT NULL,
+    organizer         TEXT,
+    event_type        TEXT NOT NULL CHECK (event_type IN (
+        'conference', 'meetup', 'workshop', 'hackathon',
+        'webinar', 'career_fair', 'networking'
+    )),
+    is_free           BOOLEAN,
+    price_text        TEXT,
+    format            TEXT NOT NULL CHECK (format IN (
+        'in_person', 'online', 'hybrid'
+    )),
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_events_start_date ON events (start_date ASC);
+CREATE INDEX IF NOT EXISTS idx_events_city       ON events (city);
+CREATE INDEX IF NOT EXISTS idx_events_event_type ON events (event_type);
+CREATE INDEX IF NOT EXISTS idx_events_format     ON events (format);
+
+-- Enable Row Level Security
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+
+-- Public read-only policy
+CREATE POLICY "Public can read upcoming events"
+    ON events
+    FOR SELECT
+    USING (true);
+
+-- Service-role write policy
+CREATE POLICY "Service role can manage events"
+    ON events
+    FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+

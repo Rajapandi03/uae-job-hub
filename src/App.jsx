@@ -16,9 +16,13 @@ import {
   Loader2,
   ExternalLink,
   Filter,
+  ArrowLeft,
+  Globe,
+  Tag,
+  Ticket,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
-import { jobs as staticJobs, companies, events, resources, browseCategories } from './data/jobs'
+import { jobs as staticJobs, companies, events as staticEvents, resources, browseCategories } from './data/jobs'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -53,6 +57,55 @@ function applyLabel(source) {
   return `Apply on ${sourceLabel(source)}`
 }
 
+function formatEventDateDisplay(startStr, endStr) {
+  if (!startStr) return ''
+  const start = new Date(startStr)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const startMonth = monthNames[start.getMonth()]
+  const startDay = start.getDate()
+  const startYear = start.getFullYear()
+
+  if (endStr && endStr !== startStr) {
+    const end = new Date(endStr)
+    const endMonth = monthNames[end.getMonth()]
+    const endDay = end.getDate()
+    if (start.getMonth() === end.getMonth()) {
+      return `${startDay} - ${endDay} ${startMonth} ${startYear}`
+    }
+    return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${startYear}`
+  }
+  return `${startDay} ${startMonth} ${startYear}`
+}
+
+function getMonthKey(dateStr) {
+  if (!dateStr) return 'Upcoming Events'
+  const d = new Date(dateStr)
+  const fullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  return `${fullMonths[d.getMonth()]} ${d.getFullYear()}`
+}
+
+function formatLabel(format) {
+  const map = {
+    in_person: 'In-Person',
+    online: 'Online',
+    hybrid: 'Hybrid',
+  }
+  return map[format] || format
+}
+
+function eventTypeLabel(type) {
+  const map = {
+    conference: 'Conference',
+    meetup: 'Meetup',
+    workshop: 'Workshop',
+    hackathon: 'Hackathon',
+    webinar: 'Webinar',
+    career_fair: 'Career Fair',
+    networking: 'Networking',
+  }
+  return map[type] || type
+}
+
 // ---------------------------------------------------------------------------
 // Map DB job to card-friendly format
 // ---------------------------------------------------------------------------
@@ -84,6 +137,9 @@ function mapDbJob(job) {
 // App Component
 // ---------------------------------------------------------------------------
 function App() {
+  // Navigation view: 'jobs' | 'events'
+  const [currentView, setCurrentView] = useState('jobs')
+
   // State for live jobs
   const [liveJobs, setLiveJobs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -91,12 +147,25 @@ function App() {
   const [showAllCompanies, setShowAllCompanies] = useState(false)
   const [visibleJobsCount, setVisibleJobsCount] = useState(10)
 
-  // Filter state
+  // State for live events
+  const [eventsList, setEventsList] = useState(staticEvents)
+  const [eventsLoading, setEventsLoading] = useState(true)
+
+  // Job Filter state
   const [searchTerm, setSearchTerm] = useState('')
   const [locationFilter, setLocationFilter] = useState('All Emirates')
   const [sourceFilter, setSourceFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
   const [levelFilter, setLevelFilter] = useState('all')
+
+  // Event Filter state
+  const [eventSearchTerm, setEventSearchTerm] = useState('')
+  const [selectedMonthTab, setSelectedMonthTab] = useState('all')
+  const [eventCityFilter, setEventCityFilter] = useState('all')
+  const [eventTypeFilter, setEventTypeFilter] = useState('all')
+  const [eventPriceFilter, setEventPriceFilter] = useState('all')
+  const [eventFormatFilter, setEventFormatFilter] = useState('all')
+  const [eventTimeframeFilter, setEventTimeframeFilter] = useState('all')
 
   // Fetch jobs from Supabase
   useEffect(() => {
@@ -119,12 +188,40 @@ function App() {
           setDbConnected(true)
         }
       } catch (err) {
-        console.warn('Supabase fetch failed, using static data:', err.message)
+        console.warn('Supabase jobs fetch failed, using static data:', err.message)
       } finally {
         setLoading(false)
       }
     }
     fetchJobs()
+  }, [])
+
+  // Fetch events from Supabase (start_date >= today, ordered by start_date ASC)
+  useEffect(() => {
+    async function fetchEvents() {
+      if (!supabase) {
+        setEventsLoading(false)
+        return
+      }
+      try {
+        const todayStr = new Date().toISOString().split('T')[0]
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .gte('start_date', todayStr)
+          .order('start_date', { ascending: true })
+
+        if (error) throw error
+        if (data && data.length > 0) {
+          setEventsList(data)
+        }
+      } catch (err) {
+        console.warn('Supabase events fetch failed, using static data:', err.message)
+      } finally {
+        setEventsLoading(false)
+      }
+    }
+    fetchEvents()
   }, [])
 
   // Use live jobs if connected, otherwise static fallback
@@ -154,11 +251,10 @@ function App() {
       }))
   }, [allJobs, dbConnected, showAllCompanies])
 
-  // Apply filters
+  // Apply job filters
   const filteredJobs = useMemo(() => {
     let result = allJobs
 
-    // Keyword search
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase()
       result = result.filter(j =>
@@ -168,19 +264,16 @@ function App() {
       )
     }
 
-    // Location filter
     if (locationFilter !== 'All Emirates') {
       result = result.filter(j =>
         j.location.toLowerCase().includes(locationFilter.toLowerCase())
       )
     }
 
-    // Source filter
     if (sourceFilter !== 'all') {
       result = result.filter(j => j.source === sourceFilter)
     }
 
-    // Time filter
     if (timeFilter !== 'all') {
       const now = new Date()
       const cutoff = new Date()
@@ -193,14 +286,12 @@ function App() {
       })
     }
 
-    // Level filter
     if (levelFilter !== 'all') {
       const seniorKeywords = ['senior', 'sr', 'sr.', 'lead', 'principal', 'manager', 'director', 'head', 'chief', 'vp', 'architect']
       const entryKeywords = ['junior', 'jr', 'jr.', 'entry', 'intern', 'associate', 'graduate', 'fresher', 'trainee']
       
       result = result.filter(j => {
         const title = j.title.toLowerCase()
-        // Boundary enforcement: make sure we're matching whole words loosely if possible, but basic includes works fine for now
         const isSenior = seniorKeywords.some(kw => title.includes(kw))
         const isEntry = entryKeywords.some(kw => title.includes(kw))
         
@@ -214,30 +305,126 @@ function App() {
     return result
   }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
-  // Reset visible jobs count when filters change
   useEffect(() => {
     setVisibleJobsCount(10)
   }, [searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
-  // Unique sources for filter dropdown
   const availableSources = useMemo(() => {
     const srcs = new Set(allJobs.map(j => j.source).filter(Boolean))
     return Array.from(srcs).sort()
   }, [allJobs])
+
+  // Filtered Events
+  const filteredEvents = useMemo(() => {
+    let result = eventsList
+
+    if (eventSearchTerm.trim()) {
+      const q = eventSearchTerm.toLowerCase()
+      result = result.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.organizer && e.organizer.toLowerCase().includes(q)) ||
+        (e.city && e.city.toLowerCase().includes(q)) ||
+        (e.venue && e.venue.toLowerCase().includes(q))
+      )
+    }
+
+    if (selectedMonthTab !== 'all') {
+      result = result.filter(e => {
+        if (!e.start_date) return false
+        const d = new Date(e.start_date)
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return monthKey === selectedMonthTab
+      })
+    }
+
+    if (eventCityFilter !== 'all') {
+      result = result.filter(e => e.city && e.city.toLowerCase() === eventCityFilter.toLowerCase())
+    }
+
+    if (eventTypeFilter !== 'all') {
+      result = result.filter(e => e.event_type === eventTypeFilter)
+    }
+
+    if (eventPriceFilter !== 'all') {
+      if (eventPriceFilter === 'free') {
+        result = result.filter(e => e.is_free === true)
+      } else if (eventPriceFilter === 'paid') {
+        result = result.filter(e => e.is_free === false || (e.price_text && e.price_text.toLowerCase() !== 'free'))
+      }
+    }
+
+    if (eventFormatFilter !== 'all') {
+      result = result.filter(e => e.format === eventFormatFilter)
+    }
+
+    if (eventTimeframeFilter !== 'all') {
+      const now = new Date()
+      result = result.filter(e => {
+        if (!e.start_date) return false
+        const eventDate = new Date(e.start_date)
+        if (eventTimeframeFilter === 'week') {
+          const nextWeek = new Date(now)
+          nextWeek.setDate(now.getDate() + 7)
+          return eventDate >= now && eventDate <= nextWeek
+        } else if (eventTimeframeFilter === 'month') {
+          return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear()
+        }
+        return true
+      })
+    }
+
+    return result
+  }, [eventsList, eventSearchTerm, selectedMonthTab, eventCityFilter, eventTypeFilter, eventPriceFilter, eventFormatFilter, eventTimeframeFilter])
+
+  // Month Tabs List
+  const monthTabs = useMemo(() => {
+    const tabsMap = new Map()
+    eventsList.forEach(e => {
+      if (e.start_date) {
+        const d = new Date(e.start_date)
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+        if (!tabsMap.has(key)) {
+          tabsMap.set(key, label)
+        }
+      }
+    })
+    return Array.from(tabsMap.entries()).map(([key, label]) => ({ key, label }))
+  }, [eventsList])
+
+  // Events Grouped By Month
+  const eventsByMonth = useMemo(() => {
+    const groups = {}
+    filteredEvents.forEach(e => {
+      const monthTitle = getMonthKey(e.start_date)
+      if (!groups[monthTitle]) {
+        groups[monthTitle] = []
+      }
+      groups[monthTitle].push(e)
+    })
+    return groups
+  }, [filteredEvents])
+
+  // Unique cities from events
+  const eventCities = useMemo(() => {
+    const cities = new Set(eventsList.map(e => e.city).filter(Boolean))
+    return Array.from(cities).sort()
+  }, [eventsList])
 
   return (
     <div className="app">
 
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
-        <div className="nav-brand">
+        <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
           <span className="nav-brand-icon">AI</span>
           JobsUAE
         </div>
         <div className="nav-links">
-          <a href="#">Find Jobs</a>
-          <a href="#">Companies</a>
-          <a href="#">Events</a>
+          <a href="#" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); setCurrentView('jobs') }}>Find Jobs</a>
+          <a href="#companies-section" onClick={(e) => { e.preventDefault(); setCurrentView('jobs'); setTimeout(() => document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' }), 100) }}>Companies</a>
+          <a href="#" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); setCurrentView('events') }}>Events</a>
           <a href="#">Resources</a>
         </div>
         <div className="nav-actions">
@@ -250,304 +437,480 @@ function App() {
         </div>
       </nav>
 
-      {/* ===== HERO ===== */}
-      <section className="hero">
-        <div className="hero-content">
-          <h1>Your AI career in the <br /><span className="highlight">UAE</span> starts here</h1>
-          <p>Explore every AI career opportunity in the UAE—all in one place. Save time, stop the search, and focus on your next step.</p>
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="Search AI jobs by title, skill"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <select
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-            >
-              <option>All Emirates</option>
-              <option>Dubai</option>
-              <option>Abu Dhabi</option>
-              <option>Sharjah</option>
-              <option>Ajman</option>
-              <option>Ras Al Khaimah</option>
-            </select>
-            <button className="btn-primary" onClick={() => {}}>
-              <Search size={16} /> Search Jobs
+      {/* ===== VIEW CONDITIONAL RENDERING ===== */}
+      {currentView === 'events' ? (
+        /* ==================== FULL EVENTS VIEW ==================== */
+        <section className="section-events-page">
+          <div className="events-view-container">
+            <button className="events-nav-back" onClick={() => setCurrentView('jobs')}>
+              <ArrowLeft size={16} /> Back to Jobs
             </button>
-          </div>
-          <div className="hero-stats">
-            <div className="stat">
-              <h3>{totalJobs}+ Active AI Jobs</h3>
-              <p>Live opportunities</p>
-            </div>
-            <div className="stat">
-              <h3>{totalCompanies}+ Companies Hiring</h3>
-              <p>Actively recruiting</p>
-            </div>
-          </div>
-        </div>
-        <div className="hero-image">
-          <img src="/dubai-skyline.png" alt="Dubai Skyline at Night" />
-        </div>
-      </section>
 
-      {/* ===== LATEST JOBS ===== */}
-      <section className="section-jobs" id="jobs-section">
-        <div className="section-title">
-          <h2>Latest AI Opportunities</h2>
-          <p>Discover roles that match your expertise and aspirations</p>
-        </div>
+            <div className="section-title" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+              <h2>UAE AI & Tech Events</h2>
+              <p>Discover conferences, hackathons, workshops, and tech meetups across the UAE</p>
+            </div>
 
-        {/* Filter bar */}
-        {dbConnected && (
-          <div className="filter-bar">
-            <div className="filter-group">
-              <Filter size={16} />
-              <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
-                <option value="all">All Sources</option>
-                {availableSources.map(s => (
-                  <option key={s} value={s}>{sourceLabel(s)}</option>
+            {/* Event Search & Filters */}
+            <div className="filter-bar" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div className="search-box" style={{ flex: '1 1 280px', margin: 0, padding: '0.4rem 1rem' }}>
+                <Search size={16} style={{ color: '#9ca3af' }} />
+                <input
+                  type="text"
+                  placeholder="Search events by title, organizer, city..."
+                  value={eventSearchTerm}
+                  onChange={(e) => setEventSearchTerm(e.target.value)}
+                  style={{ border: 'none', outline: 'none', width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+              <div className="filter-group" style={{ flexWrap: 'wrap' }}>
+                <Filter size={16} />
+                <select value={eventCityFilter} onChange={(e) => setEventCityFilter(e.target.value)}>
+                  <option value="all">All Cities</option>
+                  {eventCities.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <select value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)}>
+                  <option value="all">All Event Types</option>
+                  <option value="conference">Conference</option>
+                  <option value="meetup">Meetup</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="hackathon">Hackathon</option>
+                  <option value="webinar">Webinar</option>
+                  <option value="career_fair">Career Fair</option>
+                  <option value="networking">Networking</option>
+                </select>
+                <select value={eventPriceFilter} onChange={(e) => setEventPriceFilter(e.target.value)}>
+                  <option value="all">All Prices</option>
+                  <option value="free">Free</option>
+                  <option value="paid">Paid</option>
+                </select>
+                <select value={eventFormatFilter} onChange={(e) => setEventFormatFilter(e.target.value)}>
+                  <option value="all">All Formats</option>
+                  <option value="in_person">In-Person</option>
+                  <option value="online">Online</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+                <select value={eventTimeframeFilter} onChange={(e) => setEventTimeframeFilter(e.target.value)}>
+                  <option value="all">All Timeframes</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Month Tabs Bar */}
+            {monthTabs.length > 0 && (
+              <div className="month-tabs-bar">
+                <button
+                  className={`month-tab ${selectedMonthTab === 'all' ? 'active' : ''}`}
+                  onClick={() => setSelectedMonthTab('all')}
+                >
+                  All Months
+                </button>
+                {monthTabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    className={`month-tab ${selectedMonthTab === tab.key ? 'active' : ''}`}
+                    onClick={() => setSelectedMonthTab(tab.key)}
+                  >
+                    {tab.label}
+                  </button>
                 ))}
-              </select>
-              <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
-                <option value="all">All Levels</option>
-                <option value="entry">Entry Level</option>
-                <option value="mid">Mid Level</option>
-                <option value="senior">Senior Level</option>
-              </select>
-              <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
-                <option value="all">All Time</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-              </select>
-              {dbConnected && (
-                <span className="filter-live-badge">● Live from DB</span>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {eventsLoading && (
+              <div className="loading-state">
+                <Loader2 size={24} className="spin" />
+                <p>Loading upcoming tech & AI events...</p>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!eventsLoading && filteredEvents.length === 0 && (
+              <div className="empty-state">
+                <Calendar size={48} />
+                <h3>No events found</h3>
+                <p>Try adjusting your search query or filters.</p>
+              </div>
+            )}
+
+            {/* Events Grouped By Month */}
+            {!eventsLoading && Object.keys(eventsByMonth).map((monthTitle) => (
+              <div className="month-group" key={monthTitle}>
+                <h3 className="month-title">
+                  <Calendar size={20} style={{ color: 'var(--primary)' }} />
+                  {monthTitle}
+                </h3>
+                <div className="events-grid">
+                  {eventsByMonth[monthTitle].map((event) => (
+                    <div className="event-full-card" key={event.event_hash || event.title + event.start_date}>
+                      <div>
+                        <div className="event-card-top">
+                          <div className="event-date-box">
+                            <Clock size={14} />
+                            {formatEventDateDisplay(event.start_date, event.end_date)}
+                          </div>
+                        </div>
+                        <h4 className="event-card-title">{event.title}</h4>
+                        <div className="event-card-organizer">
+                          {event.organizer ? `Organized by ${event.organizer}` : 'UAE AI Event'}
+                        </div>
+                        <div className="event-card-badges">
+                          {event.event_type && (
+                            <span className="event-badge event-badge-type">
+                              {eventTypeLabel(event.event_type)}
+                            </span>
+                          )}
+                          {event.format && (
+                            <span className="event-badge event-badge-format">
+                              {formatLabel(event.format)}
+                            </span>
+                          )}
+                          {event.is_free === true ? (
+                            <span className="event-badge event-badge-free">Free</span>
+                          ) : event.is_free === false ? (
+                            <span className="event-badge event-badge-paid">
+                              {event.price_text || 'Paid'}
+                            </span>
+                          ) : (
+                            <span className="event-badge event-badge-unknown">Check website</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="event-card-footer">
+                        <div className="event-location-text">
+                          <MapPin size={14} />
+                          {event.venue ? `${event.venue}, ${event.city}` : event.city || 'UAE'}
+                        </div>
+                        <a
+                          href={event.registration_url || event.url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-register"
+                        >
+                          Register <ExternalLink size={13} />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        /* ==================== HOMEPAGE (JOBS VIEW) ==================== */
+        <>
+          {/* ===== HERO ===== */}
+          <section className="hero">
+            <div className="hero-content">
+              <h1>Your AI career in the <br /><span className="highlight">UAE</span> starts here</h1>
+              <p>Explore every AI career opportunity in the UAE—all in one place. Save time, stop the search, and focus on your next step.</p>
+              <div className="search-box">
+                <input
+                  type="text"
+                  placeholder="Search AI jobs by title, skill"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <select
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                >
+                  <option>All Emirates</option>
+                  <option>Dubai</option>
+                  <option>Abu Dhabi</option>
+                  <option>Sharjah</option>
+                  <option>Ajman</option>
+                  <option>Ras Al Khaimah</option>
+                </select>
+                <button className="btn-primary" onClick={() => {}}>
+                  <Search size={16} /> Search Jobs
+                </button>
+              </div>
+              <div className="hero-stats">
+                <div className="stat">
+                  <h3>{totalJobs}+ Active AI Jobs</h3>
+                  <p>Live opportunities</p>
+                </div>
+                <div className="stat">
+                  <h3>{totalCompanies}+ Companies Hiring</h3>
+                  <p>Actively recruiting</p>
+                </div>
+              </div>
+            </div>
+            <div className="hero-image">
+              <img src="/dubai-skyline.png" alt="Dubai Skyline at Night" />
+            </div>
+          </section>
+
+          {/* ===== LATEST JOBS ===== */}
+          <section className="section-jobs" id="jobs-section">
+            <div className="section-title">
+              <h2>Latest AI Opportunities</h2>
+              <p>Discover roles that match your expertise and aspirations</p>
+            </div>
+
+            {/* Filter bar */}
+            {dbConnected && (
+              <div className="filter-bar">
+                <div className="filter-group">
+                  <Filter size={16} />
+                  <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+                    <option value="all">All Sources</option>
+                    {availableSources.map(s => (
+                      <option key={s} value={s}>{sourceLabel(s)}</option>
+                    ))}
+                  </select>
+                  <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
+                    <option value="all">All Levels</option>
+                    <option value="entry">Entry Level</option>
+                    <option value="mid">Mid Level</option>
+                    <option value="senior">Senior Level</option>
+                  </select>
+                  <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
+                    <option value="all">All Time</option>
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                  </select>
+                  {dbConnected && (
+                    <span className="filter-live-badge">● Live from DB</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="jobs-container">
+              {/* Loading state */}
+              {loading && (
+                <div className="loading-state">
+                  <Loader2 size={24} className="spin" />
+                  <p>Fetching latest jobs...</p>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!loading && filteredJobs.length === 0 && (
+                <div className="empty-state">
+                  <Search size={48} />
+                  <h3>No jobs found</h3>
+                  <p>Try adjusting your search or filters.</p>
+                </div>
+              )}
+
+              {/* Job Cards */}
+              {!loading && filteredJobs.slice(0, visibleJobsCount).map((job) => (
+                <div className="job-card" key={job.id}>
+                  <div className="company-logo">{job.companyInitial}</div>
+                  <div className="job-details">
+                    <div className="job-header">
+                      <div>
+                        <h3 className="job-title">{job.title}</h3>
+                        <div className="job-company">{job.company} • {job.industry}</div>
+                      </div>
+                      <div className="job-actions">
+                        <button className="icon-btn"><Heart size={20} /></button>
+                        <button className="icon-btn whatsapp"><MessageCircle size={20} /></button>
+                        <a
+                          href={job.applyUrl || job.url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-apply"
+                        >
+                          {job.source ? applyLabel(job.source) : 'Apply Now'}
+                          <ExternalLink size={14} style={{ marginLeft: 4 }} />
+                        </a>
+                      </div>
+                    </div>
+                    <div className="job-meta">
+                      <div className="meta-item"><MapPin size={14} /> {job.location}</div>
+                      {job.source && (
+                        <div className="meta-item">
+                          <span className={`source-badge source-${job.source}`}>
+                            {sourceLabel(job.source)}
+                          </span>
+                        </div>
+                      )}
+                      {job.postedDate && (
+                        <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
+                      )}
+                    </div>
+                    {job.description && (
+                      <p className="job-desc">{job.description.substring(0, 250)}...</p>
+                    )}
+                    {job.tags && job.tags.length > 0 && (
+                      <div className="job-tags">
+                        {job.tags.map((tag, i) => (
+                          <span className="tag" key={i}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {filteredJobs.length > visibleJobsCount && (
+                <div className="btn-outline-center">
+                  <button 
+                    className="btn-outline"
+                    onClick={() => setVisibleJobsCount(filteredJobs.length)}
+                  >
+                    View All {filteredJobs.length} Jobs →
+                  </button>
+                </div>
+              )}
+              {filteredJobs.length > 0 && filteredJobs.length <= visibleJobsCount && filteredJobs.length > 10 && (
+                <div className="btn-outline-center">
+                  <button 
+                    className="btn-outline"
+                    onClick={() => setVisibleJobsCount(10)}
+                  >
+                    Show Less ↑
+                  </button>
+                </div>
               )}
             </div>
-          </div>
-        )}
+          </section>
 
-        <div className="jobs-container">
-          {/* Loading state */}
-          {loading && (
-            <div className="loading-state">
-              <Loader2 size={24} className="spin" />
-              <p>Fetching latest jobs...</p>
+          {/* ===== LEADING COMPANIES ===== */}
+          <section className="section-companies" id="companies-section">
+            <div className="section-title">
+              <h2>Leading Companies using AI in the UAE</h2>
+              <p>Discover the innovative organisations shaping the future</p>
             </div>
-          )}
-
-          {/* Empty state */}
-          {!loading && filteredJobs.length === 0 && (
-            <div className="empty-state">
-              <Search size={48} />
-              <h3>No jobs found</h3>
-              <p>Try adjusting your search or filters.</p>
-            </div>
-          )}
-
-          {/* Job Cards */}
-          {!loading && filteredJobs.slice(0, visibleJobsCount).map((job) => (
-            <div className="job-card" key={job.id}>
-              <div className="company-logo">{job.companyInitial}</div>
-              <div className="job-details">
-                <div className="job-header">
-                  <div>
-                    <h3 className="job-title">{job.title}</h3>
-                    <div className="job-company">{job.company} • {job.industry}</div>
+            <div className="companies-grid">
+              {topCompanies.map((c) => (
+                <div 
+                  className="company-card" 
+                  key={c.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    setSearchTerm(c.name)
+                    document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                >
+                  <div className="company-card-icon" style={{ background: c.color }}>
+                    {c.initial}
                   </div>
-                  <div className="job-actions">
-                    <button className="icon-btn"><Heart size={20} /></button>
-                    <button className="icon-btn whatsapp"><MessageCircle size={20} /></button>
-                    <a
-                      href={job.applyUrl || job.url || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-apply"
-                    >
-                      {job.source ? applyLabel(job.source) : 'Apply Now'}
-                      <ExternalLink size={14} style={{ marginLeft: 4 }} />
-                    </a>
-                  </div>
+                  <div className="company-card-name">{c.name}</div>
+                  <div className="company-card-roles">{c.openRoles} open {c.openRoles === 1 ? 'role' : 'roles'}</div>
                 </div>
-                <div className="job-meta">
-                  <div className="meta-item"><MapPin size={14} /> {job.location}</div>
-                  {job.source && (
-                    <div className="meta-item">
-                      <span className={`source-badge source-${job.source}`}>
-                        {sourceLabel(job.source)}
-                      </span>
+              ))}
+            </div>
+            <div className="btn-outline-center" style={{ marginTop: '2rem' }}>
+              <button 
+                className="btn-outline"
+                onClick={() => setShowAllCompanies(!showAllCompanies)}
+              >
+                {showAllCompanies ? 'Show Top Companies' : `View All ${totalCompanies} Companies`}
+              </button>
+            </div>
+          </section>
+
+          {/* ===== COMMUNITY & GROWTH ===== */}
+          <section className="section-community">
+            <div className="section-title">
+              <h2>Community & Growth</h2>
+              <p>Connect, learn, and advance your AI career</p>
+            </div>
+            <div className="community-grid">
+              <div className="events-col">
+                <h3>Upcoming AI Events</h3>
+                {eventsList.slice(0, 3).map((event) => (
+                  <div 
+                    className="event-card" 
+                    key={event.event_hash || event.title}
+                    onClick={() => setCurrentView('events')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="event-icon"><Calendar size={20} /></div>
+                    <div>
+                      <div className="event-title">{event.title}</div>
+                      <div className="event-meta">
+                        <span><Calendar size={13} /> {formatEventDateDisplay(event.start_date, event.end_date)}</span>
+                        <span><MapPin size={13} /> {event.city}</span>
+                      </div>
                     </div>
-                  )}
-                  {job.postedDate && (
-                    <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
-                  )}
-                </div>
-                {job.description && (
-                  <p className="job-desc">{job.description.substring(0, 250)}...</p>
-                )}
-                {job.tags && job.tags.length > 0 && (
-                  <div className="job-tags">
-                    {job.tags.map((tag, i) => (
-                      <span className="tag" key={i}>{tag}</span>
-                    ))}
                   </div>
-                )}
+                ))}
+                <button className="show-more-link" onClick={() => setCurrentView('events')}>
+                  Show More Events <ArrowRight size={16} />
+                </button>
               </div>
-            </div>
-          ))}
-
-          {filteredJobs.length > visibleJobsCount && (
-            <div className="btn-outline-center">
-              <button 
-                className="btn-outline"
-                onClick={() => setVisibleJobsCount(filteredJobs.length)}
-              >
-                View All {filteredJobs.length} Jobs →
-              </button>
-            </div>
-          )}
-          {filteredJobs.length > 0 && filteredJobs.length <= visibleJobsCount && filteredJobs.length > 10 && (
-            <div className="btn-outline-center">
-              <button 
-                className="btn-outline"
-                onClick={() => setVisibleJobsCount(10)}
-              >
-                Show Less ↑
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ===== LEADING COMPANIES ===== */}
-      <section className="section-companies">
-        <div className="section-title">
-          <h2>Leading Companies using AI in the UAE</h2>
-          <p>Discover the innovative organisations shaping the future</p>
-        </div>
-        <div className="companies-grid">
-          {topCompanies.map((c) => (
-            <div 
-              className="company-card" 
-              key={c.id}
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setSearchTerm(c.name)
-                document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-            >
-              <div className="company-card-icon" style={{ background: c.color }}>
-                {c.initial}
-              </div>
-              <div className="company-card-name">{c.name}</div>
-              <div className="company-card-roles">{c.openRoles} open {c.openRoles === 1 ? 'role' : 'roles'}</div>
-            </div>
-          ))}
-        </div>
-        <div className="btn-outline-center" style={{ marginTop: '2rem' }}>
-          <button 
-            className="btn-outline"
-            onClick={() => setShowAllCompanies(!showAllCompanies)}
-          >
-            {showAllCompanies ? 'Show Top Companies' : `View All ${totalCompanies} Companies`}
-          </button>
-        </div>
-      </section>
-
-      {/* ===== COMMUNITY & GROWTH ===== */}
-      <section className="section-community">
-        <div className="section-title">
-          <h2>Community & Growth</h2>
-          <p>Connect, learn, and advance your AI career</p>
-        </div>
-        <div className="community-grid">
-          <div className="events-col">
-            <h3>Upcoming AI Events</h3>
-            {events.map((event) => (
-              <div className="event-card" key={event.id}>
-                <div className="event-icon"><Calendar size={20} /></div>
-                <div>
-                  <div className="event-title">{event.title}</div>
-                  <div className="event-meta">
-                    <span><Calendar size={13} /> {event.date}</span>
-                    <span><MapPin size={13} /> {event.location}</span>
+              <div className="resources-col">
+                <h3>Career Resources</h3>
+                {resources.map((res) => (
+                  <div className="resource-card" key={res.id}>
+                    <div className="resource-icon">{res.icon}</div>
+                    <div className="resource-title">{res.title}</div>
+                    <div className="resource-desc">{res.description}</div>
+                    <a href="#" className="resource-link">{res.linkText}</a>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-            <a href="#" className="show-more-link">
-              Show More Events <ArrowRight size={16} />
-            </a>
-          </div>
-          <div className="resources-col">
-            <h3>Career Resources</h3>
-            {resources.map((res) => (
-              <div className="resource-card" key={res.id}>
-                <div className="resource-icon">{res.icon}</div>
-                <div className="resource-title">{res.title}</div>
-                <div className="resource-desc">{res.description}</div>
-                <a href="#" className="resource-link">{res.linkText}</a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== TESTIMONIAL ===== */}
-      <section className="section-testimonial">
-        <div className="testimonial-card">
-          <p className="testimonial-text">
-            "We filled our Senior ML Engineer role within 2 weeks. The quality of candidates was outstanding."
-          </p>
-          <div className="testimonial-author">Sarah Al-Mansoori</div>
-          <div className="testimonial-role">Head of AI, Dubai FinTech Co.</div>
-        </div>
-      </section>
-
-      {/* ===== EMPLOYER CTA ===== */}
-      <section className="section-employer-cta">
-        <h2>Build your AI dream team, right here in the UAE</h2>
-        <p>Join 65+ companies already hiring through AIJobsUAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
-        <div className="cta-buttons">
-          <button className="btn-cta-primary">Post Your First Job</button>
-          <button className="btn-cta-outline">Let's Chat</button>
-        </div>
-      </section>
-
-      {/* ===== BROWSE BY LOCATION & SPECIALTY ===== */}
-      <section className="section-browse">
-        <div className="section-title">
-          <h2>Browse AI Jobs by Location & Specialty</h2>
-          <p>Find the right AI role wherever you are in the UAE</p>
-        </div>
-        <div className="browse-grid">
-          {browseCategories.map((cat, i) => (
-            <div className="browse-card" key={i}>
-              <div className="browse-emoji">{cat.emoji}</div>
-              <div className="browse-title">{cat.title}</div>
-              <div className="browse-desc">{cat.description}</div>
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* ===== FINAL CTA ===== */}
-      <section className="section-final-cta">
-        <h2>Ready to advance your AI career in the UAE?</h2>
-        <p>Join thousands of AI professionals who've found their dream jobs through our platform.</p>
-        <div className="final-cta-buttons">
-          <button className="btn-primary" style={{ padding: '0.75rem 2rem' }}>Browse Jobs as Guest</button>
-        </div>
-        <div className="final-cta-note">Free to join • Apply in seconds • Track your progress</div>
-      </section>
+          {/* ===== TESTIMONIAL ===== */}
+          <section className="section-testimonial">
+            <div className="testimonial-card">
+              <p className="testimonial-text">
+                "We filled our Senior ML Engineer role within 2 weeks. The quality of candidates was outstanding."
+              </p>
+              <div className="testimonial-author">Sarah Al-Mansoori</div>
+              <div className="testimonial-role">Head of AI, Dubai FinTech Co.</div>
+            </div>
+          </section>
+
+          {/* ===== EMPLOYER CTA ===== */}
+          <section className="section-employer-cta">
+            <h2>Build your AI dream team, right here in the UAE</h2>
+            <p>Join 65+ companies already hiring through AIJobsUAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
+            <div className="cta-buttons">
+              <button className="btn-cta-primary">Post Your First Job</button>
+              <button className="btn-cta-outline">Let's Chat</button>
+            </div>
+          </section>
+
+          {/* ===== BROWSE BY LOCATION & SPECIALTY ===== */}
+          <section className="section-browse">
+            <div className="section-title">
+              <h2>Browse AI Jobs by Location & Specialty</h2>
+              <p>Find the right AI role wherever you are in the UAE</p>
+            </div>
+            <div className="browse-grid">
+              {browseCategories.map((cat, i) => (
+                <div className="browse-card" key={i}>
+                  <div className="browse-emoji">{cat.emoji}</div>
+                  <div className="browse-title">{cat.title}</div>
+                  <div className="browse-desc">{cat.description}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ===== FINAL CTA ===== */}
+          <section className="section-final-cta">
+            <h2>Ready to advance your AI career in the UAE?</h2>
+            <p>Join thousands of AI professionals who've found their dream jobs through our platform.</p>
+            <div className="final-cta-buttons">
+              <button className="btn-primary" style={{ padding: '0.75rem 2rem' }}>Browse Jobs as Guest</button>
+            </div>
+            <div className="final-cta-note">Free to join • Apply in seconds • Track your progress</div>
+          </section>
+        </>
+      )}
 
       {/* ===== FOOTER ===== */}
       <footer className="footer">
         <div className="footer-top">
           <div>
-            <div className="nav-brand" style={{ color: 'white', marginBottom: '0.75rem' }}>
+            <div className="nav-brand" style={{ color: 'white', marginBottom: '0.75rem', cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
               <span className="nav-brand-icon">AI</span> JobsUAE
             </div>
             <p className="footer-brand-desc">
@@ -556,8 +919,8 @@ function App() {
           </div>
           <div className="footer-col">
             <h4>For Candidates</h4>
-            <a href="#">Browse Jobs</a>
-            <a href="#">Find Events</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setCurrentView('jobs') }}>Browse Jobs</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setCurrentView('events') }}>Find Events</a>
             <a href="#">Application Tracker</a>
           </div>
           <div className="footer-col">
