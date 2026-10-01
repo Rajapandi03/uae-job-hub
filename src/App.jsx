@@ -1392,51 +1392,59 @@ function App() {
               <p>Connect, learn, and advance your AI career</p>
             </div>
             <div className="community-grid">
-              <div className="events-col">
+              <div className="events-col" style={{ display: 'flex', flexDirection: 'column' }}>
                 <h3>Upcoming AI Events</h3>
-                {eventsList.slice(0, 3).map((event) => (
-                  <div 
-                    className="resource-card" 
-                    key={event.event_hash || event.title}
-                    onClick={() => setCurrentView('events')}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="resource-icon"><Calendar size={22} /></div>
-                    <div className="resource-content">
-                      <div className="resource-title">{event.title}</div>
-                      <div className="resource-desc" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.8rem' }}>
-                        <span><Calendar size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> {formatEventDateDisplay(event.start_date, event.end_date)}</span>
-                        <span><MapPin size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> {event.city}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                  {eventsList.slice(0, 3).map((event) => (
+                    <div 
+                      className="resource-card" 
+                      key={event.event_hash || event.title}
+                      onClick={() => setCurrentView('events')}
+                      style={{ cursor: 'pointer', marginBottom: 0, flex: 1, display: 'flex' }}
+                    >
+                      <div className="resource-icon"><Calendar size={22} /></div>
+                      <div className="resource-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', flex: 1 }}>
+                        <div>
+                          <div className="resource-title">{event.title}</div>
+                          <div className="resource-desc" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.8rem' }}>
+                            <span><Calendar size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> {formatEventDateDisplay(event.start_date, event.end_date)}</span>
+                            <span><MapPin size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> {event.city}</span>
+                          </div>
+                        </div>
+                        <span className="resource-link">View Event Details <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
                       </div>
-                      <span className="resource-link">View Event Details <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
                     </div>
-                  </div>
-                ))}
-                <button className="show-more-link" onClick={() => setCurrentView('events')}>
+                  ))}
+                </div>
+                <button className="btn-outline" style={{ marginTop: '1rem', width: '100%', padding: '0.75rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} onClick={() => setCurrentView('events')}>
                   Show More Events <ArrowRight size={16} />
                 </button>
               </div>
-              <div className="resources-col">
+              <div className="resources-col" style={{ display: 'flex', flexDirection: 'column' }}>
                 <h3>Career Resources</h3>
-                {resources.map((res) => {
-                  const IconLookup = { GraduationCap, DollarSign, Newspaper }
-                  const IconComponent = IconLookup[res.iconName] || BookOpen
-                  return (
-                    <div 
-                      className="resource-card" 
-                      key={res.id} 
-                      onClick={() => navigateTo(res.view)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="resource-icon"><IconComponent size={22} /></div>
-                      <div className="resource-content">
-                        <div className="resource-title">{res.title}</div>
-                        <div className="resource-desc">{res.description}</div>
-                        <span className="resource-link">{res.linkText} <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                  {resources.map((res) => {
+                    const IconLookup = { GraduationCap, DollarSign, Newspaper }
+                    const IconComponent = IconLookup[res.iconName] || BookOpen
+                    return (
+                      <div 
+                        className="resource-card" 
+                        key={res.id} 
+                        onClick={() => navigateTo(res.view)}
+                        style={{ cursor: 'pointer', marginBottom: 0, flex: 1, display: 'flex' }}
+                      >
+                        <div className="resource-icon"><IconComponent size={22} /></div>
+                        <div className="resource-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', flex: 1 }}>
+                          <div>
+                            <div className="resource-title">{res.title}</div>
+                            <div className="resource-desc">{res.description}</div>
+                          </div>
+                          <span className="resource-link" style={{ marginTop: '0.8rem' }}>{res.linkText} <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </section>
