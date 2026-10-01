@@ -88,6 +88,7 @@ function App() {
   const [liveJobs, setLiveJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [dbConnected, setDbConnected] = useState(false)
+  const [showAllCompanies, setShowAllCompanies] = useState(false)
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState('')
@@ -139,9 +140,9 @@ function App() {
     allJobs.forEach(j => {
       if (j.company) counts[j.company] = (counts[j.company] || 0) + 1
     })
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
+    const toShow = showAllCompanies ? sorted : sorted.slice(0, 8)
+    return toShow
       .map(([name, count], i) => ({
         id: i + 1,
         name,
@@ -149,7 +150,7 @@ function App() {
         openRoles: count,
         color: COMPANY_COLORS[i % COMPANY_COLORS.length],
       }))
-  }, [allJobs, dbConnected])
+  }, [allJobs, dbConnected, showAllCompanies])
 
   // Apply filters
   const filteredJobs = useMemo(() => {
@@ -402,7 +403,12 @@ function App() {
           ))}
         </div>
         <div className="btn-outline-center" style={{ marginTop: '2rem' }}>
-          <button className="btn-outline">View All Companies</button>
+          <button 
+            className="btn-outline"
+            onClick={() => setShowAllCompanies(!showAllCompanies)}
+          >
+            {showAllCompanies ? 'Show Top Companies' : `View All ${totalCompanies} Companies`}
+          </button>
         </div>
       </section>
 
