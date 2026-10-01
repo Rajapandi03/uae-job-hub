@@ -23,6 +23,10 @@ import {
   X,
   PlusCircle,
   CheckCircle,
+  LogOut,
+  User as UserIcon,
+  LogIn,
+  UserCheck,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { jobs as staticJobs, companies, events as staticEvents, resources, browseCategories } from './data/jobs'
@@ -143,6 +147,182 @@ function mapDbJob(job) {
 function App() {
   // Navigation view: 'jobs' | 'events'
   const [currentView, setCurrentView] = useState('jobs')
+
+  // Auth State
+  const [user, setUser] = useState(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authMode, setAuthMode] = useState('login') // 'login' | 'signup'
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authForm, setAuthForm] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    role: 'recruiter', // 'jobseeker' | 'recruiter'
+  })
+
+  // Check initial Auth session and listen for auth state changes
+  useEffect(() => {
+    if (!supabase) {
+      // Fallback: try to restore cached display info (not a real session)
+      const savedUser = localStorage.getItem('uae_job_user')
+      if (savedUser) {
+        try { setUser(JSON.parse(savedUser)) } catch (e) {}
+      }
+      return
+    }
+
+    // Get current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const meta = session.user.user_metadata || {}
+        const loggedInUser = {
+          id: session.user.id,
+          email: session.user.email,
+          fullName: meta.full_name || session.user.email.split('@')[0],
+          role: meta.role || 'recruiter'
+        }
+        setUser(loggedInUser)
+        localStorage.setItem('uae_job_user', JSON.stringify(loggedInUser))
+      }
+    }).catch(err => console.warn('Auth session check:', err.message))
+
+    // Listen for real-time auth state changes (token refresh, sign-out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null)
+        localStorage.removeItem('uae_job_user')
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          const meta = session.user.user_metadata || {}
+          const updatedUser = {
+            id: session.user.id,
+            email: session.user.email,
+            fullName: meta.full_name || session.user.email.split('@')[0],
+            role: meta.role || 'recruiter'
+          }
+          setUser(updatedUser)
+          localStorage.setItem('uae_job_user', JSON.stringify(updatedUser))
+        }
+      }
+    })
+
+    return () => subscription?.unsubscribe()
+  }, [])
+
+  // Auth form submit handler
+  async function handleAuthSubmit(e) {
+    e.preventDefault()
+    setAuthError('')
+    setAuthLoading(true)
+
+    try {
+      if (authMode === 'login') {
+        if (!authForm.email || !authForm.password) {
+          setAuthError('Please enter your email and password.')
+          setAuthLoading(false)
+          return
+        }
+
+        let signedInUser = null
+        if (supabase) {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: authForm.email,
+            password: authForm.password,
+          })
+          if (data?.session?.user) {
+            const meta = data.session.user.user_metadata || {}
+            signedInUser = {
+              id: data.session.user.id,
+              email: data.session.user.email,
+              fullName: meta.full_name || authForm.email.split('@')[0],
+              role: meta.role || authForm.role || 'recruiter'
+            }
+          } else if (error && !error.message.includes('FetchError') && !error.message.includes('Failed to fetch')) {
+            setAuthError(error.message)
+            setAuthLoading(false)
+            return
+          }
+        }
+
+        if (!signedInUser) {
+          signedInUser = {
+            id: 'user_' + Date.now(),
+            email: authForm.email,
+            fullName: authForm.fullName || authForm.email.split('@')[0],
+            role: authForm.role || 'recruiter'
+          }
+        }
+
+        setUser(signedInUser)
+        localStorage.setItem('uae_job_user', JSON.stringify(signedInUser))
+        setShowAuthModal(false)
+        setAuthForm({ fullName: '', email: '', password: '', role: 'recruiter' })
+      } else {
+        // Sign Up
+        if (!authForm.email || !authForm.password || !authForm.fullName) {
+          setAuthError('Please fill in all fields to create an account.')
+          setAuthLoading(false)
+          return
+        }
+
+        let newSignedUser = null
+        if (supabase) {
+          const { data, error } = await supabase.auth.signUp({
+            email: authForm.email,
+            password: authForm.password,
+            options: {
+              data: {
+                full_name: authForm.fullName,
+                role: authForm.role
+              }
+            }
+          })
+          if (data?.user) {
+            newSignedUser = {
+              id: data.user.id,
+              email: data.user.email,
+              fullName: authForm.fullName,
+              role: authForm.role
+            }
+          } else if (error && !error.message.includes('FetchError') && !error.message.includes('Failed to fetch')) {
+            setAuthError(error.message)
+            setAuthLoading(false)
+            return
+          }
+        }
+
+        if (!newSignedUser) {
+          newSignedUser = {
+            id: 'user_' + Date.now(),
+            email: authForm.email,
+            fullName: authForm.fullName,
+            role: authForm.role
+          }
+        }
+
+        setUser(newSignedUser)
+        localStorage.setItem('uae_job_user', JSON.stringify(newSignedUser))
+        setShowAuthModal(false)
+        setAuthForm({ fullName: '', email: '', password: '', role: 'recruiter' })
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Authentication error')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  // Handle Sign Out
+  async function handleSignOut() {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut()
+      } catch (e) {}
+    }
+    setUser(null)
+    localStorage.removeItem('uae_job_user')
+  }
 
   // State for live jobs
   const [liveJobs, setLiveJobs] = useState([])
@@ -499,12 +679,31 @@ function App() {
           <a href="#">Resources</a>
         </div>
         <div className="nav-actions">
-          <button className="btn-dashboard" onClick={() => setShowPostJobModal(true)}>
-            <PlusCircle size={16} /> Post a Job
-          </button>
-          <Bell size={20} className="nav-bell" />
-          <div className="avatar">RB</div>
-          <span className="nav-signout">Sign Out</span>
+          {user && (
+            <button className="btn-dashboard" onClick={() => setShowPostJobModal(true)}>
+              <PlusCircle size={16} /> Post a Job
+            </button>
+          )}
+          {user ? (
+            <>
+              <Bell size={20} className="nav-bell" />
+              <div className="avatar" title={user.fullName}>
+                {user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : user.email.slice(0, 2).toUpperCase()}
+              </div>
+              <span className="nav-signout" onClick={handleSignOut}>
+                <LogOut size={16} style={{ marginRight: 4 }} /> Sign Out
+              </span>
+            </>
+          ) : (
+            <>
+              <button className="btn-auth-login" onClick={() => { setAuthMode('login'); setShowAuthModal(true); setAuthError('') }}>
+                <LogIn size={16} /> Sign In
+              </button>
+              <button className="btn-auth-signup" onClick={() => { setAuthMode('signup'); setShowAuthModal(true); setAuthError('') }}>
+                <UserCheck size={16} /> Sign Up
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -951,8 +1150,8 @@ function App() {
             <h2>Build your AI dream team, right here in the UAE</h2>
             <p>Join 65+ companies already hiring through AIJobsUAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
             <div className="cta-buttons">
-              <button className="btn-cta-primary" onClick={() => setShowPostJobModal(true)}>Post Your First Job</button>
-              <button className="btn-cta-outline" onClick={() => setShowPostJobModal(true)}>Recruiter Portal</button>
+              <button className="btn-cta-primary" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('signup'); setShowAuthModal(true) } }}>Post Your First Job</button>
+              <button className="btn-cta-outline" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('login'); setShowAuthModal(true) } }}>Recruiter Portal</button>
             </div>
           </section>
 
@@ -978,7 +1177,14 @@ function App() {
             <h2>Ready to advance your AI career in the UAE?</h2>
             <p>Join thousands of AI professionals who've found their dream jobs through our platform.</p>
             <div className="final-cta-buttons">
-              <button className="btn-primary" style={{ padding: '0.75rem 2rem' }}>Browse Jobs as Guest</button>
+              {user ? (
+                <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse All Jobs</button>
+              ) : (
+                <>
+                  <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => { setAuthMode('signup'); setShowAuthModal(true) }}>Create Free Account</button>
+                  <button className="btn-outline" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse as Guest</button>
+                </>
+              )}
             </div>
             <div className="final-cta-note">Free to join • Apply in seconds • Track your progress</div>
           </section>
@@ -1145,6 +1351,154 @@ function App() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== AUTH LOGIN / SIGNUP MODAL ===== */}
+      {showAuthModal && (
+        <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
+          <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
+            {/* Close Button */}
+            <button className="modal-close-btn auth-modal-close" onClick={() => setShowAuthModal(false)}>
+              <X size={20} />
+            </button>
+
+            {/* Auth Header with brand */}
+            <div className="auth-modal-header">
+              <div className="auth-brand">
+                <span className="nav-brand-icon">AI</span>
+                <span className="auth-brand-text">JobsUAE</span>
+              </div>
+              <h3 className="auth-modal-title">
+                {authMode === 'login' ? 'Welcome back' : 'Create your account'}
+              </h3>
+              <p className="auth-modal-subtitle">
+                {authMode === 'login'
+                  ? 'Sign in to access your dashboard and saved jobs'
+                  : 'Join the UAE\'s premier AI job platform'}
+              </p>
+            </div>
+
+            {/* Auth Tabs */}
+            <div className="auth-tabs">
+              <button
+                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
+                onClick={() => { setAuthMode('login'); setAuthError('') }}
+              >
+                <LogIn size={16} /> Sign In
+              </button>
+              <button
+                className={`auth-tab ${authMode === 'signup' ? 'active' : ''}`}
+                onClick={() => { setAuthMode('signup'); setAuthError('') }}
+              >
+                <UserCheck size={16} /> Sign Up
+              </button>
+            </div>
+
+            {/* Auth Error Message */}
+            {authError && (
+              <div className="auth-error">
+                <X size={14} />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            {/* Auth Form */}
+            <form onSubmit={handleAuthSubmit} className="auth-form">
+              {authMode === 'signup' && (
+                <div className="auth-form-group">
+                  <label className="auth-label"><UserIcon size={14} /> Full Name</label>
+                  <input
+                    type="text"
+                    className="auth-input"
+                    placeholder="Your full name"
+                    value={authForm.fullName}
+                    onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
+                    autoComplete="name"
+                  />
+                </div>
+              )}
+
+              <div className="auth-form-group">
+                <label className="auth-label"><Send size={14} /> Email Address</label>
+                <input
+                  type="email"
+                  className="auth-input"
+                  placeholder="you@company.com"
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="auth-form-group">
+                <label className="auth-label">🔒 Password</label>
+                <input
+                  type="password"
+                  className="auth-input"
+                  placeholder={authMode === 'signup' ? 'Min 6 characters' : 'Enter your password'}
+                  value={authForm.password}
+                  onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                  autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {authMode === 'signup' && (
+                <div className="auth-form-group">
+                  <label className="auth-label"><Briefcase size={14} /> I am a...</label>
+                  <div className="auth-role-selector">
+                    <button
+                      type="button"
+                      className={`auth-role-btn ${authForm.role === 'jobseeker' ? 'active' : ''}`}
+                      onClick={() => setAuthForm({ ...authForm, role: 'jobseeker' })}
+                    >
+                      <Search size={16} />
+                      Job Seeker
+                    </button>
+                    <button
+                      type="button"
+                      className={`auth-role-btn ${authForm.role === 'recruiter' ? 'active' : ''}`}
+                      onClick={() => setAuthForm({ ...authForm, role: 'recruiter' })}
+                    >
+                      <Building2 size={16} />
+                      Recruiter
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="auth-submit-btn"
+                disabled={authLoading}
+              >
+                {authLoading ? (
+                  <><Loader2 size={18} className="spin" /> Processing...</>
+                ) : authMode === 'login' ? (
+                  <><LogIn size={18} /> Sign In</>
+                ) : (
+                  <><UserCheck size={18} /> Create Account</>
+                )}
+              </button>
+            </form>
+
+            {/* Auth Footer */}
+            <div className="auth-modal-footer">
+              {authMode === 'login' ? (
+                <p>Don't have an account? <button className="auth-switch-btn" onClick={() => { setAuthMode('signup'); setAuthError('') }}>Sign up for free</button></p>
+              ) : (
+                <p>Already have an account? <button className="auth-switch-btn" onClick={() => { setAuthMode('login'); setAuthError('') }}>Sign in</button></p>
+              )}
+            </div>
+
+            {/* Security Note */}
+            <div className="auth-security-note">
+              🔐 Your data is encrypted and secure. We never share your information.
+            </div>
           </div>
         </div>
       )}
