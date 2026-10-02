@@ -51,8 +51,10 @@ import {
 function timeAgo(dateStr) {
   if (!dateStr) return null
   const posted = new Date(dateStr)
+  if (isNaN(posted.getTime())) return null
   const now = new Date()
   const diffMs = now - posted
+  if (diffMs < 0) return 'Just now'
   const diffMins = Math.floor(diffMs / (1000 * 60))
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
@@ -203,13 +205,21 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentView(getInitialView())
+  const [savedJobIds, setSavedJobIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('uae_saved_jobs') || '[]')
+    } catch {
+      return []
     }
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  })
+
+  const toggleSaveJob = (jobId) => {
+    setSavedJobIds(prev => {
+      const next = prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
+      try { localStorage.setItem('uae_saved_jobs', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   // Resources state (fetched from Supabase table `resource_items` with static fallbacks)
   const [resourcesList, setResourcesList] = useState({
@@ -630,7 +640,10 @@ function App() {
   // Last updated relative
   function lastUpdatedLabel(iso) {
     if (!iso) return 'just now'
-    const diffMs = Date.now() - new Date(iso).getTime()
+    const date = new Date(iso)
+    if (isNaN(date.getTime())) return 'just now'
+    const diffMs = Date.now() - date.getTime()
+    if (diffMs < 0) return 'just now'
     const mins = Math.floor(diffMs / 60000)
     if (mins < 1) return 'just now'
     if (mins < 60) return `${mins} min ago`
@@ -711,6 +724,13 @@ function App() {
         return true
       })
     }
+
+    // Always sort by newest first (highest timestamp)
+    result = [...result].sort((a, b) => {
+      const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
+      const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
+      return dateB - dateA
+    })
 
     return result
   }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
@@ -1399,8 +1419,24 @@ function App() {
 
                     <div className="job-card-footer">
                       <div className="job-social-actions">
-                        <button className="icon-btn" title="Save Job"><Heart size={18} /></button>
-                        <button className="icon-btn whatsapp" title="Share on WhatsApp"><MessageCircle size={18} /></button>
+                        <button
+                          className={`icon-btn ${savedJobIds.includes(job.id) ? 'saved' : ''}`}
+                          title={savedJobIds.includes(job.id) ? "Unsave Job" : "Save Job"}
+                          onClick={() => toggleSaveJob(job.id)}
+                          style={{ color: savedJobIds.includes(job.id) ? '#ef4444' : undefined }}
+                        >
+                          <Heart size={18} fill={savedJobIds.includes(job.id) ? '#ef4444' : 'none'} />
+                        </button>
+                        <button
+                          className="icon-btn whatsapp"
+                          title="Share on WhatsApp"
+                          onClick={() => {
+                            const text = `Check out this job opportunity in UAE: ${job.title} at ${job.company}\n${job.applyUrl || job.url || ''}`
+                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
+                          }}
+                        >
+                          <MessageCircle size={18} />
+                        </button>
                       </div>
                       <a
                         href={job.applyUrl || job.url || '#'}
