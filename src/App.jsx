@@ -1262,8 +1262,8 @@ function App() {
           {/* ===== HERO ===== */}
           <section className="hero">
             <div className="hero-content">
-              <h1><span className="highlight">{loading ? '...' : `${totalJobs}+`}</span> AI & Tech Jobs <br />in the <span className="highlight">UAE</span> — Apply Now</h1>
-              <p>Browse {loading ? '' : `${totalJobs}+ `}live opportunities from LinkedIn, Indeed & Bayt. Updated every hour. Find your role, click apply — it's that simple.</p>
+              <h1>Your AI & Tech career in <br />the <span className="highlight">UAE</span> starts here</h1>
+              <p>{loading ? 'Discover' : `${totalJobs}+`} live AI, Data & Tech roles from LinkedIn, Indeed & Bayt — all in one place. Updated every hour, apply in one click.</p>
 
               <div className="hero-stats">
                 <div className="stat">
