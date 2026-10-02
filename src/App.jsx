@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   Bell,
   Search,
@@ -827,13 +827,13 @@ function App() {
           <div className="live-bar-inner">
             <span className="live-dot-wrap"><span className="live-dot" /><span className="live-label">LIVE</span></span>
             <span className="live-bar-stat"><strong>{loading ? '...' : totalJobs}</strong> Active Jobs</span>
-            <span className="live-bar-divider">·</span>
+            <span className="live-bar-divider">Â·</span>
             <span className="live-bar-stat"><strong>{loading ? '...' : totalCompanies}</strong> Companies Hiring</span>
-            <span className="live-bar-divider">·</span>
+            <span className="live-bar-divider">Â·</span>
             <span className="live-bar-stat">Updated <strong>{lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</strong></span>
-            <span className="live-bar-divider">·</span>
-            <span className="live-bar-source">Sources: LinkedIn · Indeed · Bayt</span>
-            {refreshed && <span className="live-refreshed-badge">✓ Refreshed</span>}
+            <span className="live-bar-divider">Â·</span>
+            <span className="live-bar-source">Sources: LinkedIn Â· Indeed Â· Bayt</span>
+            {refreshed && <span className="live-refreshed-badge">âœ“ Refreshed</span>}
           </div>
         </div>
       )}
@@ -851,31 +851,6 @@ function App() {
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
         <div className="nav-actions">
-          {user && (
-            <button className="btn-dashboard" onClick={() => setShowPostJobModal(true)}>
-              <PlusCircle size={16} /> Post a Job
-            </button>
-          )}
-          {user ? (
-            <>
-              <Bell size={20} className="nav-bell" />
-              <div className="avatar" title={user.fullName}>
-                {user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : user.email.slice(0, 2).toUpperCase()}
-              </div>
-              <span className="nav-signout" onClick={handleSignOut}>
-                <LogOut size={16} style={{ marginRight: 4 }} /> Sign Out
-              </span>
-            </>
-          ) : (
-            <>
-              <button className="btn-auth-login" onClick={() => { setAuthMode('login'); setShowAuthModal(true); setAuthError('') }}>
-                <LogIn size={16} /> Sign In
-              </button>
-              <button className="btn-auth-signup" onClick={() => { setAuthMode('signup'); setShowAuthModal(true); setAuthError('') }}>
-                <UserCheck size={16} /> Sign Up
-              </button>
-            </>
-          )}
         </div>
       </nav>
 
@@ -1225,7 +1200,7 @@ function App() {
               <div className="hero-stats">
                 <div className="stat">
                   <h3 className="stat-number">{loading ? '...' : `${totalJobs}`}<span className="stat-plus">+</span></h3>
-                  <p className="stat-label">Active AI Jobs  <span className="stat-live-chip">● Live</span></p>
+                  <p className="stat-label">Active AI Jobs  <span className="stat-live-chip">â— Live</span></p>
                 </div>
                 <div className="stat">
                   <h3 className="stat-number">{loading ? '...' : `${totalCompanies}`}<span className="stat-plus">+</span></h3>
@@ -1245,7 +1220,7 @@ function App() {
           {/* ===== JOBS TICKER ===== */}
           {!loading && tickerJobs.length > 0 && (
             <div className="ticker-wrap">
-              <span className="ticker-badge">⚡ New</span>
+              <span className="ticker-badge">âš¡ New</span>
               <div className="ticker-track">
                 <div className="ticker-content">
                   {[...tickerJobs, ...tickerJobs].map((j, i) => (
@@ -1260,7 +1235,7 @@ function App() {
             </div>
           )}
 
-          {/* ===== WHY US + LIVE SOURCES — COMBINED ===== */}
+          {/* ===== WHY US + LIVE SOURCES â€” COMBINED ===== */}
           {!loading && dbConnected && sourceBreakdown.length > 0 && (
             <section className="section-combined">
               <div className="combined-container">
@@ -1270,15 +1245,15 @@ function App() {
                   <div className="combined-features">
                     <div className="combined-feat">
                       <Clock size={16} />
-                      <span><strong>Hourly Auto-refresh</strong> · Stale jobs removed in 7 days</span>
+                      <span><strong>Hourly Auto-refresh</strong> Â· Stale jobs removed in 7 days</span>
                     </div>
                     <div className="combined-feat">
                       <Briefcase size={16} />
-                      <span><strong>Multi-source</strong> · LinkedIn, Indeed, Bayt aggregated</span>
+                      <span><strong>Multi-source</strong> Â· LinkedIn, Indeed, Bayt aggregated</span>
                     </div>
                     <div className="combined-feat">
                       <CheckCircle size={16} />
-                      <span><strong>AI & Tech only</strong> · Curated for professionals</span>
+                      <span><strong>AI & Tech only</strong> Â· Curated for professionals</span>
                     </div>
                   </div>
                   <div className="combined-live-badge">
@@ -1368,7 +1343,7 @@ function App() {
                     <option value="24h">1 Day Ago (24h)</option>
                   </select>
                   {dbConnected && (
-                    <span className="filter-live-badge">● Live from DB</span>
+                    <span className="filter-live-badge">â— Live from DB</span>
                   )}
                 </div>
               </div>
@@ -1399,7 +1374,7 @@ function App() {
                     <div className="company-logo">{job.companyInitial}</div>
                     <div className="job-header">
                       <h3 className="job-title">{job.title}</h3>
-                      <div className="job-company">{job.company} • {job.industry}</div>
+                      <div className="job-company">{job.company} â€¢ {job.industry}</div>
                     </div>
                   </div>
 
@@ -1457,7 +1432,7 @@ function App() {
                     className="btn-outline"
                     onClick={() => setVisibleJobsCount(filteredJobs.length)}
                   >
-                    View All {filteredJobs.length} Jobs →
+                    View All {filteredJobs.length} Jobs â†’
                   </button>
                 </div>
               )}
@@ -1467,7 +1442,7 @@ function App() {
                     className="btn-outline"
                     onClick={() => setVisibleJobsCount(10)}
                   >
-                    Show Less ↑
+                    Show Less â†‘
                   </button>
                 </div>
               )}
@@ -1578,8 +1553,8 @@ function App() {
             <h2>Build your AI dream team, right here in the UAE</h2>
             <p>Join 65+ companies already hiring through AI JobHub UAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
             <div className="cta-buttons">
-              <button className="btn-cta-primary" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('signup'); setShowAuthModal(true) } }}>Post Your First Job</button>
-              <button className="btn-cta-outline" onClick={() => { if (user) { setShowPostJobModal(true) } else { setAuthMode('login'); setShowAuthModal(true) } }}>Recruiter Portal</button>
+              <button className="btn-cta-primary" onClick={() => setShowPostJobModal(true)}>Post Your First Job</button>
+              <button className="btn-cta-outline" onClick={() => setShowPostJobModal(true)}>Recruiter Portal</button>
             </div>
           </section>
 
@@ -1588,19 +1563,12 @@ function App() {
             <h2>Ready to advance your AI career in the UAE?</h2>
             <p>Join thousands of AI professionals who've found their dream jobs through our platform.</p>
             <div className="final-cta-buttons">
-              {user ? (
-                <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse All Jobs</button>
-              ) : (
-                <>
-                  <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => { setAuthMode('signup'); setShowAuthModal(true) }}>Create Free Account</button>
-                  <button className="btn-outline" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse as Guest</button>
-                </>
-              )}
+              <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse All Jobs</button>
             </div>
             <div className="final-cta-note">
-              <span style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500' }}>100% Free Forever • No Subscriptions • Built for Job Seekers</span>
+              <span style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500' }}>100% Free Forever â€¢ No Subscriptions â€¢ Built for Job Seekers</span>
               <div style={{ padding: '0.5rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'inline-block', maxWidth: '600px', lineHeight: '1.5' }}>
-                <span style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>👋</span> 
+                <span style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>ðŸ‘‹</span> 
                 I built this platform completely free to help you land your dream role. If you get hired, <a href="https://www.linkedin.com/in/rajapandi6/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px solid var(--primary)' }}>message me on LinkedIn</a> so I can celebrate with you! (Please report any website issues there too.)
               </div>
             </div>
@@ -1637,7 +1605,7 @@ function App() {
           </div>
           <div className="footer-col footer-newsletter">
             <h4>The Sunday Brief</h4>
-            <p>Your week in UAE AI — new roles, hiring trends, and one skill to learn. Free, every Sunday.</p>
+            <p>Your week in UAE AI â€” new roles, hiring trends, and one skill to learn. Free, every Sunday.</p>
             <div className="newsletter-form">
               <input type="email" placeholder="Your email" />
               <button><Send size={14} /></button>
@@ -1645,7 +1613,7 @@ function App() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© 2026 AI JobHub UAE. All rights reserved. Empowering AI careers across the Emirates.</p>
+          <p>Â© 2026 AI JobHub UAE. All rights reserved. Empowering AI careers across the Emirates.</p>
           <div className="footer-links-bottom">
             <a href="#">AI Jobs in Dubai</a>
             <a href="#">ML Jobs Dubai</a>
@@ -1772,153 +1740,6 @@ function App() {
         </div>
       )}
 
-      {/* ===== AUTH LOGIN / SIGNUP MODAL ===== */}
-      {showAuthModal && (
-        <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
-          <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* Close Button */}
-            <button className="modal-close-btn auth-modal-close" onClick={() => setShowAuthModal(false)}>
-              <X size={20} />
-            </button>
-
-            {/* Auth Header with brand */}
-            <div className="auth-modal-header">
-              <div className="auth-brand">
-                <span className="nav-brand-icon">AI</span>
-                <span className="auth-brand-text">JobsUAE</span>
-              </div>
-              <h3 className="auth-modal-title">
-                {authMode === 'login' ? 'Welcome back' : 'Create your account'}
-              </h3>
-              <p className="auth-modal-subtitle">
-                {authMode === 'login'
-                  ? 'Sign in to access your dashboard and saved jobs'
-                  : 'Join the UAE\'s premier AI job platform'}
-              </p>
-            </div>
-
-            {/* Auth Tabs */}
-            <div className="auth-tabs">
-              <button
-                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
-                onClick={() => { setAuthMode('login'); setAuthError('') }}
-              >
-                <LogIn size={16} /> Sign In
-              </button>
-              <button
-                className={`auth-tab ${authMode === 'signup' ? 'active' : ''}`}
-                onClick={() => { setAuthMode('signup'); setAuthError('') }}
-              >
-                <UserCheck size={16} /> Sign Up
-              </button>
-            </div>
-
-            {/* Auth Error Message */}
-            {authError && (
-              <div className="auth-error">
-                <X size={14} />
-                <span>{authError}</span>
-              </div>
-            )}
-
-            {/* Auth Form */}
-            <form onSubmit={handleAuthSubmit} className="auth-form">
-              {authMode === 'signup' && (
-                <div className="auth-form-group">
-                  <label className="auth-label"><UserIcon size={14} /> Full Name</label>
-                  <input
-                    type="text"
-                    className="auth-input"
-                    placeholder="Your full name"
-                    value={authForm.fullName}
-                    onChange={(e) => setAuthForm({ ...authForm, fullName: e.target.value })}
-                    autoComplete="name"
-                  />
-                </div>
-              )}
-
-              <div className="auth-form-group">
-                <label className="auth-label"><Send size={14} /> Email Address</label>
-                <input
-                  type="email"
-                  className="auth-input"
-                  placeholder="you@company.com"
-                  value={authForm.email}
-                  onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
-                  autoComplete="email"
-                  required
-                />
-              </div>
-
-              <div className="auth-form-group">
-                <label className="auth-label">🔒 Password</label>
-                <input
-                  type="password"
-                  className="auth-input"
-                  placeholder={authMode === 'signup' ? 'Min 6 characters' : 'Enter your password'}
-                  value={authForm.password}
-                  onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-                  autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                  required
-                  minLength={6}
-                />
-              </div>
-
-              {authMode === 'signup' && (
-                <div className="auth-form-group">
-                  <label className="auth-label"><Briefcase size={14} /> I am a...</label>
-                  <div className="auth-role-selector">
-                    <button
-                      type="button"
-                      className={`auth-role-btn ${authForm.role === 'jobseeker' ? 'active' : ''}`}
-                      onClick={() => setAuthForm({ ...authForm, role: 'jobseeker' })}
-                    >
-                      <Search size={16} />
-                      Job Seeker
-                    </button>
-                    <button
-                      type="button"
-                      className={`auth-role-btn ${authForm.role === 'recruiter' ? 'active' : ''}`}
-                      onClick={() => setAuthForm({ ...authForm, role: 'recruiter' })}
-                    >
-                      <Building2 size={16} />
-                      Recruiter
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="auth-submit-btn"
-                disabled={authLoading}
-              >
-                {authLoading ? (
-                  <><Loader2 size={18} className="spin" /> Processing...</>
-                ) : authMode === 'login' ? (
-                  <><LogIn size={18} /> Sign In</>
-                ) : (
-                  <><UserCheck size={18} /> Create Account</>
-                )}
-              </button>
-            </form>
-
-            {/* Auth Footer */}
-            <div className="auth-modal-footer">
-              {authMode === 'login' ? (
-                <p>Don't have an account? <button className="auth-switch-btn" onClick={() => { setAuthMode('signup'); setAuthError('') }}>Sign up for free</button></p>
-              ) : (
-                <p>Already have an account? <button className="auth-switch-btn" onClick={() => { setAuthMode('login'); setAuthError('') }}>Sign in</button></p>
-              )}
-            </div>
-
-            {/* Security Note */}
-            <div className="auth-security-note">
-              🔐 Your data is encrypted and secure. We never share your information.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
