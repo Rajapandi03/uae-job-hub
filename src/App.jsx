@@ -1265,7 +1265,7 @@ function App() {
           {/* ===== HERO ===== */}
           <section className="hero">
             <div className="hero-content">
-              <h1>Your AI & Tech career in <br />the <span className="highlight">UAE</span> starts here</h1>
+              <h1>Your AI & Tech career in the <span className="highlight">UAE</span> starts here</h1>
               <p>{loading ? 'Discover' : `${totalJobs}+`} live AI, Data & Tech roles from LinkedIn, Indeed & Bayt — all in one place. Updated every hour, apply in one click.</p>
 
               <div className="hero-stats">
