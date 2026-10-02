@@ -13,7 +13,7 @@ import random
 from datetime import datetime, timezone
 
 from jobspy import scrape_jobs
-from common import normalize_job, upsert_jobs, logger, is_relevant_tech_job, clean_string
+from common import normalize_job, upsert_jobs, logger, is_relevant_tech_job, is_strict_uae_job, clean_string
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -117,6 +117,10 @@ def scrape_combo(search_term: str, location: str) -> list[dict]:
                 desc = None
 
             if not is_relevant_tech_job(title, desc or ""):
+                continue
+
+            if not is_strict_uae_job(loc, job_url, apply_url):
+                logger.info(f"    -> Rejecting non-UAE job: {title} @ {company} [{loc}] [{job_url}]")
                 continue
 
             job = normalize_job(

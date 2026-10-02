@@ -711,6 +711,17 @@ function App() {
   const filteredJobs = useMemo(() => {
     let result = allJobs
 
+    // Strict UAE safety filter (reject non-UAE URLs/locations like India/Pakistan)
+    const NON_UAE_URL_REGEX = /\/(pakistan|india|bangladesh|philippines|egypt|jordan|saudi|qatar|oman|kuwait|bahrain)\//i
+    const NON_UAE_LOC_REGEX = /\b(pakistan|india|bangladesh|philippines|egypt|jordan|lebanon|saudi|qatar|oman|kuwait|bahrain|hyderabad|bengaluru|mumbai|delhi|karachi|lahore|islamabad|chennai|pune|gurgaon|noida)\b/i
+
+    result = result.filter(j => {
+      const u = (j.applyUrl || j.url || '').toLowerCase()
+      const loc = (j.location || '').toLowerCase()
+      if (NON_UAE_URL_REGEX.test(u) || NON_UAE_LOC_REGEX.test(loc)) return false
+      return true
+    })
+
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase()
       result = result.filter(j =>

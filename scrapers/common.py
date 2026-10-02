@@ -119,6 +119,33 @@ def is_relevant_tech_job(title: str, description: str = "") -> bool:
     return False
 
 
+NON_UAE_COUNTRIES = re.compile(
+    r'\b(pakistan|india|bangladesh|philippines|egypt|jordan|lebanon|saudi|qatar|oman|kuwait|'
+    r'bahrain|sri lanka|nepal|nigeria|kenya|ukraine|poland|canada|usa|united states|uk|united kingdom|'
+    r'hyderabad|bengaluru|mumbai|delhi|karachi|lahore|islamabad|chennai|pune|gurgaon|noida)\b',
+    re.IGNORECASE
+)
+
+NON_UAE_URL_PATTERNS = re.compile(
+    r'/(pakistan|india|bangladesh|philippines|egypt|jordan|saudi|qatar|oman|kuwait|bahrain)/',
+    re.IGNORECASE
+)
+
+def is_strict_uae_job(location: str, url: str = "", apply_url: str = "") -> bool:
+    """Return False if the job location or URL indicates a non-UAE country (India, Pakistan, etc.)."""
+    loc = (location or "").lower()
+    u = (url or "").lower()
+    app_u = (apply_url or "").lower()
+
+    if NON_UAE_URL_PATTERNS.search(u) or NON_UAE_URL_PATTERNS.search(app_u):
+        return False
+
+    if NON_UAE_COUNTRIES.search(loc):
+        return False
+
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Job hash: deterministic primary key from title|company
 # ---------------------------------------------------------------------------
