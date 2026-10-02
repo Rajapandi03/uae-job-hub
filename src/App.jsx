@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   Bell,
   Search,
@@ -431,6 +431,8 @@ function App() {
   const [dbConnected, setDbConnected] = useState(false)
   const [showAllCompanies, setShowAllCompanies] = useState(false)
   const [visibleJobsCount, setVisibleJobsCount] = useState(10)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [refreshed, setRefreshed] = useState(false)
 
   // State for live events
   const [eventsList, setEventsList] = useState(staticEvents)
@@ -519,40 +521,51 @@ function App() {
   const [eventFormatFilter, setEventFormatFilter] = useState('all')
   const [eventTimeframeFilter, setEventTimeframeFilter] = useState('all')
 
-  // Fetch jobs from Supabase
-  useEffect(() => {
-    async function fetchJobs() {
-      if (!supabase) {
-        setLoading(false)
-        return
-      }
-      try {
-        const cutoff7d = new Date()
-        cutoff7d.setDate(cutoff7d.getDate() - 7)
-        const cutoffISO = cutoff7d.toISOString()
-
-        const { data, error } = await supabase
-          .from('jobs')
-          .select('*')
-          .eq('active', true)
-          .gte('first_seen', cutoffISO)
-          .order('posted_at', { ascending: false, nullsFirst: false })
-          .order('first_seen', { ascending: false })
-          .limit(1000)
-
-        if (error) throw error
-        if (data && data.length > 0) {
-          setLiveJobs(data.map(mapDbJob))
-          setDbConnected(true)
-        }
-      } catch (err) {
-        console.warn('Supabase jobs fetch failed, using static data:', err.message)
-      } finally {
-        setLoading(false)
-      }
+  // Fetch jobs from Supabase (used for initial load and auto-refresh)
+  const fetchJobs = useCallback(async (isRefresh = false) => {
+    if (!supabase) {
+      setLoading(false)
+      return
     }
-    fetchJobs()
+    try {
+      const cutoff7d = new Date()
+      cutoff7d.setDate(cutoff7d.getDate() - 7)
+      const cutoffISO = cutoff7d.toISOString()
+
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('active', true)
+        .gte('first_seen', cutoffISO)
+        .order('posted_at', { ascending: false, nullsFirst: false })
+        .order('first_seen', { ascending: false })
+        .limit(1000)
+
+      if (error) throw error
+      if (data && data.length > 0) {
+        setLiveJobs(data.map(mapDbJob))
+        setDbConnected(true)
+        // Track the newest job's first_seen as "last updated"
+        const newest = data.reduce((a, b) => ((a.first_seen || '') > (b.first_seen || '') ? a : b), data[0])
+        setLastUpdated(newest.first_seen || new Date().toISOString())
+        if (isRefresh) {
+          setRefreshed(true)
+          setTimeout(() => setRefreshed(false), 3000)
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase jobs fetch failed, using static data:', err.message)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    fetchJobs(false)
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(() => fetchJobs(true), 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [fetchJobs])
 
   // Fetch events from Supabase (start_date >= today, ordered by start_date ASC)
   useEffect(() => {
@@ -587,7 +600,40 @@ function App() {
 
   // Dynamic stats
   const totalJobs = allJobs.length
-  const totalCompanies = new Set(allJobs.map(j => j.company)).size
+  const totalCompanies = new Set(allJobs.filter(j => j.company && j.company !== 'Hiring Company').map(j => j.company)).size
+
+  // Source breakdown
+  const sourceBreakdown = useMemo(() => {
+    const counts = {}
+    allJobs.forEach(j => { if (j.source) counts[j.source] = (counts[j.source] || 0) + 1 })
+    const total = allJobs.length || 1
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([src, cnt]) => ({
+        source: src,
+        label: { linkedin: 'LinkedIn', indeed: 'Indeed', bayt: 'Bayt', google: 'Google Jobs', naukrigulf: 'Naukrigulf', gulftalent: 'GulfTalent', career_page: 'Company Sites', employer: 'Direct Employer' }[src] || src,
+        count: cnt,
+        pct: Math.round((cnt / total) * 100),
+        color: { linkedin: '#0a66c2', indeed: '#2557a7', bayt: '#e8252d', google: '#4285f4', naukrigulf: '#f26522', gulftalent: '#00aeef', career_page: '#7c3aed', employer: '#16a34a' }[src] || '#6b7280',
+      }))
+  }, [allJobs])
+
+  // Ticker: newest 12 jobs
+  const tickerJobs = useMemo(() => {
+    return allJobs.slice(0, 12).map(j => ({ title: j.title, company: j.company }))
+  }, [allJobs])
+
+  // Last updated relative
+  function lastUpdatedLabel(iso) {
+    if (!iso) return 'just now'
+    const diffMs = Date.now() - new Date(iso).getTime()
+    const mins = Math.floor(diffMs / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins} min ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return `${Math.floor(hrs / 24)}d ago`
+  }
 
   // Dynamic top companies from live data
   const COMPANY_COLORS = ['#1f2937','#6d28d9','#0ea5e9','#16a34a','#f97316','#7c3aed','#dc2626','#0d9488']
@@ -774,6 +820,23 @@ function App() {
 
   return (
     <div className="app">
+
+      {/* ===== LIVE STATS BAR ===== */}
+      {currentView === 'jobs' && (
+        <div className="live-bar">
+          <div className="live-bar-inner">
+            <span className="live-dot-wrap"><span className="live-dot" /><span className="live-label">LIVE</span></span>
+            <span className="live-bar-stat"><strong>{loading ? '...' : totalJobs}</strong> Active Jobs</span>
+            <span className="live-bar-divider">·</span>
+            <span className="live-bar-stat"><strong>{loading ? '...' : totalCompanies}</strong> Companies Hiring</span>
+            <span className="live-bar-divider">·</span>
+            <span className="live-bar-stat">Updated <strong>{lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</strong></span>
+            <span className="live-bar-divider">·</span>
+            <span className="live-bar-source">Sources: LinkedIn · Indeed · Bayt</span>
+            {refreshed && <span className="live-refreshed-badge">✓ Refreshed</span>}
+          </div>
+        </div>
+      )}
 
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
@@ -1161,12 +1224,16 @@ function App() {
 
               <div className="hero-stats">
                 <div className="stat">
-                  <h3>{loading ? '...' : `${totalJobs}+`} Active AI Jobs</h3>
-                  <p>Live opportunities</p>
+                  <h3 className="stat-number">{loading ? '...' : `${totalJobs}`}<span className="stat-plus">+</span></h3>
+                  <p className="stat-label">Active AI Jobs  <span className="stat-live-chip">● Live</span></p>
                 </div>
                 <div className="stat">
-                  <h3>{loading ? '...' : `${totalCompanies}+`} Companies Hiring</h3>
-                  <p>Actively recruiting</p>
+                  <h3 className="stat-number">{loading ? '...' : `${totalCompanies}`}<span className="stat-plus">+</span></h3>
+                  <p className="stat-label">Companies Hiring</p>
+                </div>
+                <div className="stat">
+                  <h3 className="stat-number">3</h3>
+                  <p className="stat-label">Top Sources</p>
                 </div>
               </div>
             </div>
@@ -1174,6 +1241,24 @@ function App() {
               <img src="/dubai-skyline.png" alt="Dubai Skyline at Night" />
             </div>
           </section>
+
+          {/* ===== JOBS TICKER ===== */}
+          {!loading && tickerJobs.length > 0 && (
+            <div className="ticker-wrap">
+              <span className="ticker-badge">⚡ New</span>
+              <div className="ticker-track">
+                <div className="ticker-content">
+                  {[...tickerJobs, ...tickerJobs].map((j, i) => (
+                    <span key={i} className="ticker-item">
+                      <span className="ticker-title">{j.title}</span>
+                      <span className="ticker-at">@</span>
+                      <span className="ticker-company">{j.company}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ===== HOW IT WORKS / WHY WE'RE BEST ===== */}
           <section className="section-features">
@@ -1189,7 +1274,7 @@ function App() {
                  <div className="feature-icon"><Briefcase size={24} /></div>
                  <div>
                    <h4>All Top Sources</h4>
-                   <p>Aggregating LinkedIn, Indeed, GulfTalent & more.</p>
+                   <p>Aggregating LinkedIn, Indeed, Bayt & more in real-time.</p>
                  </div>
               </div>
               <div className="feature-card">
@@ -1201,6 +1286,48 @@ function App() {
               </div>
             </div>
           </section>
+
+          {/* ===== SOURCE BREAKDOWN TRUST SECTION ===== */}
+          {!loading && dbConnected && sourceBreakdown.length > 0 && (
+            <section className="section-sources">
+              <div className="sources-container">
+                <div className="sources-header">
+                  <div>
+                    <h2 className="sources-title">Where We Find Your Jobs</h2>
+                    <p className="sources-sub">Real-time aggregation across {sourceBreakdown.length} top UAE job platforms — updated every hour, automatically.</p>
+                  </div>
+                  <div className="sources-total-badge">
+                    <span className="sources-total-num">{totalJobs}</span>
+                    <span className="sources-total-label">Live Jobs Right Now</span>
+                  </div>
+                </div>
+                <div className="sources-grid">
+                  {sourceBreakdown.map(s => (
+                    <div key={s.source} className="source-card">
+                      <div className="source-card-top">
+                        <span className="source-card-name" style={{ color: s.color }}>{s.label}</span>
+                        <span className="source-card-count">{s.count} jobs</span>
+                      </div>
+                      <div className="source-bar-track">
+                        <div
+                          className="source-bar-fill"
+                          style={{ width: `${s.pct}%`, background: s.color }}
+                        />
+                      </div>
+                      <div className="source-pct">{s.pct}% of total</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="sources-trust-row">
+                  <span className="trust-chip">🔒 No fake jobs</span>
+                  <span className="trust-chip">⚡ Hourly sync</span>
+                  <span className="trust-chip">🗑️ 7-day auto-purge</span>
+                  <span className="trust-chip">✅ UAE-only listings</span>
+                  <span className="trust-chip">🆓 100% Free</span>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* ===== LATEST JOBS ===== */}
           <section className="section-jobs" id="jobs-section">
