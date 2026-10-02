@@ -2,8 +2,8 @@ name: Scrape UAE Jobs
 
 on:
   schedule:
-    # Every 6 hours: midnight, 6am, noon, 6pm UTC
-    - cron: '0 0,6,12,18 * * *'
+    # Every 6 hours at :20 past the hour (offset avoids GitHub top-of-hour congestion)
+    - cron: '20 0,6,12,18 * * *'
   workflow_dispatch: # Manual trigger from GitHub UI
 
 # Prevent overlapping runs

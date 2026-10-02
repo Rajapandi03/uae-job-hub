@@ -528,6 +528,7 @@ function App() {
           .select('*')
           .eq('active', true)
           .order('posted_at', { ascending: false, nullsFirst: false })
+          .order('first_seen', { ascending: false })
           .limit(200)
 
         if (error) throw error
