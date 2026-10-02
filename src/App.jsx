@@ -1245,59 +1245,7 @@ function App() {
             </div>
           )}
 
-          {/* ===== WHY US + LIVE SOURCES — COMBINED ===== */}
-          {!loading && dbConnected && sourceBreakdown.length > 0 && (
-            <section className="section-combined">
-              <div className="combined-container">
 
-                {/* Top row: 3 feature pills + live badge */}
-                <div className="combined-top-row">
-                  <div className="combined-features">
-                    <div className="combined-feat">
-                      <Clock size={16} />
-                      <span><strong>Hourly Auto-refresh</strong> &nbsp;|&nbsp; Stale jobs removed in 7 days</span>
-                    </div>
-                    <div className="combined-feat">
-                      <Briefcase size={16} />
-                      <span><strong>Multi-source</strong> &nbsp;|&nbsp; LinkedIn, Indeed, Bayt aggregated</span>
-                    </div>
-                    <div className="combined-feat">
-                      <CheckCircle size={16} />
-                      <span><strong>AI & Tech only</strong> &nbsp;|&nbsp; Curated for professionals</span>
-                    </div>
-                  </div>
-                  <div className="combined-live-badge">
-                    <span className="clb-num">{totalJobs}</span>
-                    <span className="clb-label">Live Jobs Now</span>
-                  </div>
-                </div>
-
-                {/* Bottom row: source bars */}
-                <div className="combined-sources-row">
-                  {sourceBreakdown.map(s => (
-                    <div key={s.source} className="combined-source-item">
-                      <div className="csi-top">
-                        <span className="csi-name" style={{ color: s.color }}>{s.label}</span>
-                        <span className="csi-count">{s.count}</span>
-                      </div>
-                      <div className="csi-track">
-                        <div className="csi-fill" style={{ width: `${s.pct}%`, background: s.color }} />
-                      </div>
-                      <div className="csi-pct">{s.pct}%</div>
-                    </div>
-                  ))}
-                  <div className="combined-trust-chips">
-                    <span className="trust-chip">No fake jobs</span>
-                    <span className="trust-chip">Hourly sync</span>
-                    <span className="trust-chip">7-day purge</span>
-                    <span className="trust-chip">UAE-only</span>
-                    <span className="trust-chip">Free</span>
-                  </div>
-                </div>
-
-              </div>
-            </section>
-          )}
 
           {/* ===== LATEST JOBS ===== */}
           <section className="section-jobs" id="jobs-section">
