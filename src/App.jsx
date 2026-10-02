@@ -713,6 +713,13 @@ function App() {
       })
     }
 
+    // Always sort: newest (least minutes ago) first
+    result = [...result].sort((a, b) => {
+      const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
+      const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
+      return dateB - dateA
+    })
+
     return result
   }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
