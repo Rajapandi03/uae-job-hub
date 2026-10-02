@@ -821,23 +821,6 @@ function App() {
   return (
     <div className="app">
 
-      {/* ===== LIVE STATS BAR ===== */}
-      {currentView === 'jobs' && (
-        <div className="live-bar">
-          <div className="live-bar-inner">
-            <span className="live-dot-wrap"><span className="live-dot" /><span className="live-label">LIVE</span></span>
-            <span className="live-bar-stat"><strong>{loading ? '...' : totalJobs}</strong> Active Jobs</span>
-            <span className="live-bar-divider">|</span>
-            <span className="live-bar-stat"><strong>{loading ? '...' : totalCompanies}</strong> Companies Hiring</span>
-            <span className="live-bar-divider">|</span>
-            <span className="live-bar-stat">Updated <strong>{lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</strong></span>
-            <span className="live-bar-divider">|</span>
-            <span className="live-bar-source">Sources: LinkedIn &nbsp;|&nbsp; Indeed &nbsp;|&nbsp; Bayt</span>
-            {refreshed && <span className="live-refreshed-badge">Refreshed</span>}
-          </div>
-        </div>
-      )}
-
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
         <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigateTo('jobs')}>
@@ -850,6 +833,10 @@ function App() {
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
         <div className="nav-actions">
+          <div className="nav-live-pill" title="Live data updated automatically">
+            <span className="live-dot" />
+            <span className="nav-live-count"><strong>{loading ? '...' : totalJobs}</strong> Live Jobs</span>
+          </div>
         </div>
       </nav>
 
@@ -1199,7 +1186,7 @@ function App() {
               <div className="hero-stats">
                 <div className="stat">
                   <h3 className="stat-number">{loading ? '...' : `${totalJobs}`}<span className="stat-plus">+</span></h3>
-                  <p className="stat-label">Active AI Jobs  <span className="stat-live-chip">â— Live</span></p>
+                  <p className="stat-label">Active AI Jobs</p>
                 </div>
                 <div className="stat">
                   <h3 className="stat-number">{loading ? '...' : `${totalCompanies}`}<span className="stat-plus">+</span></h3>
@@ -1219,7 +1206,7 @@ function App() {
           {/* ===== JOBS TICKER ===== */}
           {!loading && tickerJobs.length > 0 && (
             <div className="ticker-wrap">
-              <span className="ticker-badge">âš¡ New</span>
+              <span className="ticker-badge">New</span>
               <div className="ticker-track">
                 <div className="ticker-content">
                   {[...tickerJobs, ...tickerJobs].map((j, i) => (
@@ -1234,7 +1221,7 @@ function App() {
             </div>
           )}
 
-          {/* ===== WHY US + LIVE SOURCES â€” COMBINED ===== */}
+          {/* ===== WHY US + LIVE SOURCES — COMBINED ===== */}
           {!loading && dbConnected && sourceBreakdown.length > 0 && (
             <section className="section-combined">
               <div className="combined-container">
@@ -1244,15 +1231,15 @@ function App() {
                   <div className="combined-features">
                     <div className="combined-feat">
                       <Clock size={16} />
-                      <span><strong>Hourly Auto-refresh</strong> Â· Stale jobs removed in 7 days</span>
+                      <span><strong>Hourly Auto-refresh</strong> &nbsp;|&nbsp; Stale jobs removed in 7 days</span>
                     </div>
                     <div className="combined-feat">
                       <Briefcase size={16} />
-                      <span><strong>Multi-source</strong> Â· LinkedIn, Indeed, Bayt aggregated</span>
+                      <span><strong>Multi-source</strong> &nbsp;|&nbsp; LinkedIn, Indeed, Bayt aggregated</span>
                     </div>
                     <div className="combined-feat">
                       <CheckCircle size={16} />
-                      <span><strong>AI & Tech only</strong> Â· Curated for professionals</span>
+                      <span><strong>AI & Tech only</strong> &nbsp;|&nbsp; Curated for professionals</span>
                     </div>
                   </div>
                   <div className="combined-live-badge">
