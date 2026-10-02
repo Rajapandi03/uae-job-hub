@@ -13,15 +13,20 @@ import random
 from datetime import datetime, timezone
 
 from jobspy import scrape_jobs
-from common import normalize_job, upsert_jobs, logger
+from common import normalize_job, upsert_jobs, logger, is_relevant_tech_job, clean_string
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 SEARCH_TERMS = [
     "AI engineer",
+    "junior AI engineer",
+    "AI intern",
+    "graduate machine learning",
     "machine learning",
     "data scientist",
+    "junior data scientist",
+    "generative AI developer",
     "python developer",
     "full stack developer",
 ]
@@ -110,6 +115,9 @@ def scrape_combo(search_term: str, location: str) -> list[dict]:
             desc = str(row.get("description", "")).strip()
             if desc == "nan":
                 desc = None
+
+            if not is_relevant_tech_job(title, desc or ""):
+                continue
 
             job = normalize_job(
                 title=title,

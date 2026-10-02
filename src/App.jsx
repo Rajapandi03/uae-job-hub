@@ -132,21 +132,25 @@ function eventTypeLabel(type) {
 // Map DB job to card-friendly format
 // ---------------------------------------------------------------------------
 function mapDbJob(job) {
+  const comp = (job.company && job.company !== 'None' && job.company !== 'nan') ? String(job.company).trim() : 'Hiring Company'
+  const title = (job.title && job.title !== 'None' && job.title !== 'nan') ? String(job.title).trim() : 'AI / Tech Specialist'
+  const loc = (job.location && job.location !== 'None' && job.location !== 'nan') ? String(job.location).trim() : 'Dubai, UAE'
+
+  const postedRelative = timeAgo(job.posted_at) || timeAgo(job.first_seen) || 'Today'
+
   return {
     id: job.job_hash,
-    title: job.title,
-    company: job.company,
-    companyInitial: job.company.charAt(0).toUpperCase(),
+    title: title,
+    company: comp,
+    companyInitial: comp.charAt(0).toUpperCase() || 'C',
     industry: sourceLabel(job.source),
-    location: job.location,
+    location: loc,
     type: 'Onsite',
     typeColor: '#16a34a',
     level: '',
-    postedDate: job.posted_at
-      ? `Posted ${timeAgo(job.posted_at)}`
-      : `Found on ${new Date(job.first_seen).toLocaleDateString()}`,
+    postedDate: `Posted ${postedRelative}`,
     updatedDate: '',
-    description: job.description || '',
+    description: (job.description && job.description !== 'None') ? job.description : '',
     tags: [],
     applyUrl: job.apply_url || job.url,
     source: job.source,
@@ -523,10 +527,15 @@ function App() {
         return
       }
       try {
+        const cutoff7d = new Date()
+        cutoff7d.setDate(cutoff7d.getDate() - 7)
+        const cutoffISO = cutoff7d.toISOString()
+
         const { data, error } = await supabase
           .from('jobs')
           .select('*')
           .eq('active', true)
+          .gte('first_seen', cutoffISO)
           .order('posted_at', { ascending: false, nullsFirst: false })
           .order('first_seen', { ascending: false })
           .limit(200)
@@ -637,16 +646,18 @@ function App() {
 
     if (levelFilter !== 'all') {
       const seniorKeywords = ['senior', 'sr', 'sr.', 'lead', 'principal', 'manager', 'director', 'head', 'chief', 'vp', 'architect']
-      const entryKeywords = ['junior', 'jr', 'jr.', 'entry', 'intern', 'associate', 'graduate', 'fresher', 'trainee']
-      
+      const fresherKeywords = ['fresher', 'junior', 'jr', 'jr.', 'entry', 'intern', 'internship', 'graduate', 'associate', 'trainee']
+
       result = result.filter(j => {
         const title = j.title.toLowerCase()
+        const desc = (j.description || '').toLowerCase()
         const isSenior = seniorKeywords.some(kw => title.includes(kw))
-        const isEntry = entryKeywords.some(kw => title.includes(kw))
-        
+        const isFresher = fresherKeywords.some(kw => title.includes(kw) || desc.includes(kw))
+
+        if (levelFilter === 'fresher') return isFresher
+        if (levelFilter === 'entry') return isFresher
         if (levelFilter === 'senior') return isSenior
-        if (levelFilter === 'entry') return isEntry
-        if (levelFilter === 'mid') return !isSenior && !isEntry
+        if (levelFilter === 'mid') return !isSenior && !isFresher
         return true
       })
     }
@@ -1235,7 +1246,7 @@ function App() {
                   </select>
                   <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
                     <option value="all">All Levels</option>
-                    <option value="entry">Entry Level</option>
+                    <option value="fresher">⚡ Fresher / Entry AI</option>
                     <option value="mid">Mid Level</option>
                     <option value="senior">Senior Level</option>
                   </select>

@@ -1,6 +1,6 @@
 """
-scrapling_scraper.py - Phase 2: Scrape Naukrigulf and GulfTalent using Scrapling.
-Uses Fetcher for simple HTTP and StealthyFetcher if blocked.
+scrapling_scraper.py - Phase 2: Scrape Naukrigulf and GulfTalent using Scrapling and HTTP fallback.
+Uses Fetcher with realistic browser headers to bypass basic bot protection.
 
 Usage:
     python scrapling_scraper.py          # scrape and upsert
@@ -11,76 +11,104 @@ import sys
 import time
 import random
 import re
-from datetime import datetime, timedelta, timezone
+import requests
+from datetime import datetime, timezone
 
-from common import normalize_job, upsert_jobs, logger
+from common import normalize_job, upsert_jobs, logger, is_relevant_tech_job, clean_string, clean_location
+
+DEFAULT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 # ---------------------------------------------------------------------------
 # Naukrigulf scraper
 # ---------------------------------------------------------------------------
 def scrape_naukrigulf() -> list[dict]:
-    """Scrape Naukrigulf UAE IT jobs using Scrapling Fetcher."""
+    """Scrape Naukrigulf UAE IT & AI jobs."""
     jobs = []
+    search_terms = [
+        "AI+engineer",
+        "junior+AI+engineer",
+        "AI+intern",
+        "machine+learning",
+        "data+scientist",
+        "junior+data+scientist",
+        "python+developer",
+    ]
+
     try:
         from scrapling import Fetcher
-
-        search_terms = ["AI+engineer", "machine+learning", "data+scientist", "python+developer"]
         fetcher = Fetcher(auto_match=False)
+    except Exception:
+        fetcher = None
 
-        for term in search_terms:
-            try:
-                url = f"https://www.naukrigulf.com/jobs-in-uae?searchQuery={term}&sort=date"
-                logger.info(f"  Naukrigulf: fetching '{term}'")
-                page = fetcher.get(url, timeout=15)
+    for term in search_terms:
+        try:
+            url = f"https://www.naukrigulf.com/jobs-in-uae?searchQuery={term}&sort=date"
+            logger.info(f"  Naukrigulf: fetching '{term}'")
 
-                if not page or page.status != 200:
-                    logger.warning(f"  Naukrigulf: status {getattr(page, 'status', 'None')} for '{term}'")
-                    continue
+            html_content = ""
+            if fetcher:
+                try:
+                    page = fetcher.get(url, timeout=15, headers=DEFAULT_HEADERS)
+                    if page and page.status == 200:
+                        html_content = page.html
+                except Exception as e:
+                    logger.debug(f"    Scrapling fetcher error: {e}")
 
-                # Naukrigulf job cards are in article or div elements with job data
-                cards = page.css(".srp-tuple") or page.css("article.tuple") or []
-                logger.info(f"    -> {len(cards)} cards found")
+            if not html_content:
+                resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
+                if resp.status_code == 200:
+                    html_content = resp.text
 
-                for card in cards:
-                    try:
-                        title_el = card.css_first(".desig, .designation, h2 a")
-                        company_el = card.css_first(".comp-name, .company-name, .tuple-header a")
-                        location_el = card.css_first(".loc, .location, .tuple-footer span")
-                        link_el = card.css_first("a[href]")
-
-                        title = title_el.text.strip() if title_el else None
-                        company = company_el.text.strip() if company_el else None
-                        loc = location_el.text.strip() if location_el else "UAE"
-                        href = link_el.attrib.get("href", "") if link_el else ""
-
-                        if not title or not company:
-                            continue
-
-                        if href and not href.startswith("http"):
-                            href = f"https://www.naukrigulf.com{href}"
-
-                        job = normalize_job(
-                            title=title,
-                            company=company,
-                            location=loc,
-                            url=href or url,
-                            source="naukrigulf",
-                        )
-                        jobs.append(job)
-                    except Exception as e:
-                        logger.debug(f"    Card parse error: {e}")
-                        continue
-
-                time.sleep(random.uniform(2, 4))
-
-            except Exception as e:
-                logger.error(f"  Naukrigulf error for '{term}': {e}")
+            if not html_content:
                 continue
 
-    except ImportError:
-        logger.error("Scrapling not installed. Run: pip install scrapling")
-    except Exception as e:
-        logger.error(f"Naukrigulf scraper failed: {e}")
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, "html.parser")
+            cards = soup.select(".srp-tuple, article.tuple, .tuple, .job-tuple")
+            logger.info(f"    -> {len(cards)} cards found")
+
+            for card in cards:
+                try:
+                    title_el = card.select_one(".desig, .designation, h2 a, .tuple-title a")
+                    company_el = card.select_one(".comp-name, .company-name, .tuple-header a, .info-org")
+                    location_el = card.select_one(".loc, .location, .tuple-footer span, .info-loc")
+                    link_el = card.select_one("a[href]")
+
+                    title = title_el.get_text(strip=True) if title_el else None
+                    company = company_el.get_text(strip=True) if company_el else None
+                    loc = location_el.get_text(strip=True) if location_el else "UAE"
+                    href = link_el.get("href", "") if link_el else ""
+
+                    if not title or not company:
+                        continue
+
+                    if not is_relevant_tech_job(title):
+                        continue
+
+                    if href and not href.startswith("http"):
+                        href = f"https://www.naukrigulf.com{href}"
+
+                    job = normalize_job(
+                        title=title,
+                        company=company,
+                        location=loc,
+                        url=href or url,
+                        source="naukrigulf",
+                    )
+                    jobs.append(job)
+                except Exception as e:
+                    logger.debug(f"    Card parse error: {e}")
+                    continue
+
+            time.sleep(random.uniform(2, 4))
+
+        except Exception as e:
+            logger.error(f"  Naukrigulf error for '{term}': {e}")
+            continue
 
     return jobs
 
@@ -89,68 +117,89 @@ def scrape_naukrigulf() -> list[dict]:
 # GulfTalent scraper
 # ---------------------------------------------------------------------------
 def scrape_gulftalent() -> list[dict]:
-    """Scrape GulfTalent UAE IT jobs using Scrapling."""
+    """Scrape GulfTalent UAE IT & AI jobs."""
     jobs = []
+    search_terms = [
+        "artificial-intelligence",
+        "junior-ai-engineer",
+        "ai-intern",
+        "machine-learning",
+        "data-science",
+        "junior-data-scientist",
+        "software-engineer",
+    ]
+
     try:
         from scrapling import Fetcher
-
         fetcher = Fetcher(auto_match=False)
-        search_terms = ["artificial-intelligence", "machine-learning", "data-science", "software-engineer"]
+    except Exception:
+        fetcher = None
 
-        for term in search_terms:
-            try:
-                url = f"https://www.gulftalent.com/uae/jobs/s/{term}"
-                logger.info(f"  GulfTalent: fetching '{term}'")
-                page = fetcher.get(url, timeout=15)
+    for term in search_terms:
+        try:
+            url = f"https://www.gulftalent.com/uae/jobs/s/{term}"
+            logger.info(f"  GulfTalent: fetching '{term}'")
 
-                if not page or page.status != 200:
-                    logger.warning(f"  GulfTalent: status {getattr(page, 'status', 'None')} for '{term}'")
-                    continue
+            html_content = ""
+            if fetcher:
+                try:
+                    page = fetcher.get(url, timeout=15, headers=DEFAULT_HEADERS)
+                    if page and page.status == 200:
+                        html_content = page.html
+                except Exception as e:
+                    logger.debug(f"    Scrapling fetcher error: {e}")
 
-                # GulfTalent uses div.job-listing or similar
-                cards = page.css(".job-listing, .result-item, .job-card") or []
-                logger.info(f"    -> {len(cards)} cards found")
+            if not html_content:
+                resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
+                if resp.status_code == 200:
+                    html_content = resp.text
 
-                for card in cards:
-                    try:
-                        title_el = card.css_first("h2 a, .job-title a, a.title")
-                        company_el = card.css_first(".company, .employer, .company-name")
-                        location_el = card.css_first(".location, .loc")
-                        link_el = card.css_first("a[href]")
-
-                        title = title_el.text.strip() if title_el else None
-                        company = company_el.text.strip() if company_el else None
-                        loc = location_el.text.strip() if location_el else "UAE"
-                        href = link_el.attrib.get("href", "") if link_el else ""
-
-                        if not title or not company:
-                            continue
-
-                        if href and not href.startswith("http"):
-                            href = f"https://www.gulftalent.com{href}"
-
-                        job = normalize_job(
-                            title=title,
-                            company=company,
-                            location=loc,
-                            url=href or url,
-                            source="gulftalent",
-                        )
-                        jobs.append(job)
-                    except Exception as e:
-                        logger.debug(f"    Card parse error: {e}")
-                        continue
-
-                time.sleep(random.uniform(2, 4))
-
-            except Exception as e:
-                logger.error(f"  GulfTalent error for '{term}': {e}")
+            if not html_content:
                 continue
 
-    except ImportError:
-        logger.error("Scrapling not installed. Run: pip install scrapling")
-    except Exception as e:
-        logger.error(f"GulfTalent scraper failed: {e}")
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, "html.parser")
+            cards = soup.select(".job-listing, .result-item, .job-card, tr.job-row")
+            logger.info(f"    -> {len(cards)} cards found")
+
+            for card in cards:
+                try:
+                    title_el = card.select_one("h2 a, .job-title a, a.title, td a")
+                    company_el = card.select_one(".company, .employer, .company-name")
+                    location_el = card.select_one(".location, .loc")
+                    link_el = card.select_one("a[href]")
+
+                    title = title_el.get_text(strip=True) if title_el else None
+                    company = company_el.get_text(strip=True) if company_el else None
+                    loc = location_el.get_text(strip=True) if location_el else "UAE"
+                    href = link_el.get("href", "") if link_el else ""
+
+                    if not title or not company:
+                        continue
+
+                    if not is_relevant_tech_job(title):
+                        continue
+
+                    if href and not href.startswith("http"):
+                        href = f"https://www.gulftalent.com{href}"
+
+                    job = normalize_job(
+                        title=title,
+                        company=company,
+                        location=loc,
+                        url=href or url,
+                        source="gulftalent",
+                    )
+                    jobs.append(job)
+                except Exception as e:
+                    logger.debug(f"    Card parse error: {e}")
+                    continue
+
+            time.sleep(random.uniform(2, 4))
+
+        except Exception as e:
+            logger.error(f"  GulfTalent error for '{term}': {e}")
+            continue
 
     return jobs
 

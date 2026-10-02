@@ -1,10 +1,11 @@
 """
 common.py - Shared utilities for all scrapers.
-Provides: normalized job format, hashing, deduplication, Supabase upsert.
+Provides: normalized job format, hashing, deduplication, Supabase upsert, tech relevance filter.
 """
 
 import hashlib
 import os
+import re
 import logging
 from datetime import datetime, timedelta, timezone
 from supabase import create_client, Client
@@ -30,15 +31,101 @@ def get_supabase() -> Client:
 
 
 # ---------------------------------------------------------------------------
-# Job hash: deterministic primary key from title|company|location
+# Sanitization & Cleaning Utilities
+# ---------------------------------------------------------------------------
+def clean_string(val: str) -> str:
+    """Clean string values and remove 'None', 'nan', 'null', 'undefined' artifacts."""
+    if not val:
+        return ""
+    s = str(val).strip()
+    if s.lower() in ("none", "nan", "null", "undefined"):
+        return ""
+    return s
+
+
+def clean_location(loc_raw: str) -> str:
+    """Clean location strings and fix redundant duplicates like 'Dubai, United Arab Emirates, United Arab Emirates'."""
+    loc = clean_string(loc_raw)
+    if not loc:
+        return "UAE"
+
+    # Replace long country names with UAE
+    loc = re.sub(r'United Arab Emirates', 'UAE', loc, flags=re.IGNORECASE)
+    
+    # Split by comma and deduplicate tokens case-insensitively while maintaining order
+    tokens = [t.strip() for t in loc.split(',') if t.strip()]
+    seen = set()
+    cleaned_tokens = []
+    for t in tokens:
+        t_lower = t.lower()
+        if t_lower not in seen:
+            seen.add(t_lower)
+            cleaned_tokens.append(t)
+            
+    res = ", ".join(cleaned_tokens)
+    return res if res else "UAE"
+
+
+# ---------------------------------------------------------------------------
+# Tech Relevance & Non-Tech Blocklist Filter
+# ---------------------------------------------------------------------------
+# Explicit non-tech roles to discard
+NON_TECH_BLOCKLIST = re.compile(
+    r'\b(nurse|doctor|pharmacist|barista|waiter|waitress|cook|chef|housekeeper|cleaner|mason|'
+    r'plumber|electrician|hvac|real estate|property consultant|leasing agent|sales agent|'
+    r'sales executive|sales representative|accountant|auditor|financial analyst|bookkeeper|'
+    r'hr manager|hr executive|recruiter|receptionist|cashier|security guard|storekeeper|'
+    r'tailor|driver|delivery rider|car washer|mechanic|carpenter|beautician|hair stylist|'
+    r'teacher|tutor|nanny)\b',
+    re.IGNORECASE
+)
+
+# Tech, Software, Data & AI allowlist pattern
+TECH_ALLOWLIST = re.compile(
+    r'\b(ai|ml|data|python|software|full stack|fullstack|frontend|backend|cloud|devops|'
+    r'cyber|security|engineer|developer|architect|machine learning|deep learning|nlp|'
+    r'computer vision|genai|generative ai|llm|artificial intelligence|data science|'
+    r'data scientist|data analyst|data engineer|web|react|node|vue|angular|java|c\+\+|\.net|'
+    r'golang|rust|embedded|qa|tester|automation|scrum|tech|technical|fresher|graduate|'
+    r'intern|internship|junior|code|coding|programmer|system|database|network|infrastructure|it)\b',
+    re.IGNORECASE
+)
+
+def is_relevant_tech_job(title: str, description: str = "") -> bool:
+    """
+    Check if a job title (and optional description) is a relevant tech/AI job.
+    Enforces word boundary matching (\b) to avoid false positive substring matches.
+    """
+    t = clean_string(title)
+    if not t:
+        return False
+        
+    # Rejection check: if title explicitly matches non-tech blocklist, discard
+    if NON_TECH_BLOCKLIST.search(t):
+        return False
+        
+    # Acceptance check: title must match tech allowlist
+    if TECH_ALLOWLIST.search(t):
+        return True
+        
+    # If description is provided, check if description mentions AI/tech
+    if description and TECH_ALLOWLIST.search(description[:500]):
+        return True
+
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Job hash: deterministic primary key from title|company
 # ---------------------------------------------------------------------------
 def make_job_hash(title: str, company: str, location: str = "") -> str:
-    """Deterministic hash from title + company only.
-    Location is intentionally excluded so the same job discovered via
-    different location queries (e.g. 'Dubai' vs 'UAE') collapses into
-    one row instead of creating duplicates.
     """
-    raw = f"{title.strip().lower()}|{company.strip().lower()}"
+    Deterministic hash from sanitized title + company.
+    Special characters and extra spaces are stripped to ensure cross-source deduplication.
+    """
+    t_clean = re.sub(r'[^a-z0-9]', '', clean_string(title).lower())
+    c_clean = re.sub(r'[^a-z0-9]', '', clean_string(company).lower())
+    raw = f"{t_clean}|{c_clean}"
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
 
@@ -56,18 +143,23 @@ def normalize_job(
     apply_url: str = None,
 ) -> dict:
     """Return a dict matching the Supabase `jobs` table schema."""
-    loc = location.strip() if location else "UAE"
-    desc = (description[:3000] if description else None)
+    t = clean_string(title)
+    c = clean_string(company)
+    loc = clean_location(location)
+    u = clean_string(url)
+    app_u = clean_string(apply_url) if apply_url else u
+    desc = clean_string(description)[:3000] if description else None
+    
     return {
-        "job_hash":    make_job_hash(title, company, loc),
-        "title":       title.strip(),
-        "company":     company.strip(),
+        "job_hash":    make_job_hash(t, c, loc),
+        "title":       t,
+        "company":     c,
         "location":    loc,
-        "url":         url.strip(),
-        "apply_url":   (apply_url.strip() if apply_url else url.strip()),
-        "source":      source.lower(),
+        "url":         u,
+        "apply_url":   app_u if app_u else u,
+        "source":      clean_string(source).lower(),
         "posted_at":   posted_at,
-        "description": desc,
+        "description": desc if desc else None,
         "active":      True,
     }
 
@@ -79,15 +171,19 @@ def upsert_jobs(jobs: list[dict]) -> int:
     """Upsert a list of normalized job dicts. Returns count of upserted rows."""
     if not jobs:
         return 0
+        
+    # Filter out non-relevant jobs before DB insertion
+    relevant_jobs = [j for j in jobs if is_relevant_tech_job(j["title"], j.get("description") or "")]
+    if not relevant_jobs:
+        logger.info("No relevant tech jobs to upsert after relevance filtering.")
+        return 0
+
     sb = get_supabase()
-    # Upsert: on conflict with job_hash, update everything EXCEPT first_seen
-    # Supabase Python client supports upsert via on_conflict
     result = (
         sb.table("jobs")
         .upsert(
-            jobs,
+            relevant_jobs,
             on_conflict="job_hash",
-            # first_seen has a DB default and we never send it, so it stays
         )
         .execute()
     )
@@ -100,6 +196,8 @@ def upsert_jobs(jobs: list[dict]) -> int:
 def deactivate_stale_jobs(days: int = 7):
     sb = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    
+    # Deactivate jobs whose first_seen is older than 7 days
     result = (
         sb.table("jobs")
         .update({"active": False})
@@ -114,7 +212,7 @@ def deactivate_stale_jobs(days: int = 7):
 
 
 # ---------------------------------------------------------------------------
-# Remove duplicate jobs based on title and company
+# Remove duplicate jobs based on sanitized title and company
 # ---------------------------------------------------------------------------
 def remove_duplicates():
     """
@@ -148,14 +246,12 @@ def remove_duplicates():
         logger.info("No active jobs to deduplicate.")
         return 0
         
-    import re
     from collections import defaultdict
     
     def sanitize(text):
         if not text:
             return ""
-        # Remove non-alphanumeric and standardize lowercase
-        return re.sub(r'[^a-z0-9]', '', str(text).lower())
+        return re.sub(r'[^a-z0-9]', '', clean_string(text).lower())
         
     grouped = defaultdict(list)
     for job in all_jobs:
