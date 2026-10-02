@@ -140,7 +140,7 @@ function mapDbJob(job) {
   const title = (job.title && job.title !== 'None' && job.title !== 'nan') ? String(job.title).trim() : 'AI / Tech Specialist'
   const loc = (job.location && job.location !== 'None' && job.location !== 'nan') ? String(job.location).trim() : 'Dubai, UAE'
 
-  const postedRelative = timeAgo(job.first_seen) || timeAgo(job.posted_at) || 'Just now'
+  const postedRelative = timeAgo(job.posted_at) || timeAgo(job.first_seen) || 'Just now'
 
   return {
     id: job.job_hash,
