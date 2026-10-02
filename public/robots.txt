@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://uae-jobs-hub.vercel.app/sitemap.xml
