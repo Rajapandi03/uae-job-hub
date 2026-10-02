@@ -754,16 +754,34 @@ function App() {
 
     if (timeFilter !== 'all') {
       const now = new Date()
-      const cutoff = new Date()
-      if (timeFilter === '1h') cutoff.setHours(now.getHours() - 1)
-      else if (timeFilter === '6h') cutoff.setHours(now.getHours() - 6)
-      else if (timeFilter === '12h') cutoff.setHours(now.getHours() - 12)
-      else if (timeFilter === '24h') cutoff.setHours(now.getHours() - 24)
-      else if (timeFilter === '3d') cutoff.setDate(now.getDate() - 3)
+      const cutoff = new Date(now)
+      if (timeFilter === '1h') cutoff.setTime(now.getTime() - 1 * 60 * 60 * 1000)
+      else if (timeFilter === '6h') cutoff.setTime(now.getTime() - 6 * 60 * 60 * 1000)
+      else if (timeFilter === '12h') cutoff.setTime(now.getTime() - 12 * 60 * 60 * 1000)
+      else if (timeFilter === '24h') cutoff.setTime(now.getTime() - 24 * 60 * 60 * 1000)
+      else if (timeFilter === '3d') cutoff.setTime(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
       result = result.filter(j => {
-        const d = j.first_seen ? new Date(j.first_seen) : (j.posted_at ? new Date(j.posted_at) : null)
-        return d && d >= cutoff
+        // Use the best available date: prefer non-midnight posted_at, else first_seen
+        let bestD = null
+        if (j.posted_at) {
+          const pa = new Date(j.posted_at)
+          if (!isNaN(pa.getTime())) {
+            // Check if it's a midnight timestamp (date-only from scraper)
+            const isMidnight = pa.getUTCHours() === 0 && pa.getUTCMinutes() === 0 && pa.getUTCSeconds() === 0
+            if (!isMidnight) {
+              bestD = pa
+            }
+          }
+        }
+        if (!bestD && j.first_seen) {
+          const fs = new Date(j.first_seen)
+          if (!isNaN(fs.getTime())) bestD = fs
+        }
+        if (!bestD && j.posted_at) {
+          bestD = new Date(j.posted_at) // fallback to midnight posted_at
+        }
+        return bestD && bestD >= cutoff
       })
     }
 
