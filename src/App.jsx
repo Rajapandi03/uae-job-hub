@@ -142,7 +142,18 @@ function mapDbJob(job) {
   const title = (job.title && job.title !== 'None' && job.title !== 'nan') ? String(job.title).trim() : 'AI / Tech Specialist'
   const loc = (job.location && job.location !== 'None' && job.location !== 'nan') ? String(job.location).trim() : 'Dubai, UAE'
 
-  const postedRelative = timeAgo(job.posted_at) || timeAgo(job.first_seen) || 'Just now'
+  // Prefer first_seen over date-only posted_at (midnight timestamps from scrapers)
+  // Date-only posted_at values (e.g. "2026-10-02" → midnight) produce wildly inaccurate
+  // "X hours ago" labels. first_seen is when our scraper actually discovered the job.
+  let bestDate = job.posted_at
+  if (bestDate) {
+    const d = new Date(bestDate)
+    // Detect midnight timestamps (date-only values from scrapers)
+    if (!isNaN(d.getTime()) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && job.first_seen) {
+      bestDate = job.first_seen
+    }
+  }
+  const postedRelative = timeAgo(bestDate) || timeAgo(job.first_seen) || 'Just now'
 
   return {
     id: job.job_hash,

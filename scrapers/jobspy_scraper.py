@@ -100,14 +100,31 @@ def scrape_combo(search_term: str, location: str) -> list[dict]:
                 apply_url = job_url
 
             # Posted date
+            # JobSpy often returns date-only values (e.g. "2026-10-02") without time.
+            # This causes midnight UTC timestamps, making "X hours ago" wildly inaccurate.
+            # Fix: if the date is today (date-only), use current timestamp for accuracy.
             posted_at = None
             date_posted = row.get("date_posted")
             if date_posted is not None and str(date_posted) != "nan" and str(date_posted) != "NaT":
                 try:
                     if hasattr(date_posted, "isoformat"):
-                        posted_at = date_posted.isoformat()
+                        date_str = date_posted.isoformat()
                     else:
-                        posted_at = str(date_posted)
+                        date_str = str(date_posted).strip()
+
+                    # Detect date-only values (no 'T' means no time component)
+                    # e.g. "2026-10-02" or "2026-10-02 00:00:00"
+                    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    is_date_only = ('T' not in date_str) or date_str.endswith("T00:00:00") or date_str.endswith("00:00:00+00:00")
+
+                    if is_date_only and date_str[:10] == today_str:
+                        # Today's job but no time info — use current timestamp
+                        posted_at = datetime.now(timezone.utc).isoformat()
+                    elif is_date_only:
+                        # Older date-only — set to noon UTC to reduce error
+                        posted_at = date_str[:10] + "T12:00:00+00:00"
+                    else:
+                        posted_at = date_str
                 except Exception:
                     posted_at = None
 
