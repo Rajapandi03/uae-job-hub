@@ -1182,7 +1182,7 @@ function App() {
                  <div className="feature-icon"><Clock size={24} /></div>
                  <div>
                    <h4>100% Automated & Fresh</h4>
-                   <p>Jobs update 4x daily via automation. Stale listings older than 7 days are strictly removed to ensure freshness.</p>
+                   <p>New jobs are updated every 1 hour via automation. Stale listings older than 7 days are strictly removed to ensure freshness.</p>
                  </div>
               </div>
               <div className="feature-card">
