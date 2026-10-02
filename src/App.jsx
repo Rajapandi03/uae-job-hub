@@ -1488,7 +1488,7 @@ function App() {
                 className="btn-outline"
                 onClick={() => setShowAllCompanies(!showAllCompanies)}
               >
-                {showAllCompanies ? 'Show Top Companies' : `View All ${totalCompanies} Companies`}
+                {showAllCompanies ? 'Show Top 10 Companies ↑' : `View All ${totalCompanies} Companies ↓`}
               </button>
             </div>
           </section>
