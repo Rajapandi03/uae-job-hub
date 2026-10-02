@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   Bell,
   Search,
@@ -827,13 +827,13 @@ function App() {
           <div className="live-bar-inner">
             <span className="live-dot-wrap"><span className="live-dot" /><span className="live-label">LIVE</span></span>
             <span className="live-bar-stat"><strong>{loading ? '...' : totalJobs}</strong> Active Jobs</span>
-            <span className="live-bar-divider">Â·</span>
+            <span className="live-bar-divider">|</span>
             <span className="live-bar-stat"><strong>{loading ? '...' : totalCompanies}</strong> Companies Hiring</span>
-            <span className="live-bar-divider">Â·</span>
+            <span className="live-bar-divider">|</span>
             <span className="live-bar-stat">Updated <strong>{lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</strong></span>
-            <span className="live-bar-divider">Â·</span>
-            <span className="live-bar-source">Sources: LinkedIn Â· Indeed Â· Bayt</span>
-            {refreshed && <span className="live-refreshed-badge">âœ“ Refreshed</span>}
+            <span className="live-bar-divider">|</span>
+            <span className="live-bar-source">Sources: LinkedIn &nbsp;|&nbsp; Indeed &nbsp;|&nbsp; Bayt</span>
+            {refreshed && <span className="live-refreshed-badge">Refreshed</span>}
           </div>
         </div>
       )}
@@ -841,8 +841,7 @@ function App() {
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
         <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigateTo('jobs')}>
-          <span className="nav-brand-icon">AI</span>
-          JobHub UAE
+          <span className="nav-wordmark">JobHub</span><span className="nav-wordmark-uae"> UAE</span>
         </div>
         <div className="nav-links">
           <a href="/" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('jobs') }}>Find Jobs</a>
@@ -1581,7 +1580,7 @@ function App() {
         <div className="footer-top">
           <div>
             <div className="nav-brand" style={{ color: 'white', marginBottom: '0.75rem', cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
-              <span className="nav-brand-icon">AI</span> JobHub UAE
+              <span className="footer-wordmark">JobHub UAE</span>
             </div>
             <p className="footer-brand-desc">
               Connecting AI talent with opportunities across the United Arab Emirates.
@@ -1613,7 +1612,7 @@ function App() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>Â© 2026 AI JobHub UAE. All rights reserved. Empowering AI careers across the Emirates.</p>
+          <p>&copy; 2026 JobHub UAE. All rights reserved.</p>
           <div className="footer-links-bottom">
             <a href="#">AI Jobs in Dubai</a>
             <a href="#">ML Jobs Dubai</a>
