@@ -1246,7 +1246,7 @@ function App() {
                   </select>
                   <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
                     <option value="all">All Levels</option>
-                    <option value="fresher">⚡ Fresher / Entry AI</option>
+                    <option value="fresher">Fresher</option>
                     <option value="mid">Mid Level</option>
                     <option value="senior">Senior Level</option>
                   </select>

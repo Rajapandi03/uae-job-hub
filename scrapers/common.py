@@ -76,7 +76,11 @@ NON_TECH_BLOCKLIST = re.compile(
     r'sales executive|sales representative|accountant|auditor|financial analyst|bookkeeper|'
     r'hr manager|hr executive|recruiter|receptionist|cashier|security guard|storekeeper|'
     r'tailor|driver|delivery rider|car washer|mechanic|carpenter|beautician|hair stylist|'
-    r'teacher|tutor|nanny)\b',
+    r'teacher|tutor|nanny|mechanical engineer|mechanical technician|civil engineer|'
+    r'structural engineer|electrical engineer|field engineer|maintenance engineer|'
+    r'production engineer|manufacturing engineer|piping engineer|hvac engineer|'
+    r'instrumentation engineer|geotechnical|quantity surveyor|site engineer|'
+    r'process engineer|plant engineer|welding engineer|marine engineer)\b',
     re.IGNORECASE
 )
 
