@@ -652,23 +652,58 @@ function App() {
     return `${Math.floor(hrs / 24)}d ago`
   }
 
+  // Clean raw scraper company names
+  function cleanCompanyName(raw) {
+    if (!raw || raw === 'None' || raw === 'nan') return 'Hiring Company'
+    let str = String(raw).trim()
+    str = str.split('|')[0]
+    str = str.split(', by ')[0]
+    str = str.split(' - ')[0]
+    str = str.replace(/\b(Inc|LLC|Ltd|FZC|FZ-LLC|Co\.|Corp|Corporation|Group|Holdings|Private Limited|Pvt Ltd|Jobs|Career|Recruitment)\b/gi, '').trim()
+    str = str.replace(/[,.-]+$/, '').trim()
+    return str || raw
+  }
+
+  function getCompanyInitial(name) {
+    const cleaned = cleanCompanyName(name)
+    const parts = cleaned.split(/\s+/).filter(Boolean)
+    if (parts.length >= 2 && parts[0][0] && parts[1][0]) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return cleaned.substring(0, 2).toUpperCase()
+  }
+
   // Dynamic top companies from live data
-  const COMPANY_COLORS = ['#1f2937', '#6d28d9', '#0ea5e9', '#16a34a', '#f97316', '#7c3aed', '#dc2626', '#0d9488']
+  const COMPANY_Gradients = [
+    'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+    'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+    'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+    'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+    'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+    'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+    'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+  ]
+
   const topCompanies = useMemo(() => {
     if (!dbConnected) return companies
     const counts = {}
     allJobs.forEach(j => {
-      if (j.company) counts[j.company] = (counts[j.company] || 0) + 1
+      if (j.company) {
+        const cleaned = cleanCompanyName(j.company)
+        counts[cleaned] = (counts[cleaned] || 0) + 1
+      }
     })
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
     const toShow = showAllCompanies ? sorted : sorted.slice(0, 8)
     return toShow
       .map(([name, count], i) => ({
         id: i + 1,
-        name,
-        initial: name.substring(0, 2).toUpperCase(),
+        rawName: name,
+        name: name,
+        initial: getCompanyInitial(name),
         openRoles: count,
-        color: COMPANY_COLORS[i % COMPANY_COLORS.length],
+        background: COMPANY_Gradients[i % COMPANY_Gradients.length],
       }))
   }, [allJobs, dbConnected, showAllCompanies])
 
@@ -1440,7 +1475,7 @@ function App() {
                     document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
                   }}
                 >
-                  <div className="company-card-icon" style={{ background: c.color }}>
+                  <div className="company-card-icon" style={{ background: c.background }}>
                     {c.initial}
                   </div>
                   <div className="company-card-name">{c.name}</div>
