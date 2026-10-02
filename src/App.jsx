@@ -1262,13 +1262,6 @@ function App() {
                       <div className="csi-pct">{s.pct}%</div>
                     </div>
                   ))}
-                  <div className="combined-trust-chips">
-                    <span className="trust-chip">No fake jobs</span>
-                    <span className="trust-chip">Hourly sync</span>
-                    <span className="trust-chip">7-day purge</span>
-                    <span className="trust-chip">UAE-only</span>
-                    <span className="trust-chip">Free</span>
-                  </div>
                 </div>
 
               </div>
