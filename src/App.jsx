@@ -56,7 +56,6 @@ function timeAgo(dateStr) {
   const diffMins = Math.floor(diffMs / (1000 * 60))
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
   if (diffMins < 1) return 'Just now'
   if (diffMins < 60) return `${diffMins} min ago`
   if (diffHours < 24) return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`
@@ -273,7 +272,7 @@ function App() {
       // Fallback: try to restore cached display info (not a real session)
       const savedUser = localStorage.getItem('uae_job_user')
       if (savedUser) {
-        try { setUser(JSON.parse(savedUser)) } catch (e) {}
+        try { setUser(JSON.parse(savedUser)) } catch (e) { }
       }
       return
     }
@@ -424,7 +423,7 @@ function App() {
     if (supabase) {
       try {
         await supabase.auth.signOut()
-      } catch (e) {}
+      } catch (e) { }
     }
     setUser(null)
     localStorage.removeItem('uae_job_user')
@@ -641,7 +640,7 @@ function App() {
   }
 
   // Dynamic top companies from live data
-  const COMPANY_COLORS = ['#1f2937','#6d28d9','#0ea5e9','#16a34a','#f97316','#7c3aed','#dc2626','#0d9488']
+  const COMPANY_COLORS = ['#1f2937', '#6d28d9', '#0ea5e9', '#16a34a', '#f97316', '#7c3aed', '#dc2626', '#0d9488']
   const topCompanies = useMemo(() => {
     if (!dbConnected) return companies
     const counts = {}
@@ -712,13 +711,6 @@ function App() {
         return true
       })
     }
-
-    // Always sort: newest (least minutes ago) first
-    result = [...result].sort((a, b) => {
-      const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
-      const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
-      return dateB - dateA
-    })
 
     return result
   }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
@@ -1426,7 +1418,7 @@ function App() {
 
               {filteredJobs.length > visibleJobsCount && (
                 <div className="btn-outline-center">
-                  <button 
+                  <button
                     className="btn-outline"
                     onClick={() => setVisibleJobsCount(filteredJobs.length)}
                   >
@@ -1436,7 +1428,7 @@ function App() {
               )}
               {filteredJobs.length > 0 && filteredJobs.length <= visibleJobsCount && filteredJobs.length > 10 && (
                 <div className="btn-outline-center">
-                  <button 
+                  <button
                     className="btn-outline"
                     onClick={() => setVisibleJobsCount(10)}
                   >
@@ -1455,8 +1447,8 @@ function App() {
             </div>
             <div className="companies-grid">
               {topCompanies.map((c) => (
-                <div 
-                  className="company-card" 
+                <div
+                  className="company-card"
                   key={c.id}
                   style={{ cursor: 'pointer' }}
                   onClick={() => {
@@ -1473,7 +1465,7 @@ function App() {
               ))}
             </div>
             <div className="btn-outline-center" style={{ marginTop: '2rem' }}>
-              <button 
+              <button
                 className="btn-outline"
                 onClick={() => setShowAllCompanies(!showAllCompanies)}
               >
@@ -1493,8 +1485,8 @@ function App() {
                 <h3>Upcoming AI Events</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
                   {eventsList.slice(0, 3).map((event) => (
-                    <div 
-                      className="resource-card" 
+                    <div
+                      className="resource-card"
                       key={event.event_hash || event.title}
                       onClick={() => setCurrentView('events')}
                       style={{ cursor: 'pointer', marginBottom: 0, flex: 1, display: 'flex' }}
@@ -1524,9 +1516,9 @@ function App() {
                     const IconLookup = { GraduationCap, DollarSign, Newspaper }
                     const IconComponent = IconLookup[res.iconName] || BookOpen
                     return (
-                      <div 
-                        className="resource-card" 
-                        key={res.id} 
+                      <div
+                        className="resource-card"
+                        key={res.id}
                         onClick={() => navigateTo(res.view)}
                         style={{ cursor: 'pointer', marginBottom: 0, flex: 1, display: 'flex' }}
                       >
@@ -1566,7 +1558,7 @@ function App() {
             <div className="final-cta-note">
               <span style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500' }}>100% Free Forever • No Subscriptions • Built for Job Seekers</span>
               <div style={{ padding: '0.5rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'inline-block', maxWidth: '600px', lineHeight: '1.5' }}>
-                <span style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>👋</span> 
+                <span style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>👋</span>
                 I built this platform completely free to help you land your dream role. If you get hired, <a href="https://www.linkedin.com/in/rajapandi6/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px solid var(--primary)' }}>message me on LinkedIn</a> so I can celebrate with you! (Please report any website issues there too.)
               </div>
             </div>
