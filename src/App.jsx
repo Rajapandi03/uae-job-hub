@@ -1260,71 +1260,56 @@ function App() {
             </div>
           )}
 
-          {/* ===== HOW IT WORKS / WHY WE'RE BEST ===== */}
-          <section className="section-features">
-            <div className="features-grid">
-              <div className="feature-card">
-                 <div className="feature-icon"><Clock size={24} /></div>
-                 <div>
-                   <h4>100% Automated & Fresh</h4>
-                   <p>New jobs are updated every 1 hour via automation. Stale listings older than 7 days are strictly removed to ensure freshness.</p>
-                 </div>
-              </div>
-              <div className="feature-card">
-                 <div className="feature-icon"><Briefcase size={24} /></div>
-                 <div>
-                   <h4>All Top Sources</h4>
-                   <p>Aggregating LinkedIn, Indeed, Bayt & more in real-time.</p>
-                 </div>
-              </div>
-              <div className="feature-card">
-                 <div className="feature-icon"><CheckCircle size={24} /></div>
-                 <div>
-                   <h4>AI & Tech Only</h4>
-                   <p>Strictly curated roles for tech professionals.</p>
-                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ===== SOURCE BREAKDOWN TRUST SECTION ===== */}
+          {/* ===== WHY US + LIVE SOURCES — COMBINED ===== */}
           {!loading && dbConnected && sourceBreakdown.length > 0 && (
-            <section className="section-sources">
-              <div className="sources-container">
-                <div className="sources-header">
-                  <div>
-                    <h2 className="sources-title">Where We Find Your Jobs</h2>
-                    <p className="sources-sub">Real-time aggregation across {sourceBreakdown.length} top UAE job platforms — updated every hour, automatically.</p>
+            <section className="section-combined">
+              <div className="combined-container">
+
+                {/* Top row: 3 feature pills + live badge */}
+                <div className="combined-top-row">
+                  <div className="combined-features">
+                    <div className="combined-feat">
+                      <Clock size={16} />
+                      <span><strong>Hourly Auto-refresh</strong> · Stale jobs removed in 7 days</span>
+                    </div>
+                    <div className="combined-feat">
+                      <Briefcase size={16} />
+                      <span><strong>Multi-source</strong> · LinkedIn, Indeed, Bayt aggregated</span>
+                    </div>
+                    <div className="combined-feat">
+                      <CheckCircle size={16} />
+                      <span><strong>AI & Tech only</strong> · Curated for professionals</span>
+                    </div>
                   </div>
-                  <div className="sources-total-badge">
-                    <span className="sources-total-num">{totalJobs}</span>
-                    <span className="sources-total-label">Live Jobs Right Now</span>
+                  <div className="combined-live-badge">
+                    <span className="clb-num">{totalJobs}</span>
+                    <span className="clb-label">Live Jobs Now</span>
                   </div>
                 </div>
-                <div className="sources-grid">
+
+                {/* Bottom row: source bars */}
+                <div className="combined-sources-row">
                   {sourceBreakdown.map(s => (
-                    <div key={s.source} className="source-card">
-                      <div className="source-card-top">
-                        <span className="source-card-name" style={{ color: s.color }}>{s.label}</span>
-                        <span className="source-card-count">{s.count} jobs</span>
+                    <div key={s.source} className="combined-source-item">
+                      <div className="csi-top">
+                        <span className="csi-name" style={{ color: s.color }}>{s.label}</span>
+                        <span className="csi-count">{s.count}</span>
                       </div>
-                      <div className="source-bar-track">
-                        <div
-                          className="source-bar-fill"
-                          style={{ width: `${s.pct}%`, background: s.color }}
-                        />
+                      <div className="csi-track">
+                        <div className="csi-fill" style={{ width: `${s.pct}%`, background: s.color }} />
                       </div>
-                      <div className="source-pct">{s.pct}% of total</div>
+                      <div className="csi-pct">{s.pct}%</div>
                     </div>
                   ))}
+                  <div className="combined-trust-chips">
+                    <span className="trust-chip">🔒 No fake jobs</span>
+                    <span className="trust-chip">⚡ Hourly sync</span>
+                    <span className="trust-chip">🗑️ 7-day purge</span>
+                    <span className="trust-chip">✅ UAE-only</span>
+                    <span className="trust-chip">🆓 Free</span>
+                  </div>
                 </div>
-                <div className="sources-trust-row">
-                  <span className="trust-chip">🔒 No fake jobs</span>
-                  <span className="trust-chip">⚡ Hourly sync</span>
-                  <span className="trust-chip">🗑️ 7-day auto-purge</span>
-                  <span className="trust-chip">✅ UAE-only listings</span>
-                  <span className="trust-chip">🆓 100% Free</span>
-                </div>
+
               </div>
             </section>
           )}
