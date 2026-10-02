@@ -2811,7 +2811,24 @@ html, body, #root, .app {
   border-top: 1px solid var(--border-light);
 }
 
+.trust-chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: border-color 0.2s, background 0.2s;
+}
 
+.trust-chip:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
 
 /* ======== RESPONSIVE ======== */
 @media (max-width: 768px) {

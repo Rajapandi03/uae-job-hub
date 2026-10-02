@@ -1262,6 +1262,13 @@ function App() {
                       <div className="csi-pct">{s.pct}%</div>
                     </div>
                   ))}
+                  <div className="combined-trust-chips">
+                    <span className="trust-chip">No fake jobs</span>
+                    <span className="trust-chip">Hourly sync</span>
+                    <span className="trust-chip">7-day purge</span>
+                    <span className="trust-chip">UAE-only</span>
+                    <span className="trust-chip">Free</span>
+                  </div>
                 </div>
 
               </div>
@@ -1322,7 +1329,7 @@ function App() {
                     <option value="24h">1 Day Ago (24h)</option>
                   </select>
                   {dbConnected && (
-                    <span className="filter-live-badge">â— Live from DB</span>
+                    <span className="filter-live-badge">• Live from DB</span>
                   )}
                 </div>
               </div>
@@ -1353,7 +1360,7 @@ function App() {
                     <div className="company-logo">{job.companyInitial}</div>
                     <div className="job-header">
                       <h3 className="job-title">{job.title}</h3>
-                      <div className="job-company">{job.company} â€¢ {job.industry}</div>
+                      <div className="job-company">{job.company} • {job.industry}</div>
                     </div>
                   </div>
 
@@ -1411,7 +1418,7 @@ function App() {
                     className="btn-outline"
                     onClick={() => setVisibleJobsCount(filteredJobs.length)}
                   >
-                    View All {filteredJobs.length} Jobs â†’
+                    View All {filteredJobs.length} Jobs →
                   </button>
                 </div>
               )}
@@ -1421,7 +1428,7 @@ function App() {
                     className="btn-outline"
                     onClick={() => setVisibleJobsCount(10)}
                   >
-                    Show Less â†‘
+                    Show Less ↑
                   </button>
                 </div>
               )}
@@ -1545,9 +1552,9 @@ function App() {
               <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse All Jobs</button>
             </div>
             <div className="final-cta-note">
-              <span style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500' }}>100% Free Forever â€¢ No Subscriptions â€¢ Built for Job Seekers</span>
+              <span style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500' }}>100% Free Forever • No Subscriptions • Built for Job Seekers</span>
               <div style={{ padding: '0.5rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'inline-block', maxWidth: '600px', lineHeight: '1.5' }}>
-                <span style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>ðŸ‘‹</span> 
+                <span style={{ fontSize: '1.2rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>👋</span> 
                 I built this platform completely free to help you land your dream role. If you get hired, <a href="https://www.linkedin.com/in/rajapandi6/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', borderBottom: '1px solid var(--primary)' }}>message me on LinkedIn</a> so I can celebrate with you! (Please report any website issues there too.)
               </div>
             </div>
@@ -1584,7 +1591,7 @@ function App() {
           </div>
           <div className="footer-col footer-newsletter">
             <h4>The Sunday Brief</h4>
-            <p>Your week in UAE AI â€” new roles, hiring trends, and one skill to learn. Free, every Sunday.</p>
+            <p>Your week in UAE AI — new roles, hiring trends, and one skill to learn. Free, every Sunday.</p>
             <div className="newsletter-form">
               <input type="email" placeholder="Your email" />
               <button><Send size={14} /></button>
