@@ -1331,9 +1331,6 @@ function App() {
             <div className="section-title">
               <h2>Latest AI Opportunities</h2>
               <p>Discover roles that match your expertise and aspirations</p>
-              {!loading && filteredJobs.length > 0 && (
-                <p className="swipe-hint">← Swipe to browse {filteredJobs.length} jobs →</p>
-              )}
             </div>
 
             {/* Global Search Bar */}
@@ -1489,9 +1486,9 @@ function App() {
                 <div className="btn-outline-center">
                   <button
                     className="btn-outline"
-                    onClick={() => setVisibleJobsCount(prev => prev + 20)}
+                    onClick={() => setVisibleJobsCount(filteredJobs.length)}
                   >
-                    Load More Jobs ({visibleJobsCount} of {filteredJobs.length}) →
+                    View All {filteredJobs.length} Jobs →
                   </button>
                 </div>
               )}
