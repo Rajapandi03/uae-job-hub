@@ -755,11 +755,14 @@ function App() {
     if (timeFilter !== 'all') {
       const now = new Date()
       const cutoff = new Date()
-      if (timeFilter === '24h') cutoff.setHours(now.getHours() - 24)
+      if (timeFilter === '1h') cutoff.setHours(now.getHours() - 1)
+      else if (timeFilter === '6h') cutoff.setHours(now.getHours() - 6)
+      else if (timeFilter === '12h') cutoff.setHours(now.getHours() - 12)
+      else if (timeFilter === '24h') cutoff.setHours(now.getHours() - 24)
       else if (timeFilter === '3d') cutoff.setDate(now.getDate() - 3)
 
       result = result.filter(j => {
-        const d = j.posted_at ? new Date(j.posted_at) : (j.first_seen ? new Date(j.first_seen) : null)
+        const d = j.first_seen ? new Date(j.first_seen) : (j.posted_at ? new Date(j.posted_at) : null)
         return d && d >= cutoff
       })
     }
@@ -1354,9 +1357,12 @@ function App() {
                     <option value="senior">Senior Level</option>
                   </select>
                   <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
-                    <option value="all">Last 7 Days (Max)</option>
-                    <option value="3d">3 Days Ago</option>
-                    <option value="24h">1 Day Ago (24h)</option>
+                    <option value="all">All (Last 7 Days)</option>
+                    <option value="1h">Last 1 Hour</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="12h">Last 12 Hours</option>
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="3d">Last 3 Days</option>
                   </select>
                   {dbConnected && (
                     <span className="filter-live-badge">• Live from DB</span>
