@@ -833,9 +833,12 @@ function App() {
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
         <div className="nav-actions">
-          <div className="nav-live-pill" title="Live data updated automatically">
-            <span className="live-dot" />
-            <span className="nav-live-count"><strong>{loading ? '...' : totalJobs}</strong> Live Jobs</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '0.8rem', color: '#9ca3af', fontWeight: '500' }}>Updated {lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</span>
+            <div className="nav-live-pill" title="Live data updated automatically">
+              <span className="live-dot" />
+              <span className="nav-live-count"><strong>{loading ? '...' : totalJobs}</strong> Live Jobs</span>
+            </div>
           </div>
         </div>
       </nav>
