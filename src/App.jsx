@@ -538,7 +538,7 @@ function App() {
           .gte('first_seen', cutoffISO)
           .order('posted_at', { ascending: false, nullsFirst: false })
           .order('first_seen', { ascending: false })
-          .limit(200)
+          .limit(1000)
 
         if (error) throw error
         if (data && data.length > 0) {
