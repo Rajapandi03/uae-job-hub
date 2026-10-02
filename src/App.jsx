@@ -695,7 +695,7 @@ function App() {
       }
     })
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
-    const toShow = showAllCompanies ? sorted : sorted.slice(0, 8)
+    const toShow = showAllCompanies ? sorted : sorted.slice(0, 10)
     return toShow
       .map(([name, count], i) => ({
         id: i + 1,
