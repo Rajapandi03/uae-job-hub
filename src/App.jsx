@@ -782,10 +782,11 @@ function App() {
       })
     }
 
-    // Always sort by newest first (highest timestamp)
+    // Always sort by newest first — prefer first_seen (exact scraper discovery time)
+    // over posted_at which is often a midnight timestamp from date-only scraper data
     result = [...result].sort((a, b) => {
-      const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
-      const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
+      const dateA = new Date(a.first_seen || a.posted_at || 0).getTime()
+      const dateB = new Date(b.first_seen || b.posted_at || 0).getTime()
       return dateB - dateA
     })
 
