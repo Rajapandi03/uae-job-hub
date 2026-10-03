@@ -19,16 +19,45 @@ from common import normalize_job, upsert_jobs, logger, is_relevant_tech_job, is_
 # Configuration
 # ---------------------------------------------------------------------------
 SEARCH_TERMS = [
+    # --- AI & Automation (Primary Focus) ---
     "AI engineer",
     "junior AI engineer",
     "AI intern",
+    "AI developer",
+    "AI architect",
+    "AI researcher",
+    "AI product manager",
+    "generative AI",
+    "GenAI engineer",
+    "LLM engineer",
+    "prompt engineer",
+    "machine learning engineer",
+    "junior machine learning engineer",
     "graduate machine learning",
-    "machine learning",
+    "deep learning engineer",
+    "NLP engineer",
+    "natural language processing",
+    "computer vision engineer",
+    "MLOps engineer",
+    "AI automation engineer",
+    "RPA developer",
+    "robotics engineer",
     "data scientist",
     "junior data scientist",
-    "generative AI developer",
+    "data analyst",
+    "data engineer",
+    "AI solutions architect",
+    "conversational AI",
+    "AI consultant",
+    # --- Other IT Jobs (Secondary) ---
     "python developer",
     "full stack developer",
+    "software engineer",
+    "cloud engineer",
+    "DevOps engineer",
+    "cybersecurity analyst",
+    "backend developer",
+    "frontend developer",
 ]
 
 LOCATIONS = ["Dubai", "Abu Dhabi", "Sharjah", "UAE"]

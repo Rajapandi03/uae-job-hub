@@ -29,13 +29,33 @@ def scrape_naukrigulf() -> list[dict]:
     """Scrape Naukrigulf UAE IT & AI jobs."""
     jobs = []
     search_terms = [
+        # AI & Automation (Primary)
         "AI+engineer",
         "junior+AI+engineer",
         "AI+intern",
-        "machine+learning",
+        "AI+developer",
+        "generative+AI",
+        "LLM+engineer",
+        "prompt+engineer",
+        "machine+learning+engineer",
+        "deep+learning",
+        "NLP+engineer",
+        "computer+vision",
+        "MLOps+engineer",
+        "AI+automation",
+        "RPA+developer",
         "data+scientist",
         "junior+data+scientist",
+        "data+engineer",
+        "data+analyst",
+        "AI+architect",
+        # IT Jobs (Secondary)
         "python+developer",
+        "software+engineer",
+        "cloud+engineer",
+        "DevOps+engineer",
+        "cybersecurity",
+        "full+stack+developer",
     ]
 
     try:
@@ -120,13 +140,33 @@ def scrape_gulftalent() -> list[dict]:
     """Scrape GulfTalent UAE IT & AI jobs."""
     jobs = []
     search_terms = [
+        # AI & Automation (Primary)
         "artificial-intelligence",
         "junior-ai-engineer",
         "ai-intern",
+        "ai-developer",
+        "generative-ai",
+        "llm-engineer",
+        "prompt-engineer",
         "machine-learning",
+        "deep-learning",
+        "nlp-engineer",
+        "computer-vision",
+        "mlops",
+        "ai-automation",
+        "rpa-developer",
         "data-science",
         "junior-data-scientist",
+        "data-engineer",
+        "data-analyst",
+        "ai-architect",
+        # IT Jobs (Secondary)
         "software-engineer",
+        "python-developer",
+        "cloud-engineer",
+        "devops-engineer",
+        "cybersecurity",
+        "full-stack-developer",
     ]
 
     try:

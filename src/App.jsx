@@ -726,10 +726,15 @@ function App() {
     const NON_UAE_URL_REGEX = /\/(pakistan|india|bangladesh|philippines|egypt|jordan|saudi|qatar|oman|kuwait|bahrain)\//i
     const NON_UAE_LOC_REGEX = /\b(pakistan|india|bangladesh|philippines|egypt|jordan|lebanon|saudi|qatar|oman|kuwait|bahrain|hyderabad|bengaluru|mumbai|delhi|karachi|lahore|islamabad|chennai|pune|gurgaon|noida)\b/i
 
+    // Non-IT job title blocklist (defense in depth - catches stale non-IT jobs in DB)
+    const NON_IT_TITLE_REGEX = /\b(nurse|doctor|pharmacist|dentist|physiotherapist|radiologist|surgeon|barista|waiter|waitress|cook|chef|housekeeper|cleaner|hotel manager|concierge|front desk agent|mason|plumber|electrician|carpenter|welder|painter|real estate|property consultant|leasing agent|sales agent|sales executive|sales representative|sales manager|business development manager|business development executive|marketing manager|marketing executive|brand manager|content writer|copywriter|social media manager|accountant|auditor|financial analyst|bookkeeper|tax consultant|hr manager|hr executive|recruiter|receptionist|cashier|office manager|personal assistant|executive assistant|office boy|admin assistant|secretary|legal counsel|paralegal|lawyer|security guard|storekeeper|warehouse manager|facilities manager|tailor|beautician|hair stylist|fashion designer|driver|delivery rider|mechanic|logistics coordinator|logistics manager|supply chain manager|procurement officer|teacher|tutor|nanny|lecturer|mechanical engineer|civil engineer|structural engineer|electrical engineer|field engineer|maintenance engineer|production engineer|manufacturing engineer|piping engineer|hvac engineer|instrumentation engineer|quantity surveyor|site engineer|process engineer|plant engineer|welding engineer|marine engineer|chemical engineer|petroleum engineer|safety engineer|quality inspector|drilling engineer|operations manager|store manager|retail manager|general manager)\b/i
+
     result = result.filter(j => {
       const u = (j.applyUrl || j.url || '').toLowerCase()
       const loc = (j.location || '').toLowerCase()
+      const title = (j.title || '').toLowerCase()
       if (NON_UAE_URL_REGEX.test(u) || NON_UAE_LOC_REGEX.test(loc)) return false
+      if (NON_IT_TITLE_REGEX.test(title)) return false
       return true
     })
 

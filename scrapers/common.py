@@ -71,16 +71,59 @@ def clean_location(loc_raw: str) -> str:
 # ---------------------------------------------------------------------------
 # Explicit non-tech roles to discard
 NON_TECH_BLOCKLIST = re.compile(
-    r'\b(nurse|doctor|pharmacist|barista|waiter|waitress|cook|chef|housekeeper|cleaner|mason|'
-    r'plumber|electrician|hvac|real estate|property consultant|leasing agent|sales agent|'
-    r'sales executive|sales representative|accountant|auditor|financial analyst|bookkeeper|'
-    r'hr manager|hr executive|recruiter|receptionist|cashier|security guard|storekeeper|'
-    r'tailor|driver|delivery rider|car washer|mechanic|carpenter|beautician|hair stylist|'
-    r'teacher|tutor|nanny|mechanical engineer|mechanical technician|civil engineer|'
+    r'\b('
+    # Healthcare & Medical
+    r'nurse|doctor|pharmacist|dentist|physiotherapist|lab technician|radiologist|'
+    r'medical officer|clinical|veterinarian|optometrist|surgeon|'
+    # Hospitality & Food Service
+    r'barista|waiter|waitress|cook|chef|housekeeper|cleaner|'
+    r'hotel manager|concierge|front desk agent|bell boy|room attendant|'
+    r'food and beverage|sommelier|banquet|pastry chef|sous chef|'
+    # Construction & Trades
+    r'mason|plumber|electrician|hvac|carpenter|welding|welder|painter|tiler|'
+    # Real Estate
+    r'real estate|property consultant|leasing agent|property manager|'
+    # Sales & Marketing (non-tech)
+    r'sales agent|sales executive|sales representative|sales manager|'
+    r'business development manager|business development executive|'
+    r'marketing manager|marketing executive|brand manager|'
+    r'content writer|copywriter|social media manager|public relations|'
+    r'digital marketing|media buyer|media planner|advertising manager|'
+    r'telesales|telemarketer|merchandiser|visual merchandiser|'
+    # Finance & Accounting (non-tech)
+    r'accountant|auditor|financial analyst|bookkeeper|'
+    r'tax consultant|compliance officer|treasury|investment analyst|'
+    r'credit analyst|loan officer|insurance agent|underwriter|'
+    # HR & Admin
+    r'hr manager|hr executive|recruiter|receptionist|cashier|'
+    r'office manager|personal assistant|executive assistant|office boy|'
+    r'admin assistant|administrative assistant|secretary|company secretary|'
+    # Legal
+    r'legal counsel|paralegal|legal assistant|lawyer|advocate|'
+    # Security & Facilities
+    r'security guard|storekeeper|warehouse manager|warehouse supervisor|'
+    r'facilities manager|janitor|steward|'
+    # Fashion & Beauty
+    r'tailor|beautician|hair stylist|fashion designer|stylist|'
+    # Transport & Logistics (non-tech)
+    r'driver|delivery rider|car washer|mechanic|'
+    r'logistics coordinator|logistics manager|supply chain manager|'
+    r'procurement officer|procurement manager|fleet manager|'
+    r'shipping coordinator|customs officer|freight|'
+    # Education (non-tech)
+    r'teacher|tutor|nanny|lecturer|academic coordinator|'
+    # Non-IT Engineering
+    r'mechanical engineer|mechanical technician|civil engineer|'
     r'structural engineer|electrical engineer|field engineer|maintenance engineer|'
     r'production engineer|manufacturing engineer|piping engineer|hvac engineer|'
     r'instrumentation engineer|geotechnical|quantity surveyor|site engineer|'
-    r'process engineer|plant engineer|welding engineer|marine engineer)\b',
+    r'process engineer|plant engineer|welding engineer|marine engineer|'
+    r'chemical engineer|petroleum engineer|safety engineer|quality inspector|'
+    r'drilling engineer|reservoir engineer|'
+    # Operations (non-tech)
+    r'operations manager|store manager|retail manager|retail assistant|'
+    r'general manager|area manager|regional manager'
+    r')\b',
     re.IGNORECASE
 )
 
