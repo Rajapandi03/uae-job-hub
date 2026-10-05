@@ -56,6 +56,10 @@ import {
   staticSalaries,
   staticNews,
 } from './data/jobs'
+import { parseResumeFile, getSavedResume, saveResumeState, clearSavedResume } from './components/resume/ResumeParser.js'
+import { useJobMatcher } from './matching/useJobMatcher.js'
+import { ResumeStrip } from './components/resume/ResumeStrip.jsx'
+import { JobDetailDrawer } from './components/jobs/JobDetailDrawer.jsx'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -255,13 +259,31 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [refreshed, setRefreshed] = useState(false)
 
+  // State for Resume Upload & Matching Engine (key: hini_resume_v1)
+  const [resumeData, setResumeData] = useState(() => getSavedResume())
+  const [sortOption, setSortOption] = useState(() => (getSavedResume() ? 'best' : 'newest'))
+  const [showWeakerMatches, setShowWeakerMatches] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+
+  // State for Job Details & ATS Match Drawer
+  const [drawerJob, setDrawerJob] = useState(null)
+  const [drawerScoreData, setDrawerScoreData] = useState(null)
+  const [drawerTab, setDrawerTab] = useState('description')
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+  const openJobDrawer = (job, scoreData = null, tab = 'description') => {
+    setDrawerJob(job)
+    setDrawerScoreData(scoreData)
+    setDrawerTab(tab)
+    setIsDrawerOpen(true)
+  }
+
   // State for AI Career Assistant Chatbot
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [groqApiKey, setGroqApiKey] = useState(() => localStorage.getItem('groq_api_key') || '')
   const [showSettings, setShowSettings] = useState(false)
   const [chatInput, setChatInput] = useState('')
-  const [userResumeText, setUserResumeText] = useState(() => localStorage.getItem('hini_user_resume') || '')
-  const [resumeFileName, setResumeFileName] = useState(() => localStorage.getItem('hini_resume_filename') || '')
   const [isAiThinking, setIsAiThinking] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -269,107 +291,71 @@ function App() {
     {
       id: 1,
       sender: 'bot',
-      text: "👋 Welcome to **Hini Career AI**! Upload your CV/Resume file below (`.pdf`, `.docx`, `.txt`) or paste your CV text. I will analyze your skills against all live UAE AI & Tech jobs and provide genuine ATS match scores!",
+      text: resumeData
+        ? `👋 Welcome back! I detected **${resumeData.skills.length} skills** in your resume \`${resumeData.fileName}\`. Click **"Show my best jobs"** below to see your top recommendations!`
+        : "👋 Welcome to **Hini Career AI**! Upload your CV/Resume file (`.pdf`, `.docx`, `.txt`) to instantly rank all live UAE jobs by your skill match score!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ])
   const chatMessagesEndRef = useRef(null)
 
-  // Curated list of tech & AI keywords for genuine ATS analysis
-  const TECH_KEYWORDS = useMemo(() => [
-    'python', 'javascript', 'typescript', 'react', 'next.js', 'vue', 'angular', 'node.js', 'express',
-    'java', 'c++', 'c#', '.net', 'golang', 'rust', 'php', 'sql', 'postgresql', 'mongodb', 'redis',
-    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'ci/cd', 'devops', 'linux',
-    'machine learning', 'deep learning', 'artificial intelligence', 'tensorflow', 'pytorch',
-    'nlp', 'computer vision', 'llm', 'generative ai', 'prompt engineering', 'rag', 'langchain',
-    'data engineering', 'data science', 'data analytics', 'pandas', 'spark', 'hadoop', 'tableau',
-    'power bi', 'cybersecurity', 'siem', 'soc', 'penetration testing', 'agile', 'scrum', 'git', 'rest api', 'graphql',
-    'security', 'compliance', 'solutions architect', 'cloud', 'security engineer', 'risk', 'network'
-  ], [])
-
-  const extractSkillsFromText = useCallback((text) => {
-    if (!text || !text.trim()) return []
-    const lower = text.toLowerCase()
-    return TECH_KEYWORDS.filter(kw => lower.includes(kw))
-  }, [TECH_KEYWORDS])
-
-  const calculateAtsScoreAndSkills = useCallback((resumeText, job) => {
-    if (!resumeText || !resumeText.trim()) {
-      return { atsScore: 0, matchedSkills: [], missingSkills: [] }
-    }
-
-    const candidateSkills = extractSkillsFromText(resumeText)
-    const jobFullText = (job.title + ' ' + (job.company || '') + ' ' + (job.description || '') + ' ' + (job.tags ? job.tags.join(' ') : '')).toLowerCase()
-    const jobRequiredSkills = TECH_KEYWORDS.filter(kw => jobFullText.includes(kw))
-
-    if (jobRequiredSkills.length === 0) {
-      const titleTokens = job.title.toLowerCase().split(/\W+/).filter(w => w.length > 3)
-      const matched = titleTokens.filter(t => resumeText.toLowerCase().includes(t))
-      const score = Math.min(92, Math.max(30, Math.round((matched.length / Math.max(titleTokens.length, 1)) * 100)))
-      return { atsScore: score, matchedSkills: matched, missingSkills: titleTokens.filter(t => !matched.includes(t)) }
-    }
-
-    const matched = candidateSkills.filter(s => jobRequiredSkills.includes(s))
-    const missing = jobRequiredSkills.filter(s => !candidateSkills.includes(s))
-    const score = Math.min(98, Math.max(20, Math.round((matched.length / Math.max(jobRequiredSkills.length, 1)) * 100)))
-
-    return { atsScore: score, matchedSkills: matched, missingSkills: missing }
-  }, [extractSkillsFromText, TECH_KEYWORDS])
-
-  const findBestJobMatches = useCallback((resumeText, jobsList, limit = 5) => {
-    if (!jobsList || jobsList.length === 0 || !resumeText || !resumeText.trim()) return []
-
-    const scored = jobsList.map(j => {
-      const { atsScore, matchedSkills, missingSkills } = calculateAtsScoreAndSkills(resumeText, j)
-      return {
-        ...j,
-        atsScore,
-        matchedSkills,
-        missingSkills
-      }
-    })
-
-    scored.sort((a, b) => b.atsScore - a.atsScore)
-    return scored.slice(0, limit)
-  }, [calculateAtsScoreAndSkills])
-
-  // Real File Upload Handler
-  const handleFileUpload = (e) => {
+  // Real File Upload Handler using pdfjs-dist / mammoth / text
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const name = file.name
-    setResumeFileName(name)
-    localStorage.setItem('hini_resume_filename', name)
+    setIsUploading(true)
+    setUploadError('')
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const rawText = event.target?.result || ''
-      const cleaned = String(rawText).replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-      setUserResumeText(cleaned)
-      localStorage.setItem('hini_user_resume', cleaned)
+    try {
+      const parsedData = await parseResumeFile(file)
+      setResumeData(parsedData)
+      setSortOption('best')
 
-      const skillsFound = extractSkillsFromText(cleaned)
-      const uploadSuccessMsg = {
+      const successMsg = {
         id: Date.now(),
         sender: 'bot',
-        text: `✅ **CV Uploaded Successfully!**\n📄 **Filename**: \`${name}\`\n🧠 **Extracted Skills**: ${skillsFound.length > 0 ? skillsFound.slice(0, 8).map(s => `\`${s}\``).join(', ') : 'General Profile'}\n\nNow click **"🎯 Best ATS Matches"** to calculate your genuine compatibility score across 900+ UAE jobs!`,
+        text: `✅ **Resume Uploaded & Parsed Successfully!**\n📄 **File**: \`${parsedData.fileName}\`\n🧠 **Detected Skills (${parsedData.skills.length})**: ${parsedData.skills.map(s => `\`${s}\``).join(', ')}\n\nYour job feed below has been re-ordered by your highest ATS match score!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
-      setChatMessages(prev => [...prev, uploadSuccessMsg])
+      setChatMessages(prev => [...prev, successMsg])
+    } catch (err) {
+      console.error('Upload error:', err)
+      const errorMsg = err.message || 'Failed to parse resume file.'
+      setUploadError(errorMsg)
+
+      setChatMessages(prev => [...prev, {
+        id: Date.now(),
+        sender: 'bot',
+        text: `❌ **Resume Parsing Error**: ${errorMsg}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }])
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
-    reader.readAsText(file)
   }
 
+  // Update Skills in Resume Strip
+  const handleUpdateSkills = (newSkills) => {
+    if (!resumeData) return
+    const updatedData = {
+      ...resumeData,
+      skills: newSkills
+    }
+    saveResumeState(updatedData)
+    setResumeData(updatedData)
+  }
+
+  // Clear Resume Handler
   const handleClearResume = () => {
-    setUserResumeText('')
-    setResumeFileName('')
-    localStorage.removeItem('hini_user_resume')
-    localStorage.removeItem('hini_resume_filename')
+    clearSavedResume()
+    setResumeData(null)
+    setSortOption('newest')
     setChatMessages(prev => [...prev, {
       id: Date.now(),
       sender: 'bot',
-      text: "🗑️ **Resume cleared.** Upload or paste a new CV to start ATS matching.",
+      text: "🗑️ **Resume cleared.** Upload a new CV file to calculate ATS match scores.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }])
   }
@@ -972,7 +958,7 @@ function App() {
     if (diffMins <= 10) return { label: `🔥 ${diffMins}m ago • Very Fresh`, class: 'badge-very-fresh', mins: diffMins }
     if (diffMins <= 30) return { label: `🟢 ${diffMins}m ago • Fresh`, class: 'badge-fresh', mins: diffMins }
     if (diffMins <= 60) return { label: `🔵 ${diffMins}m ago • Recent`, class: 'badge-recent', mins: diffMins }
-    
+
     const hrs = Math.floor(diffMins / 60)
     if (hrs < 24) return { label: `⚪ ${hrs}h ago`, class: 'badge-today', mins: diffMins }
     return { label: '⚪ Today', class: 'badge-today', mins: diffMins }
@@ -1077,7 +1063,36 @@ function App() {
       }))
   }, [allJobs, dbConnected, showAllCompanies])
 
-  // Apply job filters
+  // Web Worker Background Job Scoring Hook
+  const candidateSkills = useMemo(() => resumeData?.skills || [], [resumeData])
+  const { scores: jobScores, loading: isScoring } = useJobMatcher(candidateSkills, allJobs)
+
+  // Compute Tier Counts for active candidate resume
+  const tierCounts = useMemo(() => {
+    const counts = { Strong: 0, Good: 0, Stretch: 0, Weak: 0 }
+    if (!resumeData || !jobScores) return counts
+
+    Object.values(jobScores).forEach(scoreData => {
+      if (scoreData && scoreData.tier && counts[scoreData.tier] !== undefined) {
+        counts[scoreData.tier]++
+      }
+    })
+    return counts
+  }, [resumeData, jobScores])
+
+  // Top 3 Best Job Matches for highlight row
+  const topMatches = useMemo(() => {
+    if (!resumeData || !jobScores || allJobs.length === 0) return []
+    const list = allJobs.map(job => ({
+      job,
+      scoreData: jobScores[job.id]
+    })).filter(item => item.scoreData && item.scoreData.score !== null && item.scoreData.score >= 40)
+
+    list.sort((a, b) => (b.scoreData.score || 0) - (a.scoreData.score || 0))
+    return list.slice(0, 3)
+  }, [resumeData, jobScores, allJobs])
+
+  // Apply job filters and sorting
   const filteredJobs = useMemo(() => {
     let result = allJobs
 
@@ -1126,12 +1141,10 @@ function App() {
       else if (timeFilter === '3d') cutoff.setTime(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
       result = result.filter(j => {
-        // Use the best available date: prefer non-midnight posted_at, else first_seen
         let bestD = null
         if (j.posted_at) {
           const pa = new Date(j.posted_at)
           if (!isNaN(pa.getTime())) {
-            // Check if it's a midnight timestamp (date-only from scraper)
             const isMidnight = pa.getUTCHours() === 0 && pa.getUTCMinutes() === 0 && pa.getUTCSeconds() === 0
             if (!isMidnight) {
               bestD = pa
@@ -1143,7 +1156,7 @@ function App() {
           if (!isNaN(fs.getTime())) bestD = fs
         }
         if (!bestD && j.posted_at) {
-          bestD = new Date(j.posted_at) // fallback to midnight posted_at
+          bestD = new Date(j.posted_at)
         }
         return bestD && bestD >= cutoff
       })
@@ -1167,16 +1180,33 @@ function App() {
       })
     }
 
-    // Always sort by newest first — prefer first_seen (exact scraper discovery time)
-    // over posted_at which is often a midnight timestamp from date-only scraper data
+    // Filter weak matches (<40) if resume is active and switch is off
+    if (resumeData && !showWeakerMatches) {
+      result = result.filter(j => {
+        const sData = jobScores[j.id]
+        return !sData || sData.score === null || sData.score >= 40
+      })
+    }
+
+    // Sort jobs based on sortOption
     result = [...result].sort((a, b) => {
-      const dateA = new Date(a.first_seen || a.posted_at || 0).getTime()
-      const dateB = new Date(b.first_seen || b.posted_at || 0).getTime()
-      return dateB - dateA
+      if (sortOption === 'best' && resumeData) {
+        const scoreA = jobScores[a.id]?.score || 0
+        const scoreB = jobScores[b.id]?.score || 0
+        return scoreB - scoreA
+      } else if (sortOption === 'salary') {
+        const salA = parseFloat(a.price_text || a.salary || 0) || 0
+        const salB = parseFloat(b.price_text || b.salary || 0) || 0
+        return salB - salA
+      } else {
+        const dateA = new Date(a.first_seen || a.posted_at || 0).getTime()
+        const dateB = new Date(b.first_seen || b.posted_at || 0).getTime()
+        return dateB - dateA
+      }
     })
 
     return result
-  }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
+  }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter, resumeData, jobScores, sortOption, showWeakerMatches])
 
   useEffect(() => {
     setVisibleJobsCount(10)
@@ -1301,7 +1331,26 @@ function App() {
           <a href="/events" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('events') }}>Events</a>
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
-        <div className="nav-actions">
+        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+              color: '#ffffff',
+              padding: '0.45rem 0.95rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: '700',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 3px 10px rgba(79, 70, 229, 0.3)'
+            }}
+          >
+            <Upload size={14} /> {resumeData ? 'Replace Resume' : 'Upload Resume'}
+          </button>
           <div className="nav-live-pill" title="Live data updated automatically" style={{ gap: '0.4rem', padding: '0.35rem 0.75rem' }}>
             <span className="live-dot" />
             <span className="nav-live-count" style={{ fontWeight: '500' }}>Updated {lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</span>
@@ -1692,6 +1741,177 @@ function App() {
 
 
 
+          {/* Hidden File Input for Resume Upload */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".pdf,.docx,.txt"
+            style={{ display: 'none' }}
+          />
+
+          {/* ===== HOMEPAGE RESUME STRIP & UPLOAD CARD ===== */}
+          {resumeData ? (
+            <ResumeStrip
+              resumeData={resumeData}
+              onUpdateSkills={handleUpdateSkills}
+              onReplaceResume={() => fileInputRef.current?.click()}
+              onRemoveResume={handleClearResume}
+              tierCounts={tierCounts}
+            />
+          ) : (
+            <section className="homepage-resume-section" style={{ maxWidth: '1200px', margin: '1rem auto', padding: '0 1.25rem' }}>
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                padding: '1.25rem 1.75rem',
+                color: 'var(--text-main)',
+                boxShadow: '0 4px 20px rgba(79, 70, 229, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03)',
+                border: '1px solid #e0e7ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1.25rem',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3.5px', background: 'linear-gradient(90deg, #4f46e5 0%, #9333ea 50%, #10b981 100%)' }} />
+
+                {/* Left Info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: '1 1 320px' }}>
+                  <div style={{ background: '#e0e7ff', padding: '0.6rem', borderRadius: '12px', display: 'flex', color: '#4338ca', shrink: 0 }}>
+                    <Sparkles size={22} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: '#0f172a' }}>
+                        Instant AI Resume Matcher
+                      </h3>
+                      <span style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', fontSize: '0.72rem', fontWeight: '800', padding: '0.15rem 0.6rem', borderRadius: '12px' }}>
+                        ATS Scoring Engine
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0.15rem 0 0 0', fontWeight: '500' }}>
+                      Upload CV to score & rank all 900+ live UAE AI & Tech roles by your skill match.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Compact Upload Button */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: '1.5px dashed #818cf8',
+                    borderRadius: '12px',
+                    padding: '0.65rem 1.25rem',
+                    background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.05)'
+                  }}
+                  className="hover:border-indigo-600 transition"
+                >
+                  <Upload size={20} style={{ color: '#4f46e5' }} />
+                  <div style={{ textAlign: 'left' }}>
+                    <span style={{ fontWeight: '800', fontSize: '0.88rem', color: '#0f172a', display: 'block' }}>
+                      {isUploading ? 'Parsing Resume...' : 'Upload CV / Resume'}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: '600' }}>
+                      Supports PDF, DOCX, TXT
+                    </span>
+                  </div>
+                </div>
+
+                {uploadError && (
+                  <div style={{ width: '100%', marginTop: '0.25rem', background: '#fef2f2', border: '1px solid #fecaca', padding: '0.5rem 0.85rem', borderRadius: '8px', color: '#dc2626', fontSize: '0.8rem', textAlign: 'center', fontWeight: '600' }}>
+                    ⚠️ {uploadError}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ===== TOP 3 MATCHES ROW ===== */}
+          {resumeData && topMatches.length > 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 my-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
+                  <Sparkles size={18} />
+                </div>
+                <h2 className="font-extrabold text-xl text-slate-900 tracking-tight">Top Matches For You</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold border border-indigo-200">
+                  Highest ATS Compatibility
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {topMatches.map(({ job, scoreData }) => (
+                  <div
+                    key={job.id}
+                    onClick={(e) => {
+                      if (e.target.closest('button') || e.target.closest('a')) return
+                      openJobDrawer(job, scoreData, 'description')
+                    }}
+                    className="bg-white rounded-2xl p-5 text-slate-900 border border-indigo-100/80 shadow-md shadow-indigo-950/5 hover:border-indigo-300 transition-all flex flex-col justify-between relative overflow-hidden group cursor-pointer"
+                  >
+                    {/* Top gradient accent */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-indigo-500 to-purple-500 opacity-80" />
+
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
+                            {scoreData.tier} Match ({scoreData.score}%)
+                          </span>
+                          <h3 className="font-extrabold text-base mt-2.5 text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition">{job.title}</h3>
+                          <p className="text-xs text-slate-500 font-semibold mt-0.5">{job.company} • {job.location}</p>
+                        </div>
+                        <div className="w-12 h-12 rounded-full border-2 border-emerald-500 flex items-center justify-center bg-emerald-50 text-emerald-700 font-black text-sm shrink-0 shadow-xs">
+                          {scoreData.score}%
+                        </div>
+                      </div>
+
+                      <div className="my-3 pt-3 border-t border-slate-100">
+                        <div className="flex flex-wrap gap-1">
+                          {scoreData.matched.slice(0, 3).map(skill => (
+                            <span key={skill} className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-md">
+                              ✓ {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openJobDrawer(job, scoreData, 'ats')
+                        }}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center gap-1"
+                      >
+                        Why match?
+                      </button>
+
+                      <a
+                        href={job.applyUrl || job.url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 transition shadow-xs"
+                      >
+                        Apply <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* ===== LATEST JOBS ===== */}
           <section className="section-jobs" id="jobs-section">
             <div className="section-title">
@@ -1723,37 +1943,95 @@ function App() {
               </select>
             </div>
 
-            {/* Filter bar */}
-            {dbConnected && (
-              <div className="filter-bar">
-                <div className="filter-group">
-                  <Filter size={16} />
-                  <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
-                    <option value="all">All Sources</option>
-                    {availableSources.map(s => (
-                      <option key={s} value={s}>{sourceLabel(s)}</option>
-                    ))}
-                  </select>
-                  <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
-                    <option value="all">All Levels</option>
-                    <option value="fresher">Fresher</option>
-                    <option value="mid">Mid Level</option>
-                    <option value="senior">Senior Level</option>
-                  </select>
-                  <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
-                    <option value="all">All (Last 7 Days)</option>
-                    <option value="1h">Last 1 Hour</option>
-                    <option value="6h">Last 6 Hours</option>
-                    <option value="12h">Last 12 Hours</option>
-                    <option value="24h">Last 24 Hours</option>
-                    <option value="3d">Last 3 Days</option>
-                  </select>
-                  {dbConnected && (
-                    <span className="filter-live-badge">• Live from DB</span>
-                  )}
+            {/* Filter & Sort Bar */}
+            <div className="filter-bar" style={{ flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between' }}>
+              <div className="filter-group">
+                <Filter size={16} />
+                <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+                  <option value="all">All Sources</option>
+                  {availableSources.map(s => (
+                    <option key={s} value={s}>{sourceLabel(s)}</option>
+                  ))}
+                </select>
+                <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
+                  <option value="all">All Levels</option>
+                  <option value="fresher">Fresher</option>
+                  <option value="mid">Mid Level</option>
+                  <option value="senior">Senior Level</option>
+                </select>
+                <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
+                  <option value="all">All (Last 7 Days)</option>
+                  <option value="1h">Last 1 Hour</option>
+                  <option value="6h">Last 6 Hours</option>
+                  <option value="12h">Last 12 Hours</option>
+                  <option value="24h">Last 24 Hours</option>
+                  <option value="3d">Last 3 Days</option>
+                </select>
+              </div>
+
+              {/* Sort Controls & Weaker Matches Switch */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {resumeData && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showWeakerMatches}
+                      onChange={(e) => setShowWeakerMatches(e.target.checked)}
+                      style={{ borderRadius: '4px', cursor: 'pointer' }}
+                    />
+                    Show weaker matches (&lt;40)
+                  </label>
+                )}
+
+                <div style={{ display: 'flex', background: 'var(--bg-secondary, #f1f5f9)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <button
+                    onClick={() => setSortOption('best')}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: '700',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: sortOption === 'best' ? '#4f46e5' : 'transparent',
+                      color: sortOption === 'best' ? '#ffffff' : 'var(--text-muted)'
+                    }}
+                  >
+                    Best Match
+                  </button>
+                  <button
+                    onClick={() => setSortOption('newest')}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: '700',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: sortOption === 'newest' ? '#4f46e5' : 'transparent',
+                      color: sortOption === 'newest' ? '#ffffff' : 'var(--text-muted)'
+                    }}
+                  >
+                    Newest
+                  </button>
+                  <button
+                    onClick={() => setSortOption('salary')}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: '700',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: sortOption === 'salary' ? '#4f46e5' : 'transparent',
+                      color: sortOption === 'salary' ? '#ffffff' : 'var(--text-muted)'
+                    }}
+                  >
+                    Salary
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Scrollable Jobs Container */}
             <div className={`jobs-scroll-wrapper ${showAllJobs ? 'expanded' : ''}`}>
@@ -1798,79 +2076,210 @@ function App() {
                 )}
 
                 {/* Job Cards */}
-                {!loading && (showAllJobs ? filteredJobs : filteredJobs.slice(0, visibleJobsCount)).map((job) => (
-                  <div className="job-card" key={job.id}>
-                    <div className="job-card-top">
-                      <div className="company-logo">{job.companyInitial}</div>
-                      <div className="job-header">
-                        <h3 className="job-title">{job.title}</h3>
-                        <div className="job-company">{job.company} • {job.industry}</div>
-                      </div>
-                    </div>
+                {!loading && (showAllJobs ? filteredJobs : filteredJobs.slice(0, visibleJobsCount)).map((job) => {
+                  const scoreData = resumeData ? jobScores[job.id] : null
 
-                    <div className="job-details">
-                      <div className="job-meta">
-                        <div className="meta-item"><MapPin size={14} /> {job.location}</div>
-                        {job.source && (
-                          <div className="meta-item">
-                            <span className={`source-badge source-${job.source}`}>
-                              {sourceLabel(job.source)}
+                  return (
+                    <div className="job-card group hover:border-indigo-400 transition-all cursor-pointer" key={job.id}>
+                      <div
+                        className="job-card-top"
+                        style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
+                        onClick={(e) => {
+                          if (e.target.closest('button') || e.target.closest('a')) return
+                          openJobDrawer(job, scoreData, 'description')
+                        }}
+                      >
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                          <div className="company-logo">{job.companyInitial}</div>
+                          <div className="job-header">
+                            <h3 className="job-title group-hover:text-indigo-600 transition-colors" style={{ cursor: 'pointer' }}>{job.title}</h3>
+                            <div className="job-company">{job.company} • {job.industry}</div>
+                          </div>
+                        </div>
+
+                        {/* Match Score Badge / Ring */}
+                        {resumeData ? (
+                          scoreData && scoreData.score !== null ? (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openJobDrawer(job, scoreData, 'ats')
+                              }}
+                              title="Click to view ATS score breakdown"
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <div style={{
+                                width: '46px',
+                                height: '46px',
+                                borderRadius: '50%',
+                                border: `2.5px solid ${
+                                  scoreData.tier === 'Strong' ? '#10b981' :
+                                  scoreData.tier === 'Good' ? '#6366f1' :
+                                  scoreData.tier === 'Stretch' ? '#f59e0b' : '#94a3b8'
+                                }`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: '900',
+                                fontSize: '0.88rem',
+                                color: scoreData.tier === 'Strong' ? '#047857' :
+                                       scoreData.tier === 'Good' ? '#4338ca' :
+                                       scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
+                                background: scoreData.tier === 'Strong' ? '#ecfdf5' :
+                                            scoreData.tier === 'Good' ? '#eef2ff' :
+                                            scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
+                                boxShadow: `0 3px 10px ${
+                                  scoreData.tier === 'Strong' ? 'rgba(16, 185, 129, 0.18)' :
+                                  scoreData.tier === 'Good' ? 'rgba(99, 102, 241, 0.18)' :
+                                  scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.18)' : 'rgba(0, 0, 0, 0.05)'
+                                }`
+                              }}>
+                                {scoreData.score}%
+                              </div>
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: '800',
+                                marginTop: '0.25rem',
+                                color: scoreData.tier === 'Strong' ? '#059669' :
+                                       scoreData.tier === 'Good' ? '#4f46e5' :
+                                       scoreData.tier === 'Stretch' ? '#d97706' : '#64748b'
+                              }}>
+                                {scoreData.tier}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: '#64748b', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                              Not enough data
                             </span>
+                          )
+                        ) : null}
+                      </div>
+
+                      <div
+                        className="job-details"
+                        onClick={(e) => {
+                          if (e.target.closest('button') || e.target.closest('a')) return
+                          openJobDrawer(job, scoreData, 'description')
+                        }}
+                      >
+                        <div className="job-meta">
+                          <div className="meta-item"><MapPin size={14} /> {job.location}</div>
+                          {job.source && (
+                            <div className="meta-item">
+                              <span className={`source-badge source-${job.source}`}>
+                                {sourceLabel(job.source)}
+                              </span>
+                            </div>
+                          )}
+                          {job.postedDate && (
+                            <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
+                          )}
+                        </div>
+
+                        {job.description && (
+                          <p className="job-desc" style={{ cursor: 'pointer' }}>
+                            {job.description.replace(/\*\*/g, '').substring(0, 200)}...
+                          </p>
+                        )}
+
+                        {/* Skills breakdown pills if resume active */}
+                        {resumeData && scoreData && (
+                          <div style={{ margin: '0.75rem 0', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                            {scoreData.matched && scoreData.matched.map(skill => (
+                              <span key={skill} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
+                                ✓ {skill}
+                              </span>
+                            ))}
+                            {scoreData.missing && scoreData.missing.slice(0, 3).map(skill => (
+                              <span key={skill} style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
+                                + {skill}
+                              </span>
+                            ))}
                           </div>
                         )}
-                        {job.postedDate && (
-                          <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
+
+                        {job.tags && job.tags.length > 0 && !resumeData && (
+                          <div className="job-tags">
+                            {job.tags.map((tag, i) => (
+                              <span className="tag" key={i}>{tag}</span>
+                            ))}
+                          </div>
                         )}
-                      </div>
 
-                      {job.description && (
-                        <p className="job-desc">
-                          {job.description.replace(/\*\*/g, '').substring(0, 200)}...
-                        </p>
-                      )}
-
-                      {job.tags && job.tags.length > 0 && (
-                        <div className="job-tags">
-                          {job.tags.map((tag, i) => (
-                            <span className="tag" key={i}>{tag}</span>
-                          ))}
+                        <div className="job-card-footer">
+                          <div className="job-social-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button
+                              className={`icon-btn ${savedJobIds.includes(job.id) ? 'saved' : ''}`}
+                              title={savedJobIds.includes(job.id) ? "Unsave Job" : "Save Job"}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleSaveJob(job.id)
+                              }}
+                              style={{ color: savedJobIds.includes(job.id) ? '#ef4444' : undefined }}
+                            >
+                              <Heart size={18} fill={savedJobIds.includes(job.id) ? '#ef4444' : 'none'} />
+                            </button>
+                            <button
+                              className="icon-btn whatsapp"
+                              title="Share on WhatsApp"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const text = `Check out this job opportunity in UAE: ${job.title} at ${job.company}\n${job.applyUrl || job.url || ''}`
+                                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
+                              }}
+                            >
+                              <MessageCircle size={18} />
+                            </button>
+                          </div>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setDrawerJob(job)
+                                setDrawerScoreData(scoreData)
+                                setIsDrawerOpen(true)
+                              }}
+                              style={{
+                                background: '#eef2ff',
+                                border: '1px solid #c7d2fe',
+                                color: '#4338ca',
+                                fontSize: '0.78rem',
+                                fontWeight: '700',
+                                padding: '0.45rem 0.75rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                transition: 'all 0.15s ease'
+                              }}
+                              className="hover:bg-indigo-100"
+                              title="Click to view full job description and ATS match"
+                            >
+                              <FileText size={14} /> Description & ATS
+                            </button>
+                            <a
+                              href={job.applyUrl || job.url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-apply"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {job.source ? applyLabel(job.source) : 'Apply Now'}
+                              <ExternalLink size={14} style={{ marginLeft: 4 }} />
+                            </a>
+                          </div>
                         </div>
-                      )}
-
-                      <div className="job-card-footer">
-                        <div className="job-social-actions">
-                          <button
-                            className={`icon-btn ${savedJobIds.includes(job.id) ? 'saved' : ''}`}
-                            title={savedJobIds.includes(job.id) ? "Unsave Job" : "Save Job"}
-                            onClick={() => toggleSaveJob(job.id)}
-                            style={{ color: savedJobIds.includes(job.id) ? '#ef4444' : undefined }}
-                          >
-                            <Heart size={18} fill={savedJobIds.includes(job.id) ? '#ef4444' : 'none'} />
-                          </button>
-                          <button
-                            className="icon-btn whatsapp"
-                            title="Share on WhatsApp"
-                            onClick={() => {
-                              const text = `Check out this job opportunity in UAE: ${job.title} at ${job.company}\n${job.applyUrl || job.url || ''}`
-                              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
-                            }}
-                          >
-                            <MessageCircle size={18} />
-                          </button>
-                        </div>
-                        <a
-                          href={job.applyUrl || job.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-apply"
-                        >
-                          {job.source ? applyLabel(job.source) : 'Apply Now'}
-                          <ExternalLink size={14} style={{ marginLeft: 4 }} />
-                        </a>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* "Back to Top" button inside scrollable area */}
                 {showAllJobs && filteredJobs.length > 10 && (
@@ -2506,6 +2915,18 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Job Description & ATS Resume Match Side Drawer */}
+      <JobDetailDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        job={drawerJob}
+        initialTab={drawerTab}
+        resumeData={resumeData}
+        savedJobIds={savedJobIds}
+        onToggleSaveJob={toggleSaveJob}
+        onFileUpload={handleFileUpload}
+      />
 
     </div>
   )
