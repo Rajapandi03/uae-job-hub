@@ -146,6 +146,28 @@ function eventTypeLabel(type) {
   return map[type] || type
 }
 
+// Filter out non-job titles (dictionary definitions, Wikipedia pages, W3Schools tutorials, download pages)
+const INVALID_JOB_TITLE_REGEX = /\b(definition|meaning|tutorial|download|downloads|wikipedia|w3schools|geeksforgeeks|dictionary|what is|how it works|documentation|guides|merriam-webster|cheat sheet|course|learn|faq|overview|basics|introduction to|lesson|types and how)\b/i
+
+function isValidJob(job) {
+  if (!job || !job.title) return false
+  const title = String(job.title).toLowerCase().trim()
+  const comp = String(job.company || '').toLowerCase().trim()
+
+  if (INVALID_JOB_TITLE_REGEX.test(title)) return false
+
+  if (comp.includes('merriam-webster') || comp.includes('w3schools') || comp.includes('wikipedia') || comp.includes('geeksforgeeks') || comp.includes('mech lesson') || comp.includes('scientific american')) {
+    return false
+  }
+
+  // Pure standalone keywords without job indicators
+  if (['artificial intelligence', 'data', 'generative ai', 'java'].includes(title)) {
+    return false
+  }
+
+  return true
+}
+
 // ---------------------------------------------------------------------------
 // Map DB job to card-friendly format
 // ---------------------------------------------------------------------------
@@ -154,13 +176,9 @@ function mapDbJob(job) {
   const title = (job.title && job.title !== 'None' && job.title !== 'nan') ? String(job.title).trim() : 'AI / Tech Specialist'
   const loc = (job.location && job.location !== 'None' && job.location !== 'nan') ? String(job.location).trim() : 'Dubai, UAE'
 
-  // Prefer first_seen over date-only posted_at (midnight timestamps from scrapers)
-  // Date-only posted_at values (e.g. "2026-10-02" → midnight) produce wildly inaccurate
-  // "X hours ago" labels. first_seen is when our scraper actually discovered the job.
   let bestDate = job.posted_at
   if (bestDate) {
     const d = new Date(bestDate)
-    // Detect midnight timestamps (date-only values from scrapers)
     if (!isNaN(d.getTime()) && d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && job.first_seen) {
       bestDate = job.first_seen
     }
@@ -883,7 +901,8 @@ function App() {
 
       if (error) throw error
       if (data && data.length > 0) {
-        setLiveJobs(data.map(mapDbJob))
+        const validData = data.filter(isValidJob)
+        setLiveJobs(validData.map(mapDbJob))
         setDbConnected(true)
         // Track the newest job's first_seen as "last updated"
         const newest = data.reduce((a, b) => ((a.first_seen || '') > (b.first_seen || '') ? a : b), data[0])

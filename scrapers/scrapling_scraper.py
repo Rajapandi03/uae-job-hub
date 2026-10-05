@@ -145,6 +145,11 @@ def scrape_naukrigulf() -> list[dict]:
                         for r in results:
                             raw_title = r.get("title", "")
                             job_url = r.get("href", "")
+
+                            # Domain protection: MUST be on naukrigulf.com
+                            if "naukrigulf.com" not in job_url.lower():
+                                continue
+
                             if " - " in raw_title:
                                 parts = raw_title.split(" - ")
                                 title = parts[0].strip()
@@ -277,6 +282,11 @@ def scrape_gulftalent() -> list[dict]:
                         for r in results:
                             raw_title = r.get("title", "")
                             job_url = r.get("href", "")
+
+                            # Domain protection: MUST be on gulftalent.com
+                            if "gulftalent.com" not in job_url.lower():
+                                continue
+
                             if " - " in raw_title:
                                 parts = raw_title.split(" - ")
                                 title = parts[0].strip()

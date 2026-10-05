@@ -142,6 +142,14 @@ TECH_ALLOWLIST = re.compile(
     re.IGNORECASE
 )
 
+# Non-job title blocklist pattern (dictionary entries, tutorials, downloads, articles, etc.)
+NON_JOB_TITLE_BLOCKLIST = re.compile(
+    r'\b(definition|meaning|tutorial|download|downloads|wikipedia|w3schools|geeksforgeeks|'
+    r'dictionary|what is|how it works|documentation|guides|merriam-webster|cheat sheet|'
+    r'course|learn|faq|overview|basics|introduction to|lesson|types and how)\b',
+    re.IGNORECASE
+)
+
 def is_relevant_tech_job(title: str, description: str = "") -> bool:
     """
     Check if a job title (and optional description) is a relevant tech/AI job.
@@ -150,7 +158,11 @@ def is_relevant_tech_job(title: str, description: str = "") -> bool:
     t = clean_string(title)
     if not t:
         return False
-        
+
+    # Non-job title check: discard tutorials, dictionary definitions, wikipedia pages, downloads
+    if NON_JOB_TITLE_BLOCKLIST.search(t):
+        return False
+
     # Rejection check: if title explicitly matches non-tech blocklist, discard
     if NON_TECH_BLOCKLIST.search(t):
         return False
