@@ -29,20 +29,39 @@ def scrape_naukrigulf() -> list[dict]:
     """Scrape Naukrigulf UAE IT & AI jobs."""
     jobs = []
     search_terms = [
-        # AI & Automation (Primary) - consolidated overlapping terms
+        # AI & Automation (Primary)
         "AI+engineer",
+        "junior+AI+engineer",
+        "AI+intern",
+        "AI+developer",
         "generative+AI",
+        "LLM+engineer",
+        "prompt+engineer",
         "machine+learning+engineer",
-        "data+scientist",
-        "data+engineer",
-        "NLP+computer+vision",
+        "deep+learning",
+        "NLP+engineer",
+        "computer+vision",
         "MLOps+engineer",
+        "AI+automation",
+        "RPA+developer",
+        "data+scientist",
+        "junior+data+scientist",
+        "data+engineer",
+        "data+analyst",
+        "AI+architect",
         # IT Jobs (Secondary)
         "software+engineer",
-        "cloud+DevOps+engineer",
-        "cybersecurity",
+        "junior+software+engineer",
+        "frontend+developer",
+        "backend+developer",
         "full+stack+developer",
         "python+developer",
+        "java+developer",
+        "cloud+engineer",
+        "DevOps+engineer",
+        "cybersecurity",
+        "IT+support",
+        "system+administrator",
     ]
 
     try:
@@ -59,57 +78,92 @@ def scrape_naukrigulf() -> list[dict]:
             html_content = ""
             if fetcher:
                 try:
-                    page = fetcher.get(url, timeout=15, headers=DEFAULT_HEADERS)
+                    page = fetcher.get(url, timeout=5, headers=DEFAULT_HEADERS)
                     if page and page.status == 200:
                         html_content = page.html
                 except Exception as e:
                     logger.debug(f"    Scrapling fetcher error: {e}")
 
             if not html_content:
-                resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-                if resp.status_code == 200:
-                    html_content = resp.text
-
-            if not html_content:
-                continue
-
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(html_content, "html.parser")
-            cards = soup.select(".srp-tuple, article.tuple, .tuple, .job-tuple")
-            logger.info(f"    -> {len(cards)} cards found")
-
-            for card in cards:
                 try:
-                    title_el = card.select_one(".desig, .designation, h2 a, .tuple-title a")
-                    company_el = card.select_one(".comp-name, .company-name, .tuple-header a, .info-org")
-                    location_el = card.select_one(".loc, .location, .tuple-footer span, .info-loc")
-                    link_el = card.select_one("a[href]")
-
-                    title = title_el.get_text(strip=True) if title_el else None
-                    company = company_el.get_text(strip=True) if company_el else None
-                    loc = location_el.get_text(strip=True) if location_el else "UAE"
-                    href = link_el.get("href", "") if link_el else ""
-
-                    if not title or not company:
-                        continue
-
-                    if not is_relevant_tech_job(title):
-                        continue
-
-                    if href and not href.startswith("http"):
-                        href = f"https://www.naukrigulf.com{href}"
-
-                    job = normalize_job(
-                        title=title,
-                        company=company,
-                        location=loc,
-                        url=href or url,
-                        source="naukrigulf",
-                    )
-                    jobs.append(job)
+                    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=5)
+                    if resp.status_code == 200:
+                        html_content = resp.text
                 except Exception as e:
-                    logger.debug(f"    Card parse error: {e}")
-                    continue
+                    logger.debug(f"    Direct HTTP error: {e}")
+
+            # Fallback: DuckDuckGo search if direct site fetch is blocked/timed out
+            cards_found = False
+            if html_content:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html_content, "html.parser")
+                cards = soup.select(".srp-tuple, article.tuple, .tuple, .job-tuple")
+                if cards:
+                    cards_found = True
+                    logger.info(f"    -> {len(cards)} direct cards found")
+                    for card in cards:
+                        try:
+                            title_el = card.select_one(".desig, .designation, h2 a, .tuple-title a")
+                            company_el = card.select_one(".comp-name, .company-name, .tuple-header a, .info-org")
+                            location_el = card.select_one(".loc, .location, .tuple-footer span, .info-loc")
+                            link_el = card.select_one("a[href]")
+
+                            title = title_el.get_text(strip=True) if title_el else None
+                            company = company_el.get_text(strip=True) if company_el else None
+                            loc = location_el.get_text(strip=True) if location_el else "UAE"
+                            href = link_el.get("href", "") if link_el else ""
+
+                            if not title or not company:
+                                continue
+
+                            if not is_relevant_tech_job(title):
+                                continue
+
+                            if href and not href.startswith("http"):
+                                href = f"https://www.naukrigulf.com{href}"
+
+                            job = normalize_job(
+                                title=title,
+                                company=company,
+                                location=loc,
+                                url=href or url,
+                                source="naukrigulf",
+                            )
+                            jobs.append(job)
+                        except Exception:
+                            continue
+
+            if not cards_found:
+                # DuckDuckGo Fallback for Naukrigulf
+                try:
+                    from duckduckgo_search import DDGS
+                    ddgs = DDGS()
+                    query = f"site:naukrigulf.com/job-jobs {term.replace('+', ' ')} UAE"
+                    results = list(ddgs.text(query, max_results=5))
+                    if results:
+                        logger.info(f"    -> {len(results)} DDGS fallback results found")
+                        for r in results:
+                            raw_title = r.get("title", "")
+                            job_url = r.get("href", "")
+                            if " - " in raw_title:
+                                parts = raw_title.split(" - ")
+                                title = parts[0].strip()
+                                company = parts[1].replace("Naukrigulf.com", "").strip() or "Hiring Company"
+                            else:
+                                title = raw_title.replace("Naukrigulf.com", "").strip()
+                                company = "Hiring Company"
+
+                            if title and is_relevant_tech_job(title):
+                                job = normalize_job(
+                                    title=title,
+                                    company=company,
+                                    location="UAE",
+                                    url=job_url,
+                                    source="naukrigulf",
+                                )
+                                jobs.append(job)
+                except Exception as e:
+                    logger.debug(f"    DDGS fallback error: {e}")
 
             time.sleep(random.uniform(1, 2))
 
@@ -157,57 +211,91 @@ def scrape_gulftalent() -> list[dict]:
             html_content = ""
             if fetcher:
                 try:
-                    page = fetcher.get(url, timeout=15, headers=DEFAULT_HEADERS)
+                    page = fetcher.get(url, timeout=5, headers=DEFAULT_HEADERS)
                     if page and page.status == 200:
                         html_content = page.html
                 except Exception as e:
                     logger.debug(f"    Scrapling fetcher error: {e}")
 
             if not html_content:
-                resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-                if resp.status_code == 200:
-                    html_content = resp.text
-
-            if not html_content:
-                continue
-
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(html_content, "html.parser")
-            cards = soup.select(".job-listing, .result-item, .job-card, tr.job-row")
-            logger.info(f"    -> {len(cards)} cards found")
-
-            for card in cards:
                 try:
-                    title_el = card.select_one("h2 a, .job-title a, a.title, td a")
-                    company_el = card.select_one(".company, .employer, .company-name")
-                    location_el = card.select_one(".location, .loc")
-                    link_el = card.select_one("a[href]")
-
-                    title = title_el.get_text(strip=True) if title_el else None
-                    company = company_el.get_text(strip=True) if company_el else None
-                    loc = location_el.get_text(strip=True) if location_el else "UAE"
-                    href = link_el.get("href", "") if link_el else ""
-
-                    if not title or not company:
-                        continue
-
-                    if not is_relevant_tech_job(title):
-                        continue
-
-                    if href and not href.startswith("http"):
-                        href = f"https://www.gulftalent.com{href}"
-
-                    job = normalize_job(
-                        title=title,
-                        company=company,
-                        location=loc,
-                        url=href or url,
-                        source="gulftalent",
-                    )
-                    jobs.append(job)
+                    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=5)
+                    if resp.status_code == 200:
+                        html_content = resp.text
                 except Exception as e:
-                    logger.debug(f"    Card parse error: {e}")
-                    continue
+                    logger.debug(f"    Direct HTTP error: {e}")
+
+            cards_found = False
+            if html_content:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html_content, "html.parser")
+                cards = soup.select(".job-listing, .result-item, .job-card, tr.job-row")
+                if cards:
+                    cards_found = True
+                    logger.info(f"    -> {len(cards)} direct cards found")
+                    for card in cards:
+                        try:
+                            title_el = card.select_one("h2 a, .job-title a, a.title, td a")
+                            company_el = card.select_one(".company, .employer, .company-name")
+                            location_el = card.select_one(".location, .loc")
+                            link_el = card.select_one("a[href]")
+
+                            title = title_el.get_text(strip=True) if title_el else None
+                            company = company_el.get_text(strip=True) if company_el else None
+                            loc = location_el.get_text(strip=True) if location_el else "UAE"
+                            href = link_el.get("href", "") if link_el else ""
+
+                            if not title or not company:
+                                continue
+
+                            if not is_relevant_tech_job(title):
+                                continue
+
+                            if href and not href.startswith("http"):
+                                href = f"https://www.gulftalent.com{href}"
+
+                            job = normalize_job(
+                                title=title,
+                                company=company,
+                                location=loc,
+                                url=href or url,
+                                source="gulftalent",
+                            )
+                            jobs.append(job)
+                        except Exception:
+                            continue
+
+            if not cards_found:
+                # DuckDuckGo Fallback for GulfTalent
+                try:
+                    from duckduckgo_search import DDGS
+                    ddgs = DDGS()
+                    query = f"site:gulftalent.com/uae/jobs {term.replace('-', ' ')}"
+                    results = list(ddgs.text(query, max_results=5))
+                    if results:
+                        logger.info(f"    -> {len(results)} DDGS fallback results found")
+                        for r in results:
+                            raw_title = r.get("title", "")
+                            job_url = r.get("href", "")
+                            if " - " in raw_title:
+                                parts = raw_title.split(" - ")
+                                title = parts[0].strip()
+                                company = parts[1].replace("GulfTalent", "").strip() or "Hiring Company"
+                            else:
+                                title = raw_title.replace("GulfTalent", "").strip()
+                                company = "Hiring Company"
+
+                            if title and is_relevant_tech_job(title):
+                                job = normalize_job(
+                                    title=title,
+                                    company=company,
+                                    location="UAE",
+                                    url=job_url,
+                                    source="gulftalent",
+                                )
+                                jobs.append(job)
+                except Exception as e:
+                    logger.debug(f"    DDGS fallback error: {e}")
 
             time.sleep(random.uniform(1, 2))
 
