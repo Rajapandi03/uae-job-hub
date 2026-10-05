@@ -133,43 +133,6 @@ def scrape_naukrigulf() -> list[dict]:
                         except Exception:
                             continue
 
-            if not cards_found:
-                # DuckDuckGo Fallback for Naukrigulf
-                try:
-                    from duckduckgo_search import DDGS
-                    ddgs = DDGS()
-                    query = f"site:naukrigulf.com/job-jobs {term.replace('+', ' ')} UAE"
-                    results = list(ddgs.text(query, max_results=5))
-                    if results:
-                        logger.info(f"    -> {len(results)} DDGS fallback results found")
-                        for r in results:
-                            raw_title = r.get("title", "")
-                            job_url = r.get("href", "")
-
-                            # Domain protection: MUST be on naukrigulf.com
-                            if "naukrigulf.com" not in job_url.lower():
-                                continue
-
-                            if " - " in raw_title:
-                                parts = raw_title.split(" - ")
-                                title = parts[0].strip()
-                                company = parts[1].replace("Naukrigulf.com", "").strip() or "Hiring Company"
-                            else:
-                                title = raw_title.replace("Naukrigulf.com", "").strip()
-                                company = "Hiring Company"
-
-                            if title and is_relevant_tech_job(title):
-                                job = normalize_job(
-                                    title=title,
-                                    company=company,
-                                    location="UAE",
-                                    url=job_url,
-                                    source="naukrigulf",
-                                )
-                                jobs.append(job)
-                except Exception as e:
-                    logger.debug(f"    DDGS fallback error: {e}")
-
             time.sleep(random.uniform(1, 2))
 
         except Exception as e:
@@ -269,43 +232,6 @@ def scrape_gulftalent() -> list[dict]:
                             jobs.append(job)
                         except Exception:
                             continue
-
-            if not cards_found:
-                # DuckDuckGo Fallback for GulfTalent
-                try:
-                    from duckduckgo_search import DDGS
-                    ddgs = DDGS()
-                    query = f"site:gulftalent.com/uae/jobs {term.replace('-', ' ')}"
-                    results = list(ddgs.text(query, max_results=5))
-                    if results:
-                        logger.info(f"    -> {len(results)} DDGS fallback results found")
-                        for r in results:
-                            raw_title = r.get("title", "")
-                            job_url = r.get("href", "")
-
-                            # Domain protection: MUST be on gulftalent.com
-                            if "gulftalent.com" not in job_url.lower():
-                                continue
-
-                            if " - " in raw_title:
-                                parts = raw_title.split(" - ")
-                                title = parts[0].strip()
-                                company = parts[1].replace("GulfTalent", "").strip() or "Hiring Company"
-                            else:
-                                title = raw_title.replace("GulfTalent", "").strip()
-                                company = "Hiring Company"
-
-                            if title and is_relevant_tech_job(title):
-                                job = normalize_job(
-                                    title=title,
-                                    company=company,
-                                    location="UAE",
-                                    url=job_url,
-                                    source="gulftalent",
-                                )
-                                jobs.append(job)
-                except Exception as e:
-                    logger.debug(f"    DDGS fallback error: {e}")
 
             time.sleep(random.uniform(1, 2))
 
