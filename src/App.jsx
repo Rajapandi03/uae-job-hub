@@ -34,6 +34,11 @@ import {
   Award,
   AlertTriangle,
   Mail,
+  Sparkles,
+  Bot,
+  FileText,
+  Settings,
+  Minimize2,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import {
@@ -220,6 +225,115 @@ function App() {
   const companiesScrollRef = useRef(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [refreshed, setRefreshed] = useState(false)
+
+  // State for AI Career Assistant Chatbot
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [groqApiKey, setGroqApiKey] = useState(() => localStorage.getItem('groq_api_key') || '')
+  const [showSettings, setShowSettings] = useState(false)
+  const [chatInput, setChatInput] = useState('')
+  const [userResumeText, setUserResumeText] = useState(() => localStorage.getItem('hini_user_resume') || '')
+  const [isAiThinking, setIsAiThinking] = useState(false)
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      sender: 'bot',
+      text: "👋 Hi! I'm **Hini AI Assistant**. Upload or paste your CV/Resume below, and I'll match your profile with live UAE AI & Tech jobs, calculate your ATS score, and guide your career!",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ])
+  const chatMessagesEndRef = useRef(null)
+
+  // Client-side fast ATS scoring algorithm comparing resume text to job keywords
+  const calculateAtsScore = useCallback((resumeText, job) => {
+    if (!resumeText.trim()) return 78
+    const textTokens = new Set(resumeText.toLowerCase().split(/\W+/).filter(w => w.length > 2))
+    const jobTokens = (job.title + ' ' + job.company + ' ' + (job.description || '') + ' ' + (job.location || '')).toLowerCase().split(/\W+/).filter(w => w.length > 2)
+    let matches = 0
+    jobTokens.forEach(t => { if (textTokens.has(t)) matches++ })
+    const baseScore = Math.min(98, Math.max(55, Math.round((matches / Math.max(jobTokens.length * 0.25, 4)) * 100)))
+    return baseScore
+  }, [])
+
+  const findBestJobMatches = useCallback((resumeText, jobsList, limit = 4) => {
+    if (!jobsList || jobsList.length === 0) return []
+    const scored = jobsList.map(j => ({
+      ...j,
+      atsScore: calculateAtsScore(resumeText, j)
+    }))
+    scored.sort((a, b) => b.atsScore - a.atsScore)
+    return scored.slice(0, limit)
+  }, [calculateAtsScore])
+
+  const handleSendChatMessage = async (customPrompt = null) => {
+    const promptText = (customPrompt || chatInput).trim()
+    if (!promptText && !userResumeText.trim()) return
+
+    const userText = promptText || "Analyze my resume for live UAE AI & Tech jobs."
+    const userMsg = {
+      id: Date.now(),
+      sender: 'user',
+      text: userText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    setChatMessages(prev => [...prev, userMsg])
+    if (!customPrompt) setChatInput('')
+    setIsAiThinking(true)
+
+    const matches = findBestJobMatches(userResumeText || userText, allJobs, 4)
+
+    let botReplyText = ""
+    if (groqApiKey.trim()) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqApiKey.trim()}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are Hini AI, an expert UAE Career & ATS Advisor. Provide concise, high-value advice for AI and Tech roles in Dubai & Abu Dhabi.'
+              },
+              {
+                role: 'user',
+                content: `Candidate resume/prompt: "${userResumeText || userText}"\nTop UAE jobs available: ${JSON.stringify(matches.map(m => ({ title: m.title, company: m.company, loc: m.location })))}.\nUser query: "${userText}". Give a 2-3 sentence response matching their skills and key tips.`
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 300
+          })
+        })
+        if (response.ok) {
+          const data = await response.json()
+          botReplyText = data.choices?.[0]?.message?.content || ""
+        }
+      } catch (err) {
+        console.warn("Groq API error:", err)
+      }
+    }
+
+    if (!botReplyText) {
+      botReplyText = `Here are your top ATS-matched roles from ${allJobs.length} live UAE opportunities based on your skills:`
+    }
+
+    const botMsg = {
+      id: Date.now() + 1,
+      sender: 'bot',
+      text: botReplyText,
+      jobs: matches,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    setChatMessages(prev => [...prev, botMsg])
+    setIsAiThinking(false)
+    setTimeout(() => {
+      chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
 
 
   const navigateTo = (view) => {
@@ -2036,6 +2150,168 @@ function App() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== AI CAREER ASSISTANT CHATBOT ===== */}
+      <button
+        className="ai-chat-fab"
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        title="Ask Hini AI Career Assistant"
+      >
+        <Sparkles size={20} className="ai-sparkle-spin" />
+        <span>Ask Hini AI</span>
+        <span className="ai-fab-badge">Groq</span>
+      </button>
+
+      {isChatOpen && (
+        <div className="ai-chat-window">
+          {/* Header */}
+          <div className="ai-chat-header">
+            <div className="ai-chat-title">
+              <Bot size={22} className="ai-bot-icon" />
+              <div>
+                <h4>Hini Career AI</h4>
+                <span className="ai-status-online">● Powered by Groq LLM</span>
+              </div>
+            </div>
+            <div className="ai-chat-controls">
+              <button
+                className="ai-icon-btn"
+                title="Groq API Key Settings"
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <Settings size={18} />
+              </button>
+              <button
+                className="ai-icon-btn"
+                title="Close Chat"
+                onClick={() => setIsChatOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Settings Modal Bar */}
+          {showSettings && (
+            <div className="ai-chat-settings-bar">
+              <label className="ai-settings-label">Groq API Key (Optional):</label>
+              <div className="ai-settings-input-row">
+                <input
+                  type="password"
+                  placeholder="gsk_..."
+                  value={groqApiKey}
+                  onChange={(e) => {
+                    setGroqApiKey(e.target.value)
+                    localStorage.setItem('groq_api_key', e.target.value)
+                  }}
+                />
+                <button
+                  className="ai-btn-save-key"
+                  onClick={() => setShowSettings(false)}
+                >
+                  Save
+                </button>
+              </div>
+              <span className="ai-settings-hint">Using Groq Llama-3.3-70B for instant resume analysis.</span>
+            </div>
+          )}
+
+          {/* Resume Upload / Quick Actions Banner */}
+          <div className="ai-chat-resume-banner">
+            <div className="ai-resume-header">
+              <FileText size={15} />
+              <span>{userResumeText ? 'CV Text Saved' : 'Paste Your CV Text below:'}</span>
+            </div>
+            <textarea
+              className="ai-resume-textarea"
+              placeholder="Paste your CV / Resume text here (skills, experience, project keywords)..."
+              value={userResumeText}
+              onChange={(e) => {
+                setUserResumeText(e.target.value)
+                localStorage.setItem('hini_user_resume', e.target.value)
+              }}
+            />
+            <div className="ai-quick-prompts">
+              <button onClick={() => handleSendChatMessage("Find my top ATS job matches in UAE")}>
+                🎯 Best ATS Matches
+              </button>
+              <button onClick={() => handleSendChatMessage("How can I improve my CV for Dubai AI roles?")}>
+                💡 Optimize CV
+              </button>
+              <button onClick={() => handleSendChatMessage("What is the average salary for my skills in UAE?")}>
+                💰 UAE Salary Range
+              </button>
+            </div>
+          </div>
+
+          {/* Messages Body */}
+          <div className="ai-chat-messages">
+            {chatMessages.map((msg) => (
+              <div key={msg.id} className={`ai-msg-row ${msg.sender}`}>
+                {msg.sender === 'bot' && <div className="ai-bot-avatar"><Bot size={16} /></div>}
+                <div className="ai-msg-bubble">
+                  <div className="ai-msg-text">{msg.text}</div>
+                  {msg.jobs && msg.jobs.length > 0 && (
+                    <div className="ai-matched-jobs-list">
+                      {msg.jobs.map(j => (
+                        <div key={j.id} className="ai-job-card">
+                          <div className="ai-job-card-header">
+                            <span className="ai-job-title">{j.title}</span>
+                            <span className="ai-ats-badge">{j.atsScore}% ATS Match</span>
+                          </div>
+                          <div className="ai-job-card-meta">
+                            <span>{j.company}</span> • <span>{j.location}</span>
+                          </div>
+                          <a
+                            href={j.applyUrl || j.url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ai-job-apply-link"
+                          >
+                            Apply Now <ExternalLink size={12} />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <span className="ai-msg-time">{msg.timestamp}</span>
+                </div>
+              </div>
+            ))}
+            {isAiThinking && (
+              <div className="ai-msg-row bot">
+                <div className="ai-bot-avatar"><Bot size={16} /></div>
+                <div className="ai-msg-bubble thinking">
+                  <Loader2 size={16} className="spin" />
+                  <span>Scanning live UAE jobs & calculating ATS score...</span>
+                </div>
+              </div>
+            )}
+            <div ref={chatMessagesEndRef} />
+          </div>
+
+          {/* Input Footer */}
+          <div className="ai-chat-footer">
+            <input
+              type="text"
+              className="ai-chat-input"
+              placeholder="Ask Hini AI about jobs, ATS, skills..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSendChatMessage()
+              }}
+            />
+            <button
+              className="ai-chat-send-btn"
+              onClick={() => handleSendChatMessage()}
+              disabled={isAiThinking}
+            >
+              <Send size={16} />
+            </button>
           </div>
         </div>
       )}
