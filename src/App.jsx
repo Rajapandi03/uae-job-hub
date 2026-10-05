@@ -153,15 +153,21 @@ function isValidJob(job) {
   if (!job || !job.title) return false
   const title = String(job.title).toLowerCase().trim()
   const comp = String(job.company || '').toLowerCase().trim()
+  const url = String(job.apply_url || job.url || job.applyUrl || '').toLowerCase().trim()
+  const source = String(job.source || '').toLowerCase().trim()
+
+  // Strict Source Domain Check: Naukrigulf & GulfTalent links MUST belong to their official domains
+  if (source === 'naukrigulf' && url && !url.includes('naukrigulf.com')) return false
+  if (source === 'gulftalent' && url && !url.includes('gulftalent.com')) return false
 
   if (INVALID_JOB_TITLE_REGEX.test(title)) return false
 
-  if (comp.includes('merriam-webster') || comp.includes('w3schools') || comp.includes('wikipedia') || comp.includes('geeksforgeeks') || comp.includes('mech lesson') || comp.includes('scientific american')) {
+  if (comp.includes('merriam-webster') || comp.includes('w3schools') || comp.includes('wikipedia') || comp.includes('geeksforgeeks') || comp.includes('mech lesson') || comp.includes('scientific american') || comp.includes('data.gov')) {
     return false
   }
 
-  // Pure standalone keywords without job indicators
-  if (['artificial intelligence', 'data', 'generative ai', 'java'].includes(title)) {
+  // Pure standalone keywords or non-job titles without role indicators
+  if (['artificial intelligence', 'data', 'generative ai', 'java', 'data.gov home', 'free ai prompt generator', 'java software | oracle'].includes(title)) {
     return false
   }
 
