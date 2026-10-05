@@ -935,8 +935,9 @@ function App() {
   }, [searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
   const availableSources = useMemo(() => {
-    const srcs = new Set(allJobs.map(j => j.source).filter(Boolean))
-    return Array.from(srcs).sort()
+    const defaultSources = ['linkedin', 'indeed', 'bayt', 'naukrigulf', 'gulftalent']
+    const srcs = new Set([...defaultSources, ...allJobs.map(j => j.source).filter(Boolean)])
+    return Array.from(srcs)
   }, [allJobs])
 
   // Filtered Events
@@ -1413,7 +1414,7 @@ function App() {
                   <p className="stat-label">Companies Hiring</p>
                 </div>
                 <div className="stat">
-                  <h3 className="stat-number">{availableSources.length > 0 ? availableSources.length : 5}</h3>
+                  <h3 className="stat-number">5</h3>
                   <p className="stat-label">Top Sources</p>
                 </div>
               </div>
