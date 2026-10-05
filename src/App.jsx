@@ -1401,7 +1401,7 @@ function App() {
           <section className="hero">
             <div className="hero-content">
               <h1>Hini – Your <span className="highlight">UAE Job Hub</span> for AI & Tech Careers</h1>
-              <p>{loading ? 'Discover' : `${totalJobs}+`} live AI, Data & Tech roles from LinkedIn, Indeed & Bayt — all in one place. Updated every hour, apply in one click.</p>
+              <p>{loading ? 'Discover' : `${totalJobs}+`} live AI, Data & Tech roles from LinkedIn, Indeed, Bayt, Naukrigulf & GulfTalent — all in one place. Updated every hour, apply in one click.</p>
 
               <div className="hero-stats">
                 <div className="stat">
@@ -1413,7 +1413,7 @@ function App() {
                   <p className="stat-label">Companies Hiring</p>
                 </div>
                 <div className="stat">
-                  <h3 className="stat-number">3</h3>
+                  <h3 className="stat-number">{availableSources.length > 0 ? availableSources.length : 5}</h3>
                   <p className="stat-label">Top Sources</p>
                 </div>
               </div>
