@@ -4026,6 +4026,81 @@ html, body, #root, .app {
   margin-top: 0.3rem;
 }
 
+/* Resume Upload Zone */
+.ai-resume-file-zone {
+  margin-bottom: 0.5rem;
+}
+
+.ai-btn-upload-file {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25);
+  transition: all 0.2s ease;
+}
+
+.ai-btn-upload-file:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  box-shadow: 0 5px 14px rgba(124, 58, 237, 0.35);
+}
+
+.ai-resume-uploaded-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.75rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+
+.ai-resume-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-filename {
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #15803d;
+  display: block;
+}
+
+.ai-filesize {
+  font-size: 0.68rem;
+  color: #16a34a;
+}
+
+.ai-btn-remove-resume {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.ai-btn-remove-resume:hover {
+  background: #fee2e2;
+}
+
 /* Resume Banner */
 .ai-chat-resume-banner {
   padding: 0.75rem 1rem;
@@ -4033,19 +4108,9 @@ html, body, #root, .app {
   border-bottom: 1px solid #f3e8ff;
 }
 
-.ai-resume-header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #7e22ce;
-  margin-bottom: 0.4rem;
-}
-
 .ai-resume-textarea {
   width: 100%;
-  height: 55px;
+  height: 48px;
   border: 1px solid #e9d5ff;
   border-radius: 8px;
   padding: 0.4rem 0.6rem;
@@ -4192,13 +4257,69 @@ html, body, #root, .app {
 }
 
 .ai-ats-badge {
-  background: #dcfce7;
-  color: #15803d;
   font-weight: 700;
   font-size: 0.68rem;
-  padding: 0.15rem 0.4rem;
+  padding: 0.15rem 0.45rem;
   border-radius: 6px;
   white-space: nowrap;
+}
+
+.ai-ats-badge.high {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.ai-ats-badge.med {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.ai-ats-badge.low {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.ai-skills-audit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  font-size: 0.68rem;
+}
+
+.ai-skill-label {
+  font-weight: 700;
+  font-size: 0.65rem;
+  margin-right: 0.1rem;
+}
+
+.ai-skill-label.matched {
+  color: #16a34a;
+}
+
+.ai-skill-label.missing {
+  color: #dc2626;
+}
+
+.ai-skill-pill {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.ai-skill-pill.match {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ai-skill-pill.miss {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .ai-job-card-meta {

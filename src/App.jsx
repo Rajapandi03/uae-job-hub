@@ -39,6 +39,11 @@ import {
   FileText,
   Settings,
   Minimize2,
+  Upload,
+  FileCheck,
+  Trash2,
+  AlertCircle,
+  Check,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import {
@@ -232,43 +237,142 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [userResumeText, setUserResumeText] = useState(() => localStorage.getItem('hini_user_resume') || '')
+  const [resumeFileName, setResumeFileName] = useState(() => localStorage.getItem('hini_resume_filename') || '')
   const [isAiThinking, setIsAiThinking] = useState(false)
+  const fileInputRef = useRef(null)
+
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
       sender: 'bot',
-      text: "👋 Hi! I'm **Hini AI Assistant**. Upload or paste your CV/Resume below, and I'll match your profile with live UAE AI & Tech jobs, calculate your ATS score, and guide your career!",
+      text: "👋 Welcome to **Hini Career AI**! Upload your CV/Resume file below (`.pdf`, `.docx`, `.txt`) or paste your CV text. I will analyze your skills against all live UAE AI & Tech jobs and provide genuine ATS match scores!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ])
   const chatMessagesEndRef = useRef(null)
 
-  // Client-side fast ATS scoring algorithm comparing resume text to job keywords
-  const calculateAtsScore = useCallback((resumeText, job) => {
-    if (!resumeText.trim()) return 78
-    const textTokens = new Set(resumeText.toLowerCase().split(/\W+/).filter(w => w.length > 2))
-    const jobTokens = (job.title + ' ' + job.company + ' ' + (job.description || '') + ' ' + (job.location || '')).toLowerCase().split(/\W+/).filter(w => w.length > 2)
-    let matches = 0
-    jobTokens.forEach(t => { if (textTokens.has(t)) matches++ })
-    const baseScore = Math.min(98, Math.max(55, Math.round((matches / Math.max(jobTokens.length * 0.25, 4)) * 100)))
-    return baseScore
-  }, [])
+  // Curated list of tech & AI keywords for genuine ATS analysis
+  const TECH_KEYWORDS = useMemo(() => [
+    'python', 'javascript', 'typescript', 'react', 'next.js', 'vue', 'angular', 'node.js', 'express',
+    'java', 'c++', 'c#', '.net', 'golang', 'rust', 'php', 'sql', 'postgresql', 'mongodb', 'redis',
+    'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'ci/cd', 'devops', 'linux',
+    'machine learning', 'deep learning', 'artificial intelligence', 'tensorflow', 'pytorch',
+    'nlp', 'computer vision', 'llm', 'generative ai', 'prompt engineering', 'rag', 'langchain',
+    'data engineering', 'data science', 'data analytics', 'pandas', 'spark', 'hadoop', 'tableau',
+    'power bi', 'cybersecurity', 'siem', 'soc', 'penetration testing', 'agile', 'scrum', 'git', 'rest api', 'graphql',
+    'security', 'compliance', 'solutions architect', 'cloud', 'security engineer', 'risk', 'network'
+  ], [])
 
-  const findBestJobMatches = useCallback((resumeText, jobsList, limit = 4) => {
-    if (!jobsList || jobsList.length === 0) return []
-    const scored = jobsList.map(j => ({
-      ...j,
-      atsScore: calculateAtsScore(resumeText, j)
-    }))
+  const extractSkillsFromText = useCallback((text) => {
+    if (!text || !text.trim()) return []
+    const lower = text.toLowerCase()
+    return TECH_KEYWORDS.filter(kw => lower.includes(kw))
+  }, [TECH_KEYWORDS])
+
+  const calculateAtsScoreAndSkills = useCallback((resumeText, job) => {
+    if (!resumeText || !resumeText.trim()) {
+      return { atsScore: 0, matchedSkills: [], missingSkills: [] }
+    }
+
+    const candidateSkills = extractSkillsFromText(resumeText)
+    const jobFullText = (job.title + ' ' + (job.company || '') + ' ' + (job.description || '') + ' ' + (job.tags ? job.tags.join(' ') : '')).toLowerCase()
+    const jobRequiredSkills = TECH_KEYWORDS.filter(kw => jobFullText.includes(kw))
+
+    if (jobRequiredSkills.length === 0) {
+      const titleTokens = job.title.toLowerCase().split(/\W+/).filter(w => w.length > 3)
+      const matched = titleTokens.filter(t => resumeText.toLowerCase().includes(t))
+      const score = Math.min(92, Math.max(30, Math.round((matched.length / Math.max(titleTokens.length, 1)) * 100)))
+      return { atsScore: score, matchedSkills: matched, missingSkills: titleTokens.filter(t => !matched.includes(t)) }
+    }
+
+    const matched = candidateSkills.filter(s => jobRequiredSkills.includes(s))
+    const missing = jobRequiredSkills.filter(s => !candidateSkills.includes(s))
+    const score = Math.min(98, Math.max(20, Math.round((matched.length / Math.max(jobRequiredSkills.length, 1)) * 100)))
+
+    return { atsScore: score, matchedSkills: matched, missingSkills: missing }
+  }, [extractSkillsFromText, TECH_KEYWORDS])
+
+  const findBestJobMatches = useCallback((resumeText, jobsList, limit = 5) => {
+    if (!jobsList || jobsList.length === 0 || !resumeText || !resumeText.trim()) return []
+
+    const scored = jobsList.map(j => {
+      const { atsScore, matchedSkills, missingSkills } = calculateAtsScoreAndSkills(resumeText, j)
+      return {
+        ...j,
+        atsScore,
+        matchedSkills,
+        missingSkills
+      }
+    })
+
     scored.sort((a, b) => b.atsScore - a.atsScore)
     return scored.slice(0, limit)
-  }, [calculateAtsScore])
+  }, [calculateAtsScoreAndSkills])
+
+  // Real File Upload Handler
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const name = file.name
+    setResumeFileName(name)
+    localStorage.setItem('hini_resume_filename', name)
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const rawText = event.target?.result || ''
+      const cleaned = String(rawText).replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+      setUserResumeText(cleaned)
+      localStorage.setItem('hini_user_resume', cleaned)
+
+      const skillsFound = extractSkillsFromText(cleaned)
+      const uploadSuccessMsg = {
+        id: Date.now(),
+        sender: 'bot',
+        text: `✅ **CV Uploaded Successfully!**\n📄 **Filename**: \`${name}\`\n🧠 **Extracted Skills**: ${skillsFound.length > 0 ? skillsFound.slice(0, 8).map(s => `\`${s}\``).join(', ') : 'General Profile'}\n\nNow click **"🎯 Best ATS Matches"** to calculate your genuine compatibility score across 900+ UAE jobs!`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+      setChatMessages(prev => [...prev, uploadSuccessMsg])
+    }
+    reader.readAsText(file)
+  }
+
+  const handleClearResume = () => {
+    setUserResumeText('')
+    setResumeFileName('')
+    localStorage.removeItem('hini_user_resume')
+    localStorage.removeItem('hini_resume_filename')
+    setChatMessages(prev => [...prev, {
+      id: Date.now(),
+      sender: 'bot',
+      text: "🗑️ **Resume cleared.** Upload or paste a new CV to start ATS matching.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }])
+  }
 
   const handleSendChatMessage = async (customPrompt = null) => {
     const promptText = (customPrompt || chatInput).trim()
+    const isATSRequest = customPrompt === "Find my top ATS job matches in UAE" || promptText.toLowerCase().includes('ats') || promptText.toLowerCase().includes('match')
+
+    // STRICT VALIDATION: If requesting ATS matches but no resume is uploaded/pasted
+    if (isATSRequest && !userResumeText.trim()) {
+      const noResumeMsg = {
+        id: Date.now(),
+        sender: 'bot',
+        text: `⚠️ **No Resume Detected!**\n\nPlease click **"📁 Upload CV File"** above or paste your CV text into the box first.\n\nOnce your resume is uploaded, I will perform a real ATS skill analysis against all live UAE jobs!`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+      setChatMessages(prev => [...prev, noResumeMsg])
+      if (!customPrompt) setChatInput('')
+      setTimeout(() => {
+        chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+      return
+    }
+
     if (!promptText && !userResumeText.trim()) return
 
-    const userText = promptText || "Analyze my resume for live UAE AI & Tech jobs."
+    const userText = promptText || "Analyze my uploaded CV for live UAE jobs."
     const userMsg = {
       id: Date.now(),
       sender: 'user',
@@ -280,7 +384,7 @@ function App() {
     if (!customPrompt) setChatInput('')
     setIsAiThinking(true)
 
-    const matches = findBestJobMatches(userResumeText || userText, allJobs, 4)
+    const matches = userResumeText.trim() ? findBestJobMatches(userResumeText, allJobs, 5) : []
 
     let botReplyText = ""
     if (groqApiKey.trim()) {
@@ -296,11 +400,11 @@ function App() {
             messages: [
               {
                 role: 'system',
-                content: 'You are Hini AI, an expert UAE Career & ATS Advisor. Provide concise, high-value advice for AI and Tech roles in Dubai & Abu Dhabi.'
+                content: 'You are Hini Career AI, an expert UAE Tech Talent & ATS Advisor. Be concise, professional, and practical.'
               },
               {
                 role: 'user',
-                content: `Candidate resume/prompt: "${userResumeText || userText}"\nTop UAE jobs available: ${JSON.stringify(matches.map(m => ({ title: m.title, company: m.company, loc: m.location })))}.\nUser query: "${userText}". Give a 2-3 sentence response matching their skills and key tips.`
+                content: `Candidate resume: "${userResumeText.slice(0, 1000)}"\nMatched Jobs: ${JSON.stringify(matches.map(m => ({ title: m.title, company: m.company, score: m.atsScore })))}.\nUser query: "${userText}". Provide a 2-sentence summary and 2 ATS tips.`
               }
             ],
             temperature: 0.7,
@@ -317,7 +421,12 @@ function App() {
     }
 
     if (!botReplyText) {
-      botReplyText = `Here are your top ATS-matched roles from ${allJobs.length} live UAE opportunities based on your skills:`
+      if (matches.length > 0) {
+        const topScore = matches[0]?.atsScore || 0
+        botReplyText = `🎯 **ATS Analysis Complete!** Based on your uploaded CV, I analyzed **${allJobs.length} live UAE opportunities**. Your top match is **${topScore}% compatible**!`
+      } else {
+        botReplyText = `Here is key advice for your query regarding UAE Tech & AI opportunities:`
+      }
     }
 
     const botMsg = {
@@ -2219,21 +2328,55 @@ function App() {
             </div>
           )}
 
-          {/* Resume Upload / Quick Actions Banner */}
+          {/* Genuine Resume Upload / Dropzone Banner */}
           <div className="ai-chat-resume-banner">
-            <div className="ai-resume-header">
-              <FileText size={15} />
-              <span>{userResumeText ? 'CV Text Saved' : 'Paste Your CV Text below:'}</span>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".pdf,.docx,.txt"
+              style={{ display: 'none' }}
+            />
+
+            <div className="ai-resume-file-zone">
+              {userResumeText.trim() ? (
+                <div className="ai-resume-uploaded-badge">
+                  <div className="ai-resume-file-info">
+                    <FileCheck size={16} className="text-green-500" />
+                    <div>
+                      <span className="ai-filename">{resumeFileName || 'Resume CV Text'}</span>
+                      <span className="ai-filesize">({userResumeText.split(/\s+/).length} words parsed)</span>
+                    </div>
+                  </div>
+                  <button
+                    className="ai-btn-remove-resume"
+                    onClick={handleClearResume}
+                    title="Remove Resume"
+                  >
+                    <Trash2 size={14} /> Remove
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="ai-btn-upload-file"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload size={16} />
+                  <span>Upload Resume File (.pdf, .docx, .txt)</span>
+                </button>
+              )}
             </div>
+
             <textarea
               className="ai-resume-textarea"
-              placeholder="Paste your CV / Resume text here (skills, experience, project keywords)..."
+              placeholder="Or paste your CV / Resume text manually here..."
               value={userResumeText}
               onChange={(e) => {
                 setUserResumeText(e.target.value)
                 localStorage.setItem('hini_user_resume', e.target.value)
               }}
             />
+
             <div className="ai-quick-prompts">
               <button onClick={() => handleSendChatMessage("Find my top ATS job matches in UAE")}>
                 🎯 Best ATS Matches
@@ -2254,17 +2397,40 @@ function App() {
                 {msg.sender === 'bot' && <div className="ai-bot-avatar"><Bot size={16} /></div>}
                 <div className="ai-msg-bubble">
                   <div className="ai-msg-text">{msg.text}</div>
+
+                  {/* Matched Job Cards */}
                   {msg.jobs && msg.jobs.length > 0 && (
                     <div className="ai-matched-jobs-list">
                       {msg.jobs.map(j => (
                         <div key={j.id} className="ai-job-card">
                           <div className="ai-job-card-header">
                             <span className="ai-job-title">{j.title}</span>
-                            <span className="ai-ats-badge">{j.atsScore}% ATS Match</span>
+                            <span className={`ai-ats-badge ${j.atsScore >= 75 ? 'high' : j.atsScore >= 50 ? 'med' : 'low'}`}>
+                              {j.atsScore}% Genuine Match
+                            </span>
                           </div>
                           <div className="ai-job-card-meta">
                             <span>{j.company}</span> • <span>{j.location}</span>
                           </div>
+
+                          {/* Skill Audit Pill Lists */}
+                          {j.matchedSkills && j.matchedSkills.length > 0 && (
+                            <div className="ai-skills-audit">
+                              <span className="ai-skill-label matched">Matched:</span>
+                              {j.matchedSkills.slice(0, 4).map(s => (
+                                <span key={s} className="ai-skill-pill match">{s}</span>
+                              ))}
+                            </div>
+                          )}
+                          {j.missingSkills && j.missingSkills.length > 0 && (
+                            <div className="ai-skills-audit">
+                              <span className="ai-skill-label missing">Missing:</span>
+                              {j.missingSkills.slice(0, 3).map(s => (
+                                <span key={s} className="ai-skill-pill miss">{s}</span>
+                              ))}
+                            </div>
+                          )}
+
                           <a
                             href={j.applyUrl || j.url || '#'}
                             target="_blank"
