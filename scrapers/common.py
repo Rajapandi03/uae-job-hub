@@ -107,8 +107,8 @@ NON_TECH_BLOCKLIST = re.compile(
     # Security & Facilities
     r'security guard|storekeeper|warehouse manager|warehouse supervisor|'
     r'facilities manager|janitor|steward|'
-    # Fashion & Beauty
-    r'tailor|beautician|hair stylist|fashion designer|stylist|'
+    # Fashion, Interior & Design (non-tech)
+    r'tailor|beautician|hair stylist|fashion designer|stylist|interior designer|fit out|fitout|'
     # Transport & Logistics (non-tech)
     r'driver|delivery rider|car washer|mechanic|'
     r'logistics coordinator|logistics manager|supply chain manager|'
@@ -116,14 +116,14 @@ NON_TECH_BLOCKLIST = re.compile(
     r'shipping coordinator|customs officer|freight|'
     # Education (non-tech)
     r'teacher|tutor|nanny|lecturer|academic coordinator|'
-    # Non-IT Engineering
+    # Non-IT Engineering & Construction
     r'mechanical engineer|mechanical technician|civil engineer|'
     r'structural engineer|electrical engineer|field engineer|maintenance engineer|'
     r'production engineer|manufacturing engineer|piping engineer|hvac engineer|'
     r'instrumentation engineer|geotechnical|quantity surveyor|site engineer|'
     r'process engineer|plant engineer|welding engineer|marine engineer|'
     r'chemical engineer|petroleum engineer|safety engineer|quality inspector|'
-    r'drilling engineer|reservoir engineer|'
+    r'drilling engineer|reservoir engineer|project engineer|hospitality construction|construction|'
     # Operations (non-tech)
     r'operations manager|store manager|retail manager|retail assistant|'
     r'general manager|area manager|regional manager'
