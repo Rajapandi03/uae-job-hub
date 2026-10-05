@@ -155,9 +155,9 @@ export function JobDetailDrawer({
   }
 
   const tierStyles = {
-    Strong: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', ring: 'border-emerald-500 bg-emerald-50 text-emerald-800' },
-    Good: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', ring: 'border-indigo-500 bg-indigo-50 text-indigo-800' },
-    Stretch: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', ring: 'border-amber-500 bg-amber-50 text-amber-800' },
+    Strong: { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200', ring: 'border-indigo-600 bg-indigo-50 text-indigo-900' },
+    Good: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200', ring: 'border-sky-500 bg-sky-50 text-sky-900' },
+    Stretch: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200', ring: 'border-amber-500 bg-amber-50 text-amber-900' },
     Weak: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', ring: 'border-slate-400 bg-slate-50 text-slate-800' },
   }
 
@@ -251,7 +251,7 @@ export function JobDetailDrawer({
                 </button>
                 <button
                   onClick={handleShareWhatsApp}
-                  className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-emerald-100 transition"
+                  className="p-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-indigo-100 transition"
                   title="Share on WhatsApp"
                 >
                   <MessageCircle size={14} />
@@ -261,7 +261,7 @@ export function JobDetailDrawer({
                   className="p-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-slate-100 transition"
                   title="Copy link"
                 >
-                  {copied ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
+                  {copied ? <Check size={14} className="text-indigo-600" /> : <Share2 size={14} />}
                 </button>
               </div>
             </div>
@@ -289,7 +289,7 @@ export function JobDetailDrawer({
             >
               <Sparkles size={15} className="text-indigo-600" /> ATS Resume Matcher
               {scoreData && (
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-black">
                   {scoreData.score}%
                 </span>
               )}
@@ -315,8 +315,8 @@ export function JobDetailDrawer({
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {scoreData.matched.map(s => (
-                      <span key={s} className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-md flex items-center gap-1">
-                        <CheckCircle2 size={12} className="text-emerald-600" /> {s}
+                      <span key={s} className="px-2.5 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold rounded-md flex items-center gap-1">
+                        <CheckCircle2 size={12} className="text-indigo-600" /> {s}
                       </span>
                     ))}
                     {scoreData.missing && scoreData.missing.map(s => (
@@ -339,8 +339,8 @@ export function JobDetailDrawer({
                   <div className="p-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-slate-50 flex items-center justify-between gap-4 mb-4 shadow-xs">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          {scoreData?.tier} Match Grade
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold ${currentTier.bg} ${currentTier.text} ${currentTier.border} border`}>
+                          {scoreData?.tier === 'Strong' ? 'Strong Match' : scoreData?.tier === 'Good' ? 'Good Match' : scoreData?.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
                         </span>
                         <span className="text-xs text-slate-500 font-semibold">Verified ATS Score</span>
                       </div>
@@ -357,13 +357,13 @@ export function JobDetailDrawer({
                   {/* Matched Skills List */}
                   <div className="my-4">
                     <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <CheckCircle2 size={15} className="text-emerald-600" />
+                      <CheckCircle2 size={15} className="text-indigo-600" />
                       Matched Skills ({scoreData?.matched?.length || 0})
                     </h4>
                     {scoreData?.matched && scoreData.matched.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {scoreData.matched.map(skill => (
-                          <span key={skill} className="px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-bold rounded-lg flex items-center gap-1">
+                          <span key={skill} className="px-2.5 py-1 bg-indigo-50 border border-indigo-200/80 text-indigo-900 text-xs font-bold rounded-lg flex items-center gap-1">
                             ✓ {skill}
                           </span>
                         ))}
@@ -388,8 +388,8 @@ export function JobDetailDrawer({
                         ))}
                       </div>
                     ) : (
-                      <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
-                        <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                      <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-semibold text-indigo-900 flex items-center gap-2">
+                        <ShieldCheck size={16} className="text-indigo-600 shrink-0" />
                         Perfect Match! Your resume contains all detected technical requirements for this role.
                       </div>
                     )}

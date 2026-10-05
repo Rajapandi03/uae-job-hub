@@ -2118,8 +2118,8 @@ function App() {
                                 height: '46px',
                                 borderRadius: '50%',
                                 border: `2.5px solid ${
-                                  scoreData.tier === 'Strong' ? '#10b981' :
-                                  scoreData.tier === 'Good' ? '#6366f1' :
+                                  scoreData.tier === 'Strong' ? '#6366f1' :
+                                  scoreData.tier === 'Good' ? '#0284c7' :
                                   scoreData.tier === 'Stretch' ? '#f59e0b' : '#94a3b8'
                                 }`,
                                 display: 'flex',
@@ -2127,29 +2127,29 @@ function App() {
                                 justifyContent: 'center',
                                 fontWeight: '900',
                                 fontSize: '0.88rem',
-                                color: scoreData.tier === 'Strong' ? '#047857' :
-                                       scoreData.tier === 'Good' ? '#4338ca' :
+                                color: scoreData.tier === 'Strong' ? '#4338ca' :
+                                       scoreData.tier === 'Good' ? '#0369a1' :
                                        scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
-                                background: scoreData.tier === 'Strong' ? '#ecfdf5' :
-                                            scoreData.tier === 'Good' ? '#eef2ff' :
+                                background: scoreData.tier === 'Strong' ? '#eef2ff' :
+                                            scoreData.tier === 'Good' ? '#f0f9ff' :
                                             scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
                                 boxShadow: `0 3px 10px ${
-                                  scoreData.tier === 'Strong' ? 'rgba(16, 185, 129, 0.18)' :
-                                  scoreData.tier === 'Good' ? 'rgba(99, 102, 241, 0.18)' :
+                                  scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.18)' :
+                                  scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.18)' :
                                   scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.18)' : 'rgba(0, 0, 0, 0.05)'
                                 }`
                               }}>
                                 {scoreData.score}%
                               </div>
                               <span style={{
-                                fontSize: '0.68rem',
+                                fontSize: '0.66rem',
                                 fontWeight: '800',
                                 marginTop: '0.25rem',
-                                color: scoreData.tier === 'Strong' ? '#059669' :
-                                       scoreData.tier === 'Good' ? '#4f46e5' :
+                                color: scoreData.tier === 'Strong' ? '#4338ca' :
+                                       scoreData.tier === 'Good' ? '#0284c7' :
                                        scoreData.tier === 'Stretch' ? '#d97706' : '#64748b'
                               }}>
-                                {scoreData.tier}
+                                {scoreData.tier === 'Strong' ? 'Strong Match' : scoreData.tier === 'Good' ? 'Good Match' : scoreData.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
                               </span>
                             </div>
                           ) : (
@@ -2191,7 +2191,7 @@ function App() {
                         {resumeData && scoreData && (
                           <div style={{ margin: '0.75rem 0', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
                             {scoreData.matched && scoreData.matched.map(skill => (
-                              <span key={skill} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
+                              <span key={skill} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#4338ca', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
                                 ✓ {skill}
                               </span>
                             ))}
@@ -2237,44 +2237,16 @@ function App() {
                             </button>
                           </div>
                           
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setDrawerJob(job)
-                                setDrawerScoreData(scoreData)
-                                setIsDrawerOpen(true)
-                              }}
-                              style={{
-                                background: '#eef2ff',
-                                border: '1px solid #c7d2fe',
-                                color: '#4338ca',
-                                fontSize: '0.78rem',
-                                fontWeight: '700',
-                                padding: '0.45rem 0.75rem',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                                transition: 'all 0.15s ease'
-                              }}
-                              className="hover:bg-indigo-100"
-                              title="Click to view full job description and ATS match"
-                            >
-                              <FileText size={14} /> Description & ATS
-                            </button>
-                            <a
-                              href={job.applyUrl || job.url || '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-apply"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {job.source ? applyLabel(job.source) : 'Apply Now'}
-                              <ExternalLink size={14} style={{ marginLeft: 4 }} />
-                            </a>
-                          </div>
+                          <a
+                            href={job.applyUrl || job.url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-apply"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {job.source ? applyLabel(job.source) : 'Apply Now'}
+                            <ExternalLink size={14} style={{ marginLeft: 4 }} />
+                          </a>
                         </div>
                       </div>
                     </div>
