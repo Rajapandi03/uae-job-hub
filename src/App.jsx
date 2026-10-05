@@ -217,6 +217,7 @@ function App() {
   const [visibleJobsCount, setVisibleJobsCount] = useState(10)
   const [showAllJobs, setShowAllJobs] = useState(false)
   const jobsScrollRef = useRef(null)
+  const companiesScrollRef = useRef(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [refreshed, setRefreshed] = useState(false)
 
@@ -1685,33 +1686,103 @@ function App() {
               <h2>Leading Companies using AI in the UAE</h2>
               <p>Discover the innovative organisations shaping the future</p>
             </div>
-            <div className="companies-grid">
-              {topCompanies.map((c) => (
-                <div
-                  className="company-card"
-                  key={c.id}
-                  style={{ cursor: 'pointer' }}
+
+            {/* Scrollable Companies Container */}
+            <div className={`companies-scroll-wrapper ${showAllCompanies ? 'expanded' : ''}`}>
+              {showAllCompanies && (
+                <div className="jobs-scroll-header">
+                  <div className="jobs-scroll-header-info">
+                    <Building2 size={18} />
+                    <span>Showing all <strong>{topCompanies.length}</strong> hiring companies</span>
+                    <span className="jobs-scroll-hint">↕ Scroll inside to browse</span>
+                  </div>
+                  <button
+                    className="btn-collapse-jobs"
+                    onClick={() => {
+                      setShowAllCompanies(false)
+                      document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                  >
+                    ✕ Collapse
+                  </button>
+                </div>
+              )}
+
+              <div
+                className={showAllCompanies ? 'companies-container-scrollable' : ''}
+                ref={companiesScrollRef}
+              >
+                <div className="companies-grid">
+                  {topCompanies.map((c) => (
+                    <div
+                      className="company-card"
+                      key={c.id}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setSearchTerm(c.name)
+                        document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+                      }}
+                    >
+                      <div className="company-card-icon" style={{ background: c.background }}>
+                        {c.initial}
+                      </div>
+                      <div className="company-card-name">{c.name}</div>
+                      <div className="company-card-roles">{c.openRoles} open {c.openRoles === 1 ? 'role' : 'roles'}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* "Back to Top" button inside scrollable area */}
+                {showAllCompanies && (
+                  <div className="btn-outline-center jobs-scroll-bottom-actions" style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>
+                    <button
+                      className="btn-outline"
+                      onClick={() => {
+                        if (companiesScrollRef.current) {
+                          companiesScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+                        }
+                      }}
+                    >
+                      ↑ Scroll to Top
+                    </button>
+                    <button
+                      className="btn-outline"
+                      onClick={() => {
+                        setShowAllCompanies(false)
+                        document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' })
+                      }}
+                    >
+                      ✕ Collapse Companies
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* View All button (outside container when collapsed) */}
+            {!showAllCompanies && (
+              <div className="btn-outline-center" style={{ marginTop: '2rem' }}>
+                <button
+                  className="btn-outline btn-view-all-jobs"
                   onClick={() => {
-                    setSearchTerm(c.name)
-                    document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+                    setShowAllCompanies(true)
+                    setTimeout(() => {
+                      const container = document.querySelector('.companies-scroll-wrapper')
+                      if (container) {
+                        const yOffset = -90
+                        const y = container.getBoundingClientRect().top + window.pageYOffset + yOffset
+                        window.scrollTo({ top: y, behavior: 'smooth' })
+                      }
+                      if (companiesScrollRef.current) {
+                        companiesScrollRef.current.scrollTop = 0
+                      }
+                    }, 50)
                   }}
                 >
-                  <div className="company-card-icon" style={{ background: c.background }}>
-                    {c.initial}
-                  </div>
-                  <div className="company-card-name">{c.name}</div>
-                  <div className="company-card-roles">{c.openRoles} open {c.openRoles === 1 ? 'role' : 'roles'}</div>
-                </div>
-              ))}
-            </div>
-            <div className="btn-outline-center" style={{ marginTop: '2rem' }}>
-              <button
-                className="btn-outline"
-                onClick={() => setShowAllCompanies(!showAllCompanies)}
-              >
-                {showAllCompanies ? 'Show Top 10 Companies ↑' : `View All ${totalCompanies} Companies ↓`}
-              </button>
-            </div>
+                  View All {totalCompanies} Companies →
+                </button>
+              </div>
+            )}
           </section>
 
           {/* ===== COMMUNITY & GROWTH ===== */}

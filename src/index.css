@@ -442,6 +442,52 @@ a {
   background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
 }
 
+/* ======== SCROLLABLE COMPANIES WRAPPER ======== */
+.companies-scroll-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  transition: all 0.3s ease;
+}
+
+.companies-scroll-wrapper.expanded {
+  background: var(--bg-white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 0;
+  overflow: hidden;
+}
+
+.companies-container-scrollable {
+  max-height: 75vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  padding: 1.5rem !important;
+}
+
+.companies-container-scrollable::-webkit-scrollbar {
+  width: 10px;
+}
+
+.companies-container-scrollable::-webkit-scrollbar-track {
+  background: #f1f1f5;
+  border-radius: 0;
+  border-left: 1px solid var(--border-light);
+}
+
+.companies-container-scrollable::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%);
+  border-radius: 6px;
+  border: 2px solid #f1f1f5;
+  min-height: 60px;
+}
+
+.companies-container-scrollable::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
+}
+
 .jobs-container-scrollable::-webkit-scrollbar-thumb:active {
   background: var(--primary);
 }
