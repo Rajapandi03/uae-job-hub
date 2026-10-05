@@ -32,6 +32,8 @@ import {
   Newspaper,
   BookOpen,
   Award,
+  AlertTriangle,
+  Mail,
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import {
@@ -204,8 +206,20 @@ const viewToPath = {
 // App Component
 // ---------------------------------------------------------------------------
 function App() {
-  // Navigation view: 'jobs' | 'events' | 'certificates' | 'salary' | 'news'
+  // Navigation view: 'jobs' | 'hiring' | 'events' | 'certificates' | 'salary' | 'news'
   const [currentView, setCurrentView] = useState(getInitialView)
+
+  // State for live jobs
+  const [liveJobs, setLiveJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [dbConnected, setDbConnected] = useState(false)
+  const [showAllCompanies, setShowAllCompanies] = useState(false)
+  const [visibleJobsCount, setVisibleJobsCount] = useState(10)
+  const [showAllJobs, setShowAllJobs] = useState(false)
+  const jobsScrollRef = useRef(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [refreshed, setRefreshed] = useState(false)
+
 
   const navigateTo = (view) => {
     setCurrentView(view)
@@ -215,6 +229,92 @@ function App() {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  // Dynamic SEO: Update document title, description, and meta tags
+  useEffect(() => {
+    const pageMeta = {
+      jobs: {
+        title: "Hini – UAE Job Hub | #1 AI Jobs & Tech Jobs in Dubai, Abu Dhabi",
+        desc: "Hini is UAE's #1 job hub for AI & tech jobs. 1000+ new AI, machine learning, software & data roles posted in the last 24 hours. Updated every hour. Apply free."
+      },
+      events: {
+        title: "Hini – UAE Tech & AI Events 2026 | Conferences, Meetups & Workshops in Dubai",
+        desc: "Explore upcoming AI, tech conferences, hackathons, and developer meetups across Dubai, Abu Dhabi and UAE on Hini."
+      },
+      certificates: {
+        title: "Hini – Top AI & Tech Certifications 2026 | Free Courses in UAE",
+        desc: "Boost your tech career in UAE with top certified courses in AI, Machine Learning, Data Science, and Cloud on Hini."
+      },
+      salary: {
+        title: "Hini – UAE Tech & AI Salary Report 2026 | Dubai & Abu Dhabi Pay Benchmarks",
+        desc: "Comprehensive UAE tech salary benchmarks on Hini. View salary insights for AI engineers, software developers, data scientists, and DevOps in Dubai."
+      },
+      news: {
+        title: "Hini – UAE Tech & AI News | Latest Updates from Dubai & Abu Dhabi",
+        desc: "Stay updated with breaking news on AI developments, startup investments, tech initiatives, and career insights in UAE on Hini."
+      }
+    }
+
+    const currentMeta = pageMeta[currentView] || pageMeta.jobs
+    document.title = currentMeta.title
+
+    let metaDesc = document.querySelector('meta[name="description"]')
+    if (metaDesc) metaDesc.setAttribute('content', currentMeta.desc)
+
+    let ogTitle = document.querySelector('meta[property="og:title"]')
+    if (ogTitle) ogTitle.setAttribute('content', currentMeta.title)
+
+    let ogDesc = document.querySelector('meta[property="og:description"]')
+    if (ogDesc) ogDesc.setAttribute('content', currentMeta.desc)
+  }, [currentView])
+
+  // Inject dynamic Google JobPosting schema tags for live jobs to boost Google Search & Google Jobs indexing
+  useEffect(() => {
+    if (!liveJobs || liveJobs.length === 0) return
+
+    const existingSchemaScript = document.getElementById('dynamic-job-schema')
+    if (existingSchemaScript) existingSchemaScript.remove()
+
+    const schemaData = liveJobs.slice(0, 15).map(job => ({
+      "@context": "https://schema.org/",
+      "@type": "JobPosting",
+      "title": job.title,
+      "description": job.description || `${job.title} position at ${job.company} in ${job.location}, UAE.`,
+      "identifier": {
+        "@type": "PropertyValue",
+        "name": job.company,
+        "value": String(job.id)
+      },
+      "datePosted": job.posted_at || new Date().toISOString(),
+      "validThrough": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      "employmentType": "FULL_TIME",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": job.company,
+        "sameAs": "https://uae-jobs-hub.vercel.app"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": (job.location && job.location.includes('Abu Dhabi')) ? 'Abu Dhabi' : 'Dubai',
+          "addressCountry": "AE"
+        }
+      }
+    }))
+
+    const script = document.createElement('script')
+    script.id = 'dynamic-job-schema'
+    script.type = 'application/ld+json'
+    script.text = JSON.stringify(schemaData)
+    document.head.appendChild(script)
+
+    return () => {
+      const el = document.getElementById('dynamic-job-schema')
+      if (el) el.remove()
+    }
+  }, [liveJobs])
+
 
   const [savedJobIds, setSavedJobIds] = useState(() => {
     try {
@@ -227,7 +327,7 @@ function App() {
   const toggleSaveJob = (jobId) => {
     setSavedJobIds(prev => {
       const next = prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
-      try { localStorage.setItem('uae_saved_jobs', JSON.stringify(next)) } catch {}
+      try { localStorage.setItem('uae_saved_jobs', JSON.stringify(next)) } catch { }
       return next
     })
   }
@@ -450,15 +550,6 @@ function App() {
     localStorage.removeItem('uae_job_user')
   }
 
-  // State for live jobs
-  const [liveJobs, setLiveJobs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [dbConnected, setDbConnected] = useState(false)
-  const [showAllCompanies, setShowAllCompanies] = useState(false)
-  const [visibleJobsCount, setVisibleJobsCount] = useState(10)
-  const [lastUpdated, setLastUpdated] = useState(null)
-  const [refreshed, setRefreshed] = useState(false)
-
   // State for live events
   const [eventsList, setEventsList] = useState(staticEvents)
   const [eventsLoading, setEventsLoading] = useState(true)
@@ -619,6 +710,25 @@ function App() {
     }
     fetchEvents()
   }, [])
+
+
+  // Freshness Badge Helper
+  function getFreshnessInfo(postedAt, detectedAt) {
+    const timeStr = postedAt || detectedAt
+    if (!timeStr) return { label: '⚪ Today', class: 'badge-today', mins: 9999 }
+    const postTime = new Date(timeStr).getTime()
+    if (isNaN(postTime)) return { label: '⚪ Today', class: 'badge-today', mins: 9999 }
+    const diffMins = Math.max(0, Math.floor((Date.now() - postTime) / 60000))
+
+    if (diffMins <= 10) return { label: `🔥 ${diffMins}m ago • Very Fresh`, class: 'badge-very-fresh', mins: diffMins }
+    if (diffMins <= 30) return { label: `🟢 ${diffMins}m ago • Fresh`, class: 'badge-fresh', mins: diffMins }
+    if (diffMins <= 60) return { label: `🔵 ${diffMins}m ago • Recent`, class: 'badge-recent', mins: diffMins }
+    
+    const hrs = Math.floor(diffMins / 60)
+    if (hrs < 24) return { label: `⚪ ${hrs}h ago`, class: 'badge-today', mins: diffMins }
+    return { label: '⚪ Today', class: 'badge-today', mins: diffMins }
+  }
+
 
   // Use live jobs if connected, otherwise static fallback
   const allJobs = dbConnected ? liveJobs : staticJobs
@@ -821,6 +931,7 @@ function App() {
 
   useEffect(() => {
     setVisibleJobsCount(10)
+    setShowAllJobs(false)
   }, [searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
 
   const availableSources = useMemo(() => {
@@ -932,10 +1043,11 @@ function App() {
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
         <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigateTo('jobs')}>
-          <span className="nav-wordmark">JobHub</span><span className="nav-wordmark-uae"> UAE</span>
+          <span className="nav-wordmark">Hini</span><span className="nav-wordmark-uae"> UAE Job Hub</span>
         </div>
         <div className="nav-links">
           <a href="/" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('jobs') }}>Find Jobs</a>
+          <a href="/hiring-posts" className={currentView === 'hiring' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('hiring') }}>🚀 Hiring Posts</a>
           <a href="#companies-section" onClick={(e) => { e.preventDefault(); navigateTo('jobs'); setTimeout(() => document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' }), 100) }}>Companies</a>
           <a href="/events" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('events') }}>Events</a>
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
@@ -1288,7 +1400,7 @@ function App() {
           {/* ===== HERO ===== */}
           <section className="hero">
             <div className="hero-content">
-              <h1>Your AI & Tech career in the <span className="highlight">UAE</span> starts here</h1>
+              <h1>Hini – Your <span className="highlight">UAE Job Hub</span> for AI & Tech Careers</h1>
               <p>{loading ? 'Discover' : `${totalJobs}+`} live AI, Data & Tech roles from LinkedIn, Indeed & Bayt — all in one place. Updated every hour, apply in one click.</p>
 
               <div className="hero-stats">
@@ -1307,7 +1419,7 @@ function App() {
               </div>
             </div>
             <div className="hero-image">
-              <img src="/dubai-skyline.png" alt="Dubai Skyline at Night" />
+              <img src="/dubai-skyline.png" alt="Hini UAE Job Hub – AI and Tech Jobs in Dubai, Abu Dhabi" />
             </div>
           </section>
 
@@ -1394,120 +1506,176 @@ function App() {
               </div>
             )}
 
-            <div className="jobs-container">
-              {/* Loading state */}
-              {loading && (
-                <div className="loading-state">
-                  <Loader2 size={24} className="spin" />
-                  <p>Fetching latest jobs...</p>
-                </div>
-              )}
-
-              {/* Empty state */}
-              {!loading && filteredJobs.length === 0 && (
-                <div className="empty-state">
-                  <Search size={48} />
-                  <h3>No jobs found</h3>
-                  <p>Try adjusting your search or filters.</p>
-                </div>
-              )}
-
-              {/* Job Cards */}
-              {!loading && filteredJobs.slice(0, visibleJobsCount).map((job) => (
-                <div className="job-card" key={job.id}>
-                  <div className="job-card-top">
-                    <div className="company-logo">{job.companyInitial}</div>
-                    <div className="job-header">
-                      <h3 className="job-title">{job.title}</h3>
-                      <div className="job-company">{job.company} • {job.industry}</div>
-                    </div>
+            {/* Scrollable Jobs Container */}
+            <div className={`jobs-scroll-wrapper ${showAllJobs ? 'expanded' : ''}`}>
+              {showAllJobs && (
+                <div className="jobs-scroll-header">
+                  <div className="jobs-scroll-header-info">
+                    <Briefcase size={18} />
+                    <span>Showing all <strong>{filteredJobs.length}</strong> jobs</span>
+                    <span className="jobs-scroll-hint">↕ Scroll inside to browse</span>
                   </div>
+                  <button
+                    className="btn-collapse-jobs"
+                    onClick={() => {
+                      setShowAllJobs(false)
+                      setVisibleJobsCount(10)
+                      document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                  >
+                    ✕ Collapse
+                  </button>
+                </div>
+              )}
+              <div
+                className={`jobs-container ${showAllJobs ? 'jobs-container-scrollable' : ''}`}
+                ref={jobsScrollRef}
+              >
+                {/* Loading state */}
+                {loading && (
+                  <div className="loading-state">
+                    <Loader2 size={24} className="spin" />
+                    <p>Fetching latest jobs...</p>
+                  </div>
+                )}
 
-                  <div className="job-details">
-                    <div className="job-meta">
-                      <div className="meta-item"><MapPin size={14} /> {job.location}</div>
-                      {job.source && (
-                        <div className="meta-item">
-                          <span className={`source-badge source-${job.source}`}>
-                            {sourceLabel(job.source)}
-                          </span>
+                {/* Empty state */}
+                {!loading && filteredJobs.length === 0 && (
+                  <div className="empty-state">
+                    <Search size={48} />
+                    <h3>No jobs found</h3>
+                    <p>Try adjusting your search or filters.</p>
+                  </div>
+                )}
+
+                {/* Job Cards */}
+                {!loading && (showAllJobs ? filteredJobs : filteredJobs.slice(0, visibleJobsCount)).map((job) => (
+                  <div className="job-card" key={job.id}>
+                    <div className="job-card-top">
+                      <div className="company-logo">{job.companyInitial}</div>
+                      <div className="job-header">
+                        <h3 className="job-title">{job.title}</h3>
+                        <div className="job-company">{job.company} • {job.industry}</div>
+                      </div>
+                    </div>
+
+                    <div className="job-details">
+                      <div className="job-meta">
+                        <div className="meta-item"><MapPin size={14} /> {job.location}</div>
+                        {job.source && (
+                          <div className="meta-item">
+                            <span className={`source-badge source-${job.source}`}>
+                              {sourceLabel(job.source)}
+                            </span>
+                          </div>
+                        )}
+                        {job.postedDate && (
+                          <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
+                        )}
+                      </div>
+
+                      {job.description && (
+                        <p className="job-desc">
+                          {job.description.replace(/\*\*/g, '').substring(0, 200)}...
+                        </p>
+                      )}
+
+                      {job.tags && job.tags.length > 0 && (
+                        <div className="job-tags">
+                          {job.tags.map((tag, i) => (
+                            <span className="tag" key={i}>{tag}</span>
+                          ))}
                         </div>
                       )}
-                      {job.postedDate && (
-                        <div className="meta-item"><Clock size={14} /> {job.postedDate}</div>
-                      )}
-                    </div>
 
-                    {job.description && (
-                      <p className="job-desc">
-                        {job.description.replace(/\*\*/g, '').substring(0, 200)}...
-                      </p>
-                    )}
-
-                    {job.tags && job.tags.length > 0 && (
-                      <div className="job-tags">
-                        {job.tags.map((tag, i) => (
-                          <span className="tag" key={i}>{tag}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="job-card-footer">
-                      <div className="job-social-actions">
-                        <button
-                          className={`icon-btn ${savedJobIds.includes(job.id) ? 'saved' : ''}`}
-                          title={savedJobIds.includes(job.id) ? "Unsave Job" : "Save Job"}
-                          onClick={() => toggleSaveJob(job.id)}
-                          style={{ color: savedJobIds.includes(job.id) ? '#ef4444' : undefined }}
+                      <div className="job-card-footer">
+                        <div className="job-social-actions">
+                          <button
+                            className={`icon-btn ${savedJobIds.includes(job.id) ? 'saved' : ''}`}
+                            title={savedJobIds.includes(job.id) ? "Unsave Job" : "Save Job"}
+                            onClick={() => toggleSaveJob(job.id)}
+                            style={{ color: savedJobIds.includes(job.id) ? '#ef4444' : undefined }}
+                          >
+                            <Heart size={18} fill={savedJobIds.includes(job.id) ? '#ef4444' : 'none'} />
+                          </button>
+                          <button
+                            className="icon-btn whatsapp"
+                            title="Share on WhatsApp"
+                            onClick={() => {
+                              const text = `Check out this job opportunity in UAE: ${job.title} at ${job.company}\n${job.applyUrl || job.url || ''}`
+                              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
+                            }}
+                          >
+                            <MessageCircle size={18} />
+                          </button>
+                        </div>
+                        <a
+                          href={job.applyUrl || job.url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-apply"
                         >
-                          <Heart size={18} fill={savedJobIds.includes(job.id) ? '#ef4444' : 'none'} />
-                        </button>
-                        <button
-                          className="icon-btn whatsapp"
-                          title="Share on WhatsApp"
-                          onClick={() => {
-                            const text = `Check out this job opportunity in UAE: ${job.title} at ${job.company}\n${job.applyUrl || job.url || ''}`
-                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
-                          }}
-                        >
-                          <MessageCircle size={18} />
-                        </button>
+                          {job.source ? applyLabel(job.source) : 'Apply Now'}
+                          <ExternalLink size={14} style={{ marginLeft: 4 }} />
+                        </a>
                       </div>
-                      <a
-                        href={job.applyUrl || job.url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-apply"
-                      >
-                        {job.source ? applyLabel(job.source) : 'Apply Now'}
-                        <ExternalLink size={14} style={{ marginLeft: 4 }} />
-                      </a>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {filteredJobs.length > visibleJobsCount && (
-                <div className="btn-outline-center">
-                  <button
-                    className="btn-outline"
-                    onClick={() => setVisibleJobsCount(filteredJobs.length)}
-                  >
-                    View All {filteredJobs.length} Jobs →
-                  </button>
-                </div>
-              )}
-              {filteredJobs.length > 0 && filteredJobs.length <= visibleJobsCount && filteredJobs.length > 10 && (
-                <div className="btn-outline-center">
-                  <button
-                    className="btn-outline"
-                    onClick={() => setVisibleJobsCount(10)}
-                  >
-                    Show Less ↑
-                  </button>
-                </div>
-              )}
+                {/* "Back to Top" button inside scrollable area */}
+                {showAllJobs && filteredJobs.length > 10 && (
+                  <div className="btn-outline-center jobs-scroll-bottom-actions">
+                    <button
+                      className="btn-outline"
+                      onClick={() => {
+                        if (jobsScrollRef.current) {
+                          jobsScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+                        }
+                      }}
+                    >
+                      ↑ Scroll to Top
+                    </button>
+                    <button
+                      className="btn-outline"
+                      onClick={() => {
+                        setShowAllJobs(false)
+                        setVisibleJobsCount(10)
+                        document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+                      }}
+                    >
+                      ✕ Collapse Jobs
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* View All / Show Less buttons (outside scrollable container) */}
+            {!showAllJobs && filteredJobs.length > visibleJobsCount && (
+              <div className="btn-outline-center">
+                <button
+                  className="btn-outline btn-view-all-jobs"
+                  onClick={() => {
+                    setShowAllJobs(true)
+                    setVisibleJobsCount(filteredJobs.length)
+                    setTimeout(() => {
+                      const container = document.querySelector('.jobs-scroll-wrapper')
+                      if (container) {
+                        const yOffset = -90 // header offset
+                        const y = container.getBoundingClientRect().top + window.pageYOffset + yOffset
+                        window.scrollTo({ top: y, behavior: 'smooth' })
+                      }
+                      if (jobsScrollRef.current) {
+                        jobsScrollRef.current.scrollTop = 0
+                      }
+                    }, 50)
+                  }}
+                >
+                  View All {filteredJobs.length} Jobs →
+                </button>
+              </div>
+            )}
           </section>
 
           {/* ===== LEADING COMPANIES ===== */}
@@ -1612,7 +1780,7 @@ function App() {
           {/* ===== EMPLOYER CTA ===== */}
           <section className="section-employer-cta">
             <h2>Build your AI dream team, right here in the UAE</h2>
-            <p>Join 65+ companies already hiring through AI JobHub UAE. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
+            <p>Join 65+ companies already hiring through Hini – UAE Job Hub. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
             <div className="cta-buttons">
               <button className="btn-cta-primary" onClick={() => setShowPostJobModal(true)}>Post Your First Job</button>
               <button className="btn-cta-outline" onClick={() => setShowPostJobModal(true)}>Recruiter Portal</button>
@@ -1642,7 +1810,7 @@ function App() {
         <div className="footer-top">
           <div>
             <div className="nav-brand" style={{ color: 'white', marginBottom: '0.75rem', cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
-              <span className="footer-wordmark">JobHub UAE</span>
+              <span className="footer-wordmark">Hini – UAE Job Hub</span>
             </div>
             <p className="footer-brand-desc">
               Connecting AI talent with opportunities across the United Arab Emirates.
@@ -1674,7 +1842,7 @@ function App() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2026 JobHub UAE. All rights reserved.</p>
+          <p>&copy; 2026 Hini – UAE Job Hub. All rights reserved.</p>
           <div className="footer-links-bottom">
             <a href="#">AI Jobs in Dubai</a>
             <a href="#">ML Jobs Dubai</a>

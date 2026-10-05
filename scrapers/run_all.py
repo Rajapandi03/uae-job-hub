@@ -116,6 +116,7 @@ def main():
     else:
         logger.info("  Salary scraper skipped (only runs on the 1st).")
 
+
     # Summary
     elapsed = time.time() - start
     logger.info("\n" + "=" * 60)

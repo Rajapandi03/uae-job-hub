@@ -1,8 +1,13 @@
-python-jobspy>=1.1.75
+python-jobspy>=1.1.75; python_version >= '3.10'
+jobspy>=1.1.60; python_version < '3.10'
 scrapling>=0.2.9
 supabase>=2.0.0
 python-dotenv>=1.0.0
 feedparser>=6.0.0
-# Phase 3 (career pages) - install separately if needed:
-# scrapegraphai>=1.0.0
+requests>=2.31.0
+google-generativeai>=0.8.0
+pandas>=2.0.0
+beautifulsoup4>=4.12.0
+duckduckgo-search>=6.0.0
+groq>=0.9.0
 

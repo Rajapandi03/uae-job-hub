@@ -333,6 +333,157 @@ a {
   background: linear-gradient(180deg, #f0f0ff 0%, var(--bg) 100%);
 }
 
+/* ======== SCROLLABLE JOBS WRAPPER ======== */
+.jobs-scroll-wrapper {
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  transition: all 0.3s ease;
+}
+
+.jobs-scroll-wrapper.expanded {
+  background: var(--bg-white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Scroll Header (sticky bar at top when expanded) */
+.jobs-scroll-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: linear-gradient(135deg, #f8f5ff 0%, #f0ecff 100%);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.jobs-scroll-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.jobs-scroll-header-info strong {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.jobs-scroll-hint {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  background: rgba(124, 58, 237, 0.08);
+  padding: 0.2rem 0.65rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.btn-collapse-jobs {
+  background: var(--bg-white);
+  border: 1.5px solid var(--border);
+  color: var(--text-main);
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-collapse-jobs:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* The scrollable container when expanded */
+.jobs-container-scrollable {
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  padding: 1.25rem !important;
+}
+
+/* Custom Scrollbar — Laptop-style (right side bar like desktop apps) */
+.jobs-container-scrollable::-webkit-scrollbar {
+  width: 10px;
+}
+
+.jobs-container-scrollable::-webkit-scrollbar-track {
+  background: #f1f1f5;
+  border-radius: 0;
+  border-left: 1px solid var(--border-light);
+}
+
+.jobs-container-scrollable::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%);
+  border-radius: 6px;
+  border: 2px solid #f1f1f5;
+  min-height: 60px;
+}
+
+.jobs-container-scrollable::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
+}
+
+.jobs-container-scrollable::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
+}
+
+/* Firefox scrollbar */
+.jobs-container-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: #a78bfa #f1f1f5;
+}
+
+/* Bottom actions inside scroll container */
+.jobs-scroll-bottom-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1.5rem 0 0.5rem 0;
+}
+
+/* View All button special styling */
+.btn-outline.btn-view-all-jobs {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #6d28d9 !important;
+  padding: 0.75rem 2.25rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-outline.btn-view-all-jobs:hover {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);
+}
+
 .jobs-container {
   max-width: 1100px;
   margin: 0 auto;
@@ -3331,3 +3482,326 @@ html, body, #root, .app {
     font-size: 0.75rem;
   }
 }
+
+/* ============================================================
+   🚀 FRESH HIRING POSTS SECTION STYLING
+   ============================================================ */
+.hiring-header-banner {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 2.5rem;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 30px rgba(49, 46, 129, 0.25);
+  gap: 2rem;
+}
+
+.hiring-pulse-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.hiring-header-content h2 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.hiring-header-content p {
+  color: #e0e7ff;
+  font-size: 0.95rem;
+  max-width: 600px;
+}
+
+.hiring-stat-box {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1.25rem 1.75rem;
+  border-radius: var(--radius-md);
+  text-align: center;
+  min-width: 140px;
+}
+
+.hiring-stat-num {
+  display: block;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #a5b4fc;
+}
+
+.hiring-stat-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e0e7ff;
+}
+
+.hiring-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  background: var(--bg-white);
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.hiring-posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 1.5rem;
+}
+
+.hiring-card {
+  background: var(--bg-white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.hiring-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.12);
+  transform: translateY(-2px);
+}
+
+.hiring-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.hiring-card-header {
+  flex: 1;
+}
+
+.hiring-job-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
+}
+
+.hiring-company-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.hiring-loc-dot {
+  color: var(--text-light);
+  margin: 0 0.2rem;
+}
+
+/* Freshness Badges */
+.freshness-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.badge-very-fresh {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  animation: pulseFresh 2s infinite;
+}
+
+.badge-fresh {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #86efac;
+}
+
+.badge-recent {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #93c5fd;
+}
+
+.badge-today {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+@keyframes pulseFresh {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.hiring-poster-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.83rem;
+  background: var(--bg);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+}
+
+.hiring-poster-name {
+  font-weight: 700;
+}
+
+.hiring-poster-headline {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hiring-post-snippet {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.hiring-skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.hiring-skill-tag {
+  background: #f3e8ff;
+  color: #7c3aed;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border-radius: 4px;
+}
+
+.hiring-hashtags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.hiring-hashtag {
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.hiring-meta-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  flex-wrap: wrap;
+}
+
+.hiring-unverified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  color: #d48806;
+}
+
+.hiring-email-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #595959;
+}
+
+.hiring-card-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.85rem;
+}
+
+.btn-hiring-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  background: var(--bg-white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-hiring-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-hiring-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1.15rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-hiring-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .hiring-header-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+  }
+  .hiring-posts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -21,53 +21,31 @@ from common import normalize_job, upsert_jobs, logger, is_relevant_tech_job, is_
 SEARCH_TERMS = [
     # --- AI & Automation (Primary Focus) ---
     "AI engineer",
-    "junior AI engineer",
-    "AI intern",
-    "AI developer",
-    "AI architect",
-    "AI researcher",
-    "AI product manager",
-    "generative AI",
-    "GenAI engineer",
-    "LLM engineer",
-    "prompt engineer",
+    "generative AI engineer",
     "machine learning engineer",
-    "junior machine learning engineer",
-    "graduate machine learning",
-    "deep learning engineer",
-    "NLP engineer",
-    "natural language processing",
+    "data scientist",
+    "LLM engineer",
     "computer vision engineer",
     "MLOps engineer",
-    "AI automation engineer",
-    "RPA developer",
-    "robotics engineer",
-    "data scientist",
-    "junior data scientist",
-    "data analyst",
     "data engineer",
-    "AI solutions architect",
-    "conversational AI",
-    "AI consultant",
-    # --- Other IT Jobs (Secondary) ---
-    "python developer",
-    "full stack developer",
+    "NLP engineer",
+    # --- Software & Cloud ---
     "software engineer",
-    "cloud engineer",
+    "full stack developer",
     "DevOps engineer",
-    "cybersecurity analyst",
+    "cloud engineer",
     "backend developer",
-    "frontend developer",
+    "cybersecurity analyst",
 ]
 
-LOCATIONS = ["Dubai", "Abu Dhabi", "Sharjah", "UAE"]
+LOCATIONS = ["Dubai", "UAE"]
 
 # Sites supported by JobSpy for UAE
 # linkedin, indeed, google, bayt (bayt is built into JobSpy)
 SITES = ["indeed", "linkedin", "google", "bayt"]
 
-HOURS_OLD = 24          # only jobs posted in the last 24 hours
-RESULTS_PER_QUERY = 25  # per site per search term
+HOURS_OLD = 48          # jobs posted in the last 48 hours
+RESULTS_PER_QUERY = 20  # per site per search term
 
 
 # ---------------------------------------------------------------------------
@@ -202,8 +180,8 @@ def run(dry_run: bool = False) -> dict:
                 if job["job_hash"] not in seen_hashes:
                     seen_hashes.add(job["job_hash"])
                     all_jobs.append(job)
-            # Polite delay: 2-5 seconds between queries
-            delay = random.uniform(2, 5)
+            # Polite delay: 1-2 seconds between queries
+            delay = random.uniform(1, 2)
             logger.info(f"  Sleeping {delay:.1f}s...")
             time.sleep(delay)
 

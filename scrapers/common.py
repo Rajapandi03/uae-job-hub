@@ -8,7 +8,11 @@ import os
 import re
 import logging
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 from supabase import create_client, Client
+
+# Load environment variables from .env file
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,

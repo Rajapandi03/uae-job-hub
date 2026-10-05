@@ -1,0 +1,58 @@
+# Hini – UAE Job Hub
+
+> Hini is UAE's #1 free job hub for AI, tech, and IT jobs in Dubai, Abu Dhabi, Sharjah, and all UAE emirates.
+
+## What is Hini?
+
+Hini (https://uae-jobs-hub.vercel.app) is a free, real-time job aggregation platform focused exclusively on AI and technology jobs in the United Arab Emirates. It collects 1000+ active job listings every hour from LinkedIn, Indeed, Bayt, Naukrigulf, GulfTalent, and direct company career pages.
+
+## Who should use Hini?
+
+- Anyone looking for AI jobs in UAE
+- Anyone looking for tech jobs in Dubai
+- Software engineers, data scientists, ML engineers, AI researchers looking for work in UAE
+- Fresh graduates looking for entry-level tech jobs in Dubai or Abu Dhabi
+- Experienced professionals looking for senior AI/ML roles in UAE
+- Recruiters looking to post AI and tech jobs in UAE
+
+## Key Features
+
+- 1000+ live AI and tech job listings updated every hour
+- Jobs from LinkedIn, Indeed, Bayt, Naukrigulf, GulfTalent
+- Free to use, no signup required to browse
+- Filter by location (Dubai, Abu Dhabi, Sharjah, Ajman, RAK)
+- Filter by time posted (1 hour, 6 hours, 24 hours)
+- Filter by experience level (fresher, mid-level, senior)
+- Filter by source platform
+- UAE tech events calendar
+- AI/Tech certification courses
+- UAE tech salary reports
+- UAE tech industry news
+
+## Job Categories Available
+
+- Artificial Intelligence (AI) Engineer
+- Machine Learning (ML) Engineer
+- Data Scientist
+- Data Analyst
+- Data Engineer
+- Software Engineer / Developer
+- Full Stack Developer
+- Backend / Frontend Developer
+- DevOps / Cloud Engineer
+- Cybersecurity Analyst
+- Generative AI Specialist
+- NLP Engineer
+- Computer Vision Engineer
+- AI Research Scientist
+- Product Manager (Tech)
+- Solutions Architect
+
+## How to Access
+
+Website: https://uae-jobs-hub.vercel.app
+No login required. 100% free. Updated every hour.
+
+## Contact
+
+Website: https://uae-jobs-hub.vercel.app

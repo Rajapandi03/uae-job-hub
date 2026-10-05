@@ -1,3 +1,26 @@
 User-agent: *
 Allow: /
 Sitemap: https://uae-jobs-hub.vercel.app/sitemap.xml
+
+# AI Assistant Discoverability
+# llms.txt - for AI assistants (ChatGPT, Gemini, Claude, Copilot)
+# https://uae-jobs-hub.vercel.app/llms.txt
+# https://uae-jobs-hub.vercel.app/llms-full.txt
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
