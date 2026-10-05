@@ -1049,7 +1049,6 @@ function App() {
         </div>
         <div className="nav-links">
           <a href="/" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('jobs') }}>Find Jobs</a>
-          <a href="/hiring-posts" className={currentView === 'hiring' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('hiring') }}>🚀 Hiring Posts</a>
           <a href="#companies-section" onClick={(e) => { e.preventDefault(); navigateTo('jobs'); setTimeout(() => document.getElementById('companies-section')?.scrollIntoView({ behavior: 'smooth' }), 100) }}>Companies</a>
           <a href="/events" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('events') }}>Events</a>
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
