@@ -1771,38 +1771,24 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
             />
           ) : (
             <section className="homepage-resume-section" style={{ maxWidth: '1200px', margin: '1rem auto', padding: '0 1.25rem' }}>
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '16px',
-                padding: '1.25rem 1.75rem',
-                color: 'var(--text-main)',
-                boxShadow: '0 4px 20px rgba(79, 70, 229, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03)',
-                border: '1px solid #e0e7ff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '1.25rem',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
+              <div className="resume-matcher-card">
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3.5px', background: 'linear-gradient(90deg, #4f46e5 0%, #9333ea 50%, #38bdf8 100%)' }} />
 
                 {/* Left Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: '1 1 320px' }}>
-                  <div style={{ background: '#e0e7ff', padding: '0.6rem', borderRadius: '12px', display: 'flex', color: '#4338ca', shrink: 0 }}>
+                <div className="resume-matcher-info">
+                  <div className="resume-matcher-star-icon">
                     <Sparkles size={22} />
                   </div>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: '#0f172a' }}>
+                    <div className="resume-matcher-title-wrapper">
+                      <h3 className="resume-matcher-title">
                         Instant AI Resume Matcher
                       </h3>
-                      <span style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', fontSize: '0.72rem', fontWeight: '800', padding: '0.15rem 0.6rem', borderRadius: '12px' }}>
+                      <span className="resume-matcher-badge">
                         ATS Scoring Engine
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0.15rem 0 0 0', fontWeight: '500' }}>
+                    <p className="resume-matcher-desc">
                       Upload CV to score & rank all 900+ live UAE AI & Tech roles by your skill match.
                     </p>
                   </div>
@@ -1811,26 +1797,14 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                 {/* Right Compact Upload Button */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    border: '1.5px dashed #818cf8',
-                    borderRadius: '12px',
-                    padding: '0.65rem 1.25rem',
-                    background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.05)'
-                  }}
-                  className="hover:border-indigo-600 transition"
+                  className="resume-matcher-upload-box hover:border-indigo-600 transition"
                 >
-                  <Upload size={20} style={{ color: '#4f46e5' }} />
-                  <div style={{ textAlign: 'left' }}>
-                    <span style={{ fontWeight: '800', fontSize: '0.88rem', color: '#0f172a', display: 'block' }}>
+                  <Upload size={18} style={{ color: '#4f46e5', flexShrink: 0 }} />
+                  <div className="resume-matcher-upload-text">
+                    <span className="resume-matcher-upload-label">
                       {isUploading ? 'Parsing Resume...' : 'Upload CV / Resume'}
                     </span>
-                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: '600' }}>
+                    <span className="resume-matcher-upload-sub">
                       Supports PDF, DOCX, TXT
                     </span>
                   </div>
