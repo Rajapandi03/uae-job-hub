@@ -60,6 +60,7 @@ import { parseResumeFile, getSavedResume, saveResumeState, clearSavedResume } fr
 import { useJobMatcher } from './matching/useJobMatcher.js'
 import { ResumeStrip } from './components/resume/ResumeStrip.jsx'
 import { JobDetailDrawer } from './components/jobs/JobDetailDrawer.jsx'
+import { parseExperience, parseSeniority, parseTechnologies } from './lib/jdParser.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1873,17 +1874,17 @@ function App() {
                               isGood ? 'bg-sky-50 text-sky-700 border-sky-200' :
                               'bg-amber-50 text-amber-700 border-amber-200'
                             }`}>
-                              {scoreData.tier} Match ({scoreData.score}%)
+                              {scoreData.tier} Match
                             </span>
                             <h3 className="font-extrabold text-base mt-2.5 text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition">{job.title}</h3>
                             <p className="text-xs text-slate-500 font-semibold mt-0.5">{job.company} • {job.location}</p>
                           </div>
-                          <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-sm shrink-0 shadow-xs ${
+                          <div className={`px-3 py-1 rounded-full border flex items-center justify-center font-extrabold text-xs shrink-0 shadow-xs ${
                             isStrong ? 'border-indigo-600 bg-indigo-50 text-indigo-700' :
                             isGood ? 'border-sky-500 bg-sky-50 text-sky-700' :
                             'border-amber-500 bg-amber-50 text-amber-700'
                           }`}>
-                            {scoreData.score}%
+                            {scoreData.tier} Match
                           </div>
                         </div>
 
@@ -2114,7 +2115,7 @@ function App() {
                           </div>
                         </div>
 
-                        {/* Match Score Badge / Ring */}
+                        {/* Match Score Badge (Text Only - No Percentage) */}
                         {resumeData ? (
                           scoreData && scoreData.score !== null ? (
                             <div
@@ -2122,49 +2123,35 @@ function App() {
                                 e.stopPropagation()
                                 openJobDrawer(job, scoreData, 'ats')
                               }}
-                              title="Click to view ATS score breakdown"
+                              title="Click to view ATS breakdown"
                               style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                shrink: 0
                               }}
                             >
-                              <div style={{
-                                width: '46px',
-                                height: '46px',
-                                borderRadius: '50%',
-                                border: `2.5px solid ${
-                                  scoreData.tier === 'Strong' ? '#6366f1' :
-                                  scoreData.tier === 'Good' ? '#0284c7' :
-                                  scoreData.tier === 'Stretch' ? '#f59e0b' : '#94a3b8'
-                                }`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: '900',
-                                fontSize: '0.88rem',
+                              <span style={{
+                                padding: '0.35rem 0.7rem',
+                                borderRadius: '20px',
+                                fontSize: '0.75rem',
+                                fontWeight: '800',
+                                whiteSpace: 'nowrap',
+                                display: 'inline-block',
                                 color: scoreData.tier === 'Strong' ? '#4338ca' :
                                        scoreData.tier === 'Good' ? '#0369a1' :
                                        scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
                                 background: scoreData.tier === 'Strong' ? '#eef2ff' :
                                             scoreData.tier === 'Good' ? '#f0f9ff' :
                                             scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
-                                boxShadow: `0 3px 10px ${
-                                  scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.18)' :
-                                  scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.18)' :
-                                  scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.18)' : 'rgba(0, 0, 0, 0.05)'
+                                border: `1.5px solid ${
+                                  scoreData.tier === 'Strong' ? '#c7d2fe' :
+                                  scoreData.tier === 'Good' ? '#bae6fd' :
+                                  scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
+                                }`,
+                                boxShadow: `0 2px 6px ${
+                                  scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.12)' :
+                                  scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
+                                  scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
                                 }`
-                              }}>
-                                {scoreData.score}%
-                              </div>
-                              <span style={{
-                                fontSize: '0.66rem',
-                                fontWeight: '800',
-                                marginTop: '0.25rem',
-                                color: scoreData.tier === 'Strong' ? '#4338ca' :
-                                       scoreData.tier === 'Good' ? '#0284c7' :
-                                       scoreData.tier === 'Stretch' ? '#d97706' : '#64748b'
                               }}>
                                 {scoreData.tier === 'Strong' ? 'Strong Match' : scoreData.tier === 'Good' ? 'Good Match' : scoreData.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
                               </span>
@@ -2202,29 +2189,62 @@ function App() {
                           <p className="job-desc" style={{ cursor: 'pointer' }}>
                             {(() => {
                               const clean = job.description.replace(/\*\*/g, '').replace(/\n+/g, ' ').trim()
-                              if (clean.length <= 300) return clean
-                              const truncated = clean.substring(0, 300)
+                              if (clean.length <= 220) return clean
+                              const truncated = clean.substring(0, 220)
                               const lastSpace = truncated.lastIndexOf(' ')
-                              return (lastSpace > 200 ? truncated.substring(0, lastSpace) : truncated) + '…'
+                              return (lastSpace > 150 ? truncated.substring(0, lastSpace) : truncated) + '…'
                             })()}
                           </p>
                         )}
 
-                        {/* Skills breakdown pills if resume active */}
-                        {resumeData && scoreData && (
-                          <div style={{ margin: '0.75rem 0', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
-                            {scoreData.matched && scoreData.matched.map(skill => (
-                              <span key={skill} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#4338ca', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
-                                ✓ {skill}
-                              </span>
-                            ))}
-                            {scoreData.missing && scoreData.missing.slice(0, 3).map(skill => (
-                              <span key={skill} style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
-                                + {skill}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        {/* ── JD QUICK-INFO STRIP ── */}
+                        {(() => {
+                          const exp = job.description ? parseExperience(job.description) : null
+                          const seniority = parseSeniority(job.title, job.description)
+
+                          // When resume active — show ATS skill pills
+                          if (resumeData && scoreData) {
+                            return (
+                              <div style={{ margin: '0.6rem 0', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                                {exp && (
+                                  <span style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', padding: '0.15rem 0.6rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    🗓 {exp}
+                                  </span>
+                                )}
+                                {scoreData.matched && scoreData.matched.slice(0, 4).map(skill => (
+                                  <span key={skill} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#4338ca', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
+                                    ✓ {skill}
+                                  </span>
+                                ))}
+                                {scoreData.missing && scoreData.missing.slice(0, 2).map(skill => (
+                                  <span key={skill} style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.15rem 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '600' }}>
+                                    + {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            )
+                          }
+
+                          // When NO resume — show experience + seniority parsed from JD
+                          const hasMeta = exp || seniority
+                          if (!hasMeta) return null
+
+                          return (
+                            <div style={{ margin: '0.6rem 0', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                              {exp && (
+                                <span style={{ background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', padding: '0.15rem 0.65rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700' }}>
+                                  🗓 {exp}
+                                </span>
+                              )}
+                              {seniority && (
+                                <span style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '0.15rem 0.65rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700' }}>
+                                  {seniority}
+                                </span>
+                              )}
+                              <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: '600' }}>Click for full JD →</span>
+                            </div>
+                          )
+                        })()}
 
                         {job.tags && job.tags.length > 0 && !resumeData && (
                           <div className="job-tags">

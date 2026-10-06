@@ -56,33 +56,28 @@ export function JobDetailsModal({ isOpen, onClose, job, scoreData, resumeData, o
           {resumeData && scoreData && (
             <div className="p-4 rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/60 via-white to-purple-50/40 shadow-xs">
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-indigo-100/80">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-indigo-600" />
-                  <div>
-                    <span className="text-xs font-extrabold text-slate-900">Your ATS Resume Match Analysis</span>
-                    <p className="text-[10px] text-slate-500 font-medium">Scored against full job text</p>
-                  </div>
+                <div>
+                  <span className="text-sm font-extrabold text-slate-900">ATS Match Analysis</span>
+                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Based on resume text</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${currentTier.bg} ${currentTier.text} border ${currentTier.border}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${currentTier.bg} ${currentTier.text} border ${currentTier.border}`}>
                     {tier} Match
                   </span>
-                  <div className={`w-10 h-10 rounded-full border-2 ${currentTier.ring} flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-                    {score}%
-                  </div>
                 </div>
               </div>
 
               {/* Skills Breakdown */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-                    <CheckCircle2 size={12} className={isStrong ? 'text-indigo-600' : isGood ? 'text-sky-600' : 'text-amber-600'} /> Matched Skills ({matched.length})
+                  <span className="text-[11px] font-bold text-slate-800 mb-1.5 flex items-center gap-1">
+                    Matched Requirements
+                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{matched.length}</span>
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {matched.map(skill => (
-                      <span key={skill} className={`px-2 py-0.5 border text-[11px] font-medium rounded ${isStrong ? 'bg-indigo-50 border-indigo-200/70 text-indigo-800' : isGood ? 'bg-sky-50 border-sky-200/70 text-sky-800' : 'bg-amber-50 border-amber-200/70 text-amber-800'}`}>
-                        ✓ {skill}
+                      <span key={skill} className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-semibold rounded-md shadow-xs">
+                        {skill}
                       </span>
                     ))}
                     {matched.length === 0 && <span className="text-slate-400 italic text-[11px]">None detected</span>}
@@ -90,18 +85,19 @@ export function JobDetailsModal({ isOpen, onClose, job, scoreData, resumeData, o
                 </div>
 
                 <div>
-                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-                    <AlertCircle size={12} className="text-rose-500" /> Missing Skills ({missing.length})
+                  <span className="text-[11px] font-bold text-slate-800 mb-1.5 flex items-center gap-1">
+                    Missing Requirements
+                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{missing.length}</span>
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {missing.map(skill => (
-                      <span key={skill} className="px-2 py-0.5 bg-rose-50 border border-rose-200/70 text-rose-800 text-[11px] font-medium rounded">
-                        + {skill}
+                      <span key={skill} className="px-2.5 py-1 bg-white border border-slate-200 text-slate-500 text-[11px] font-medium rounded-md shadow-xs">
+                        {skill}
                       </span>
                     ))}
                     {missing.length === 0 && (
-                      <span className={`font-bold text-[11px] flex items-center gap-1 ${isStrong ? 'text-indigo-700' : isGood ? 'text-sky-700' : 'text-amber-700'}`}>
-                        <CheckCircle2 size={12} /> All detected role skills matched!
+                      <span className={`text-[11px] font-semibold ${isStrong ? 'text-indigo-700' : isGood ? 'text-sky-700' : 'text-amber-700'}`}>
+                        Perfect Match! Your resume contains all detected technical requirements.
                       </span>
                     )}
                   </div>

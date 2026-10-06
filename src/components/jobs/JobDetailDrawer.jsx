@@ -16,11 +16,21 @@ import {
   Briefcase,
   Share2,
   Check,
-  ChevronRight,
   Lightbulb,
-  ShieldCheck
+  ShieldCheck,
+  Code2,
+  Database,
+  Cloud,
+  Wrench,
+  Brain,
+  Layers,
+  UserCheck,
+  ListChecks,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { scoreJob } from '../../matching/scoring.js'
+import { parseJD } from '../../lib/jdParser.js'
 
 function sourceLabel(source) {
   if (!source) return 'Job Portal'
@@ -37,6 +47,16 @@ function sourceLabel(source) {
   return labels[source] || source
 }
 
+// Category icons and colors for technology sections
+const TECH_META = {
+  languages:  { label: 'Languages',   Icon: Code2,    color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+  frameworks: { label: 'Frameworks',  Icon: Layers,   color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+  aiMl:       { label: 'AI / ML',     Icon: Brain,    color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  cloud:      { label: 'Cloud & DevOps', Icon: Cloud, color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  databases:  { label: 'Databases',   Icon: Database, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+  tools:      { label: 'Tools',        Icon: Wrench,  color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+}
+
 export function JobDetailDrawer({
   isOpen,
   onClose,
@@ -51,19 +71,18 @@ export function JobDetailDrawer({
   const [copied, setCopied] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [showRawDesc, setShowRawDesc] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab || 'description')
+      setShowRawDesc(false)
     }
   }, [isOpen, initialTab])
 
-  // Close drawer on Escape key press
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+      if (e.key === 'Escape' && isOpen) onClose()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -71,8 +90,14 @@ export function JobDetailDrawer({
 
   if (!isOpen || !job) return null
 
-  // Calculate ATS match score dynamically for this job if resume is active
+  // ATS score from engine
   const scoreData = resumeData ? scoreJob(resumeData.skills || [], job) : null
+
+  // Structured JD parse (Option A: uses ATS skills for Must-Have)
+  const jd = parseJD(job, scoreData)
+
+  // TRUE if any structured section was extracted from the description
+  const hasAnyStructuredData = !!(jd.experience || jd.seniority || jd.technologies || (jd.responsibilities && jd.responsibilities.length > 0))
 
   const isSaved = savedJobIds.includes(job.id)
 
@@ -103,75 +128,175 @@ export function JobDetailDrawer({
     }
   }
 
-  // Format description text nicely into clean paragraphs
-  const formatDescription = (descText) => {
-    if (!descText || descText.trim() === '') {
-      return (
-        <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200/80 my-4">
-          <Briefcase className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-          <p className="font-semibold text-slate-700">Detailed job description not provided by portal.</p>
-          <p className="text-xs text-slate-500 mt-1">
-            Click "Apply Directly" below to read the full posting on the official portal ({job.source ? (job.source) : 'Employer Site'}).
-          </p>
-        </div>
-      )
-    }
+  const tierStyles = {
+    Strong:  { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200', ring: 'border-indigo-600 bg-indigo-50 text-indigo-900' },
+    Good:    { bg: 'bg-sky-50',    text: 'text-sky-800',    border: 'border-sky-200',    ring: 'border-sky-500 bg-sky-50 text-sky-900' },
+    Stretch: { bg: 'bg-amber-50',  text: 'text-amber-800',  border: 'border-amber-200',  ring: 'border-amber-500 bg-amber-50 text-amber-900' },
+    Weak:    { bg: 'bg-slate-50',  text: 'text-slate-700',  border: 'border-slate-200',  ring: 'border-slate-400 bg-slate-50 text-slate-800' },
+  }
+  const currentTier = scoreData ? (tierStyles[scoreData.tier] || tierStyles.Weak) : tierStyles.Weak
 
-    // Clean markdown bold markers if any, and split by double newlines or single newlines with list items
-    const cleanText = descText.replace(/\*\*/g, '').trim()
-    const paragraphs = cleanText.split(/\n\s*\n/)
+  // ── SENIORITY BADGE ─────────────────────────────────────────
+  function SeniorityBadge({ level }) {
+    if (!level) return null
+    const map = {
+      'Lead / Principal': { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+      'Senior':           { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+      'Mid-Level':        { color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+      'Junior / Entry':   { color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+    }
+    const style = map[level] || { color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' }
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border"
+        style={{ color: style.color, background: style.bg, borderColor: style.border }}
+      >
+        <UserCheck size={11} />
+        {level}
+      </span>
+    )
+  }
+
+  // ── EXPERIENCE BADGE ─────────────────────────────────────────
+  function ExperienceBadge({ years }) {
+    if (!years) return null
+    return (
+      <div className="flex items-center gap-2 p-3 rounded-xl border border-indigo-100 bg-indigo-50/60">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-500/20">
+          <Briefcase size={16} />
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Experience Required</p>
+          <p className="text-sm font-extrabold text-indigo-900">{years}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── TECHNOLOGIES GRID ────────────────────────────────────────
+  function TechGrid({ technologies }) {
+    if (!technologies) return null
+    const categories = Object.entries(TECH_META).filter(([key]) => technologies[key]?.length > 0)
+    if (categories.length === 0) return null
 
     return (
-      <div className="space-y-4 text-slate-700 text-sm leading-relaxed font-normal">
-        {paragraphs.map((paragraph, idx) => {
-          const lines = paragraph.split('\n').filter(l => l.trim().length > 0)
-          
-          if (lines.length > 1 && lines.some(l => l.trim().startsWith('-') || l.trim().startsWith('•') || /^\d+[\.\)]/.test(l.trim()))) {
-            return (
-              <div key={idx} className="my-3">
-                <ul className="space-y-2 pl-2">
-                  {lines.map((line, lIdx) => {
-                    const cleanLine = line.replace(/^[\-•\*\d+\.\)]\s*/, '').trim()
-                    return (
-                      <li key={lIdx} className="flex items-start gap-2 text-slate-700 text-sm">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 shrink-0" />
-                        <span>{cleanLine}</span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )
-          }
-
+      <div className="space-y-3">
+        {categories.map(([key, meta]) => {
+          const { Icon, label, color, bg, border } = meta
+          const terms = technologies[key]
           return (
-            <p key={idx} className="text-slate-700 leading-relaxed text-sm">
-              {paragraph}
-            </p>
+            <div key={key}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Icon size={13} style={{ color }} />
+                <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color }}>{label}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {terms.map(term => (
+                  <span
+                    key={term}
+                    className="px-2.5 py-0.5 rounded-md text-xs font-bold border"
+                    style={{ color, background: bg, borderColor: border }}
+                  >
+                    {term}
+                  </span>
+                ))}
+              </div>
+            </div>
           )
         })}
       </div>
     )
   }
 
-  const tierStyles = {
-    Strong: { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200', ring: 'border-indigo-600 bg-indigo-50 text-indigo-900' },
-    Good: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200', ring: 'border-sky-500 bg-sky-50 text-sky-900' },
-    Stretch: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200', ring: 'border-amber-500 bg-amber-50 text-amber-900' },
-    Weak: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', ring: 'border-slate-400 bg-slate-50 text-slate-800' },
+  // ── RESPONSIBILITIES LIST ────────────────────────────────────
+  function ResponsibilitiesList({ items }) {
+    if (!items || items.length === 0) return null
+    return (
+      <ul className="space-y-2">
+        {items.map((item, idx) => (
+          <li key={idx} className="flex items-start gap-2.5 text-slate-700 text-sm">
+            <span className="flex shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 items-center justify-center text-[10px] font-black mt-0.5">
+              {idx + 1}
+            </span>
+            <span className="leading-relaxed">{item}</span>
+          </li>
+        ))}
+      </ul>
+    )
   }
 
-  const currentTier = scoreData ? (tierStyles[scoreData.tier] || tierStyles.Weak) : tierStyles.Weak
+  // ── SKILLS SECTION ───────────────────────────────────────────
+  function MustHaveSkillsPills({ matched, missing, hasScore }) {
+    if (!hasScore) {
+      // No resume uploaded — show "Upload to see skills" prompt
+      return (
+        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+          <p className="text-xs text-slate-500 font-semibold">
+            <Sparkles size={12} className="inline mr-1 text-indigo-500" />
+            Upload your resume to see which skills you match for this role
+          </p>
+        </div>
+      )
+    }
+
+    const allEmpty = (!matched || matched.length === 0) && (!missing || missing.length === 0)
+    if (allEmpty) {
+      return (
+        <p className="text-xs text-slate-500 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          Not enough keyword data found in this job description.
+        </p>
+      )
+    }
+
+    return (
+      <div className="space-y-2">
+        {matched && matched.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {matched.map(skill => (
+              <span key={skill} className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold rounded-md flex items-center gap-1">
+                <CheckCircle2 size={11} className="text-indigo-600" />
+                {skill}
+              </span>
+            ))}
+          </div>
+        )}
+        {missing && missing.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {missing.map(skill => (
+              <span key={skill} className="px-2.5 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-md">
+                {skill}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-[10px] text-slate-400 font-medium">
+          ✓ = matched in your resume &nbsp;|&nbsp; uncolored = gaps to address
+        </p>
+      </div>
+    )
+  }
+
+  // ── EMPTY DESCRIPTION STATE ──────────────────────────────────
+  function EmptyDescState() {
+    return (
+      <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200/80 my-4">
+        <Briefcase className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+        <p className="font-semibold text-slate-700">Detailed job description not provided by portal.</p>
+        <p className="text-xs text-slate-500 mt-1">
+          Click "Apply Directly" below to read the full posting on {job.source ? sourceLabel(job.source) : 'the official portal'}.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/50 backdrop-blur-xs flex justify-end transition-opacity animate-in fade-in duration-200">
-      {/* Backdrop overlay listener */}
       <div className="absolute inset-0" onClick={onClose} />
 
       <div className="w-full max-w-2xl bg-white border-l border-slate-200 text-slate-900 h-full overflow-y-auto p-4 sm:p-6 shadow-2xl flex flex-col justify-between relative z-10 select-text">
         
         <div>
-          {/* Header Bar */}
+          {/* ── HEADER BAR ─────────────────────────────────────── */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
               <span className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-xs border border-indigo-100 flex items-center gap-1">
@@ -187,7 +312,7 @@ export function JobDetailDrawer({
             </button>
           </div>
 
-          {/* Job Overview Hero Card */}
+          {/* ── JOB OVERVIEW HERO ──────────────────────────────── */}
           <div className="my-4 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -203,37 +328,45 @@ export function JobDetailDrawer({
                       <span className="flex items-center gap-1 text-slate-500"><Clock size={13} /> {job.postedDate}</span>
                     )}
                   </div>
+                  {/* Seniority badge inline */}
+                  {jd.seniority && (
+                    <div className="mt-2">
+                      <SeniorityBadge level={jd.seniority} />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Match Ring Badge (if resume is uploaded) */}
+              {/* Match Badge (Text Only) */}
               {scoreData && (
                 <div
                   onClick={() => setActiveTab('ats')}
-                  className="cursor-pointer group flex flex-col items-center shrink-0"
+                  className="cursor-pointer group flex items-center shrink-0"
                   title="Click to open ATS Match breakdown"
                 >
-                  <div className={`w-12 h-12 rounded-full border-2 ${currentTier.ring} flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition`}>
-                    {scoreData.score}%
-                  </div>
-                  <span className="text-[10px] font-bold text-indigo-600 mt-1 underline">
+                  <span className={`px-3 py-1.5 rounded-full border text-xs font-extrabold shadow-xs transition group-hover:scale-105 ${currentTier.ring}`}>
                     {scoreData.tier} Match
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Quick Badges & Tags */}
+            {/* Quick badges */}
             <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-slate-200/60 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 {job.source && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    Source: {job.source.toUpperCase()}
+                    {job.source.toUpperCase()}
                   </span>
                 )}
                 {job.type && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
                     {job.type}
+                  </span>
+                )}
+                {jd.experience && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200 flex items-center gap-1">
+                    <Briefcase size={10} /> {jd.experience}
                   </span>
                 )}
               </div>
@@ -267,7 +400,7 @@ export function JobDetailDrawer({
             </div>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* ── NAVIGATION TABS ─────────────────────────────────── */}
           <div className="flex items-center border-b border-slate-200 mb-4 gap-2">
             <button
               onClick={() => setActiveTab('description')}
@@ -289,153 +422,213 @@ export function JobDetailDrawer({
             >
               <Sparkles size={15} className="text-indigo-600" /> ATS Resume Matcher
               {scoreData && (
-                <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-black">
-                  {scoreData.score}%
+                <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                  {scoreData.tier} Match
                 </span>
               )}
             </button>
           </div>
 
-          {/* TAB 1: JOB DESCRIPTION */}
+          {/* ══════════════════════════════════════════════════════
+              TAB 1 — STRUCTURED JD VIEW
+          ══════════════════════════════════════════════════════ */}
           {activeTab === 'description' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
-                  <FileText size={16} className="text-indigo-600" /> Full Job Overview & Requirements
-                </h3>
-              </div>
+            <div className="space-y-5 animate-in fade-in duration-150">
 
-              {formatDescription(job.description)}
+              {/* ── NO DESCRIPTION AT ALL ────────────────────────── */}
+              {!job.description || job.description.trim() === '' ? (
+                <EmptyDescState />
+              ) : !hasAnyStructuredData ? (
 
-              {/* Required Skills Badges */}
-              {scoreData && scoreData.matched && scoreData.matched.length > 0 && (
-                <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 my-4">
-                  <h4 className="text-xs font-bold text-indigo-950 mb-2 flex items-center gap-1">
-                    <Sparkles size={13} className="text-indigo-600" /> Key Required Skills Mentioned:
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {scoreData.matched.map(s => (
-                      <span key={s} className="px-2.5 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold rounded-md flex items-center gap-1">
-                        <CheckCircle2 size={12} className="text-indigo-600" /> {s}
-                      </span>
-                    ))}
-                    {scoreData.missing && scoreData.missing.map(s => (
-                      <span key={s} className="px-2.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold rounded-md">
-                        {s}
-                      </span>
-                    ))}
+                /* ── RAW TEXT ONLY — no structured data extracted ─── */
+                /* Show description directly. No toggle, no extra clicks. */
+                <>
+                  {/* Title + Seniority header */}
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-50 to-slate-50 border border-indigo-100/80">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest mb-1">Job Title</p>
+                        <p className="font-extrabold text-slate-900 text-base leading-snug">{job.title}</p>
+                      </div>
+                      {jd.seniority && <SeniorityBadge level={jd.seniority} />}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Must-Have Skills (ATS) — still show even with no parsed structure */}
+                  {jd.hasScore && (
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-indigo-600" />
+                        Must-Have Skills
+                        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-bold ml-1">ATS Powered</span>
+                      </h4>
+                      <MustHaveSkillsPills matched={jd.mustHaveSkills} missing={jd.missingSkills} hasScore={jd.hasScore} />
+                    </div>
+                  )}
+
+                  {/* Full raw description — always visible, no toggle needed */}
+                  <div>
+                    <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <FileText size={14} className="text-indigo-600" />
+                      Full Job Description
+                    </h4>
+                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+                      {job.description.replace(/\*\*/g, '').trim()}
+                    </div>
+                  </div>
+                </>
+              ) : (
+
+                /* ── STRUCTURED JD VIEW — parsed data found ──────── */
+                <>
+                  {/* ── SECTION: JOB TITLE + SENIORITY ─────────── */}
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-indigo-50 to-slate-50 border border-indigo-100/80">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest mb-1">Job Title</p>
+                        <p className="font-extrabold text-slate-900 text-base leading-snug">{job.title}</p>
+                      </div>
+                      {jd.seniority && <SeniorityBadge level={jd.seniority} />}
+                    </div>
+                  </div>
+
+                  {/* ── SECTION: EXPERIENCE ─────────────────────── */}
+                  {jd.experience && (
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Briefcase size={14} className="text-indigo-600" /> Experience
+                      </h4>
+                      <ExperienceBadge years={jd.experience} />
+                    </div>
+                  )}
+
+                  {/* ── SECTION: MUST-HAVE SKILLS (ATS-powered) ─── */}
+                  <div>
+                    <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <CheckCircle2 size={14} className="text-indigo-600" />
+                      Must-Have Skills
+                      {jd.hasScore && (
+                        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-bold ml-1">ATS Powered</span>
+                      )}
+                    </h4>
+                    <MustHaveSkillsPills matched={jd.mustHaveSkills} missing={jd.missingSkills} hasScore={jd.hasScore} />
+                  </div>
+
+                  {/* ── SECTION: TECHNOLOGIES ───────────────────── */}
+                  {jd.technologies && (
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <Code2 size={14} className="text-indigo-600" /> Technologies
+                      </h4>
+                      <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                        <TechGrid technologies={jd.technologies} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── SECTION: RESPONSIBILITIES ────────────────── */}
+                  {jd.responsibilities && jd.responsibilities.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <ListChecks size={14} className="text-indigo-600" /> Responsibilities
+                      </h4>
+                      <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                        <ResponsibilitiesList items={jd.responsibilities} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── TOGGLE: Full Raw Description (optional) ──── */}
+                  <div className="border-t border-slate-100 pt-4">
+                    <button
+                      onClick={() => setShowRawDesc(prev => !prev)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition"
+                    >
+                      {showRawDesc ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      {showRawDesc ? 'Hide' : 'Show'} Full Raw Description
+                    </button>
+                    {showRawDesc && (
+                      <div className="mt-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap animate-in fade-in duration-150">
+                        {job.description.replace(/\*\*/g, '').trim()}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
 
-          {/* TAB 2: ATS RESUME MATCHER */}
+          {/* ══════════════════════════════════════════════════════
+              TAB 2 — ATS RESUME MATCHER
+          ══════════════════════════════════════════════════════ */}
           {activeTab === 'ats' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               {resumeData ? (
                 <div>
-                  {/* ATS Compatibility Hero Banner */}
-                  <div className="p-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-slate-50 flex items-center justify-between gap-4 mb-4 shadow-xs">
+                  {/* ATS Hero Banner */}
+                  <div className="p-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 flex items-center justify-between gap-4 mb-6 shadow-xs">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold ${currentTier.bg} ${currentTier.text} ${currentTier.border} border`}>
-                          {scoreData?.tier === 'Strong' ? 'Strong Match' : scoreData?.tier === 'Good' ? 'Good Match' : scoreData?.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
-                        </span>
-                        <span className="text-xs text-slate-500 font-semibold">Verified ATS Score</span>
-                      </div>
-                      <h3 className="font-extrabold text-slate-900 text-base mt-1">Resume Compatibility Breakdown</h3>
-                      <p className="text-xs text-slate-600 mt-0.5">
-                        Matched against your uploaded file: <strong className="text-slate-800">{resumeData.fileName}</strong>
+                      <h3 className="font-extrabold text-slate-900 text-lg">ATS Match Analysis</h3>
+                      <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Based on your resume: <span className="font-bold text-slate-700">{resumeData.fileName}</span>
                       </p>
                     </div>
-                    <div className={`w-16 h-16 rounded-full border-3 ${currentTier.ring} flex items-center justify-center font-black text-xl shrink-0 shadow-sm`}>
-                      {scoreData?.score}%
+                    <div className={`px-4 py-1.5 rounded-full border ${currentTier.ring} flex items-center justify-center font-extrabold text-xs shrink-0 shadow-xs`}>
+                      {scoreData?.tier === 'Strong' ? 'Strong Match' : scoreData?.tier === 'Good' ? 'Good Match' : scoreData?.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
                     </div>
                   </div>
 
-                  {/* Matched Skills List */}
-                  <div className="my-4">
-                    <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <CheckCircle2 size={15} className="text-indigo-600" />
-                      Matched Skills ({scoreData?.matched?.length || 0})
-                    </h4>
+                  {/* Matched Skills */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-bold text-slate-900">Matched Requirements</h4>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">{scoreData?.matched?.length || 0}</span>
+                    </div>
                     {scoreData?.matched && scoreData.matched.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {scoreData.matched.map(skill => (
-                          <span key={skill} className="px-2.5 py-1 bg-indigo-50 border border-indigo-200/80 text-indigo-900 text-xs font-bold rounded-lg flex items-center gap-1">
-                            ✓ {skill}
+                          <span key={skill} className="px-3 py-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-md shadow-xs">
+                            {skill}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-500 italic p-2 bg-slate-50 rounded-lg">No direct technical skill keywords matched yet.</p>
+                      <p className="text-xs text-slate-500 italic">No direct technical skill keywords matched yet.</p>
                     )}
                   </div>
 
-                  {/* Missing Skills List */}
-                  <div className="my-4">
-                    <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <AlertCircle size={15} className="text-rose-500" />
-                      Skills to Highlight / Add ({scoreData?.missing?.length || 0})
-                    </h4>
+                  {/* Missing Skills */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-bold text-slate-900">Missing Requirements</h4>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">{scoreData?.missing?.length || 0}</span>
+                    </div>
                     {scoreData?.missing && scoreData.missing.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {scoreData.missing.map(skill => (
-                          <span key={skill} className="px-2.5 py-1 bg-rose-50 border border-rose-200/80 text-rose-800 text-xs font-bold rounded-lg flex items-center gap-1">
-                            + {skill}
+                          <span key={skill} className="px-3 py-1 bg-white border border-slate-200 text-slate-500 text-xs font-medium rounded-md shadow-xs">
+                            {skill}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-semibold text-indigo-900 flex items-center gap-2">
-                        <ShieldCheck size={16} className="text-indigo-600 shrink-0" />
-                        Perfect Match! Your resume contains all detected technical requirements for this role.
+                      <div className="text-xs font-semibold text-indigo-700">
+                        Perfect Match! Your resume contains all detected technical requirements.
                       </div>
                     )}
                   </div>
 
-                  {/* Scoring Algorithm Breakdown */}
-                  {scoreData?.reasons && scoreData.reasons.length > 0 && (
-                    <div className="my-4">
-                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <Award size={15} className="text-indigo-600" /> Scoring Weight Breakdown
-                      </h4>
-                      <div className="space-y-1.5">
-                        {scoreData.reasons.map((reason, idx) => (
-                          <div key={idx} className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200/70 flex items-start gap-2 font-medium">
-                            <span className="text-indigo-600 font-bold">•</span>
-                            <span>{reason}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tailored Optimization Recommendation */}
-                  {scoreData?.missing && scoreData.missing.length > 0 && (
-                    <div className="p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-xl my-4 flex items-start gap-2.5">
-                      <Lightbulb size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                      <div>
-                        <h5 className="font-extrabold text-amber-950 text-xs">ATS Optimization Tip</h5>
-                        <p className="text-xs text-amber-900 mt-0.5 leading-relaxed font-medium">
-                          Including keywords like <strong className="underline">{scoreData.missing.slice(0, 3).join(', ')}</strong> in your resume summary or work projects can help pass recruiter ATS filters for this application.
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ) : (
-                /* No Resume Uploaded Callout */
+                /* No Resume Uploaded */
                 <div className="p-6 text-center bg-gradient-to-b from-indigo-50/60 to-white rounded-2xl border border-indigo-100 my-4 shadow-xs">
                   <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xs">
                     <Upload size={22} />
                   </div>
                   <h3 className="font-extrabold text-slate-900 text-base">Test Your Resume Match Score</h3>
                   <p className="text-xs text-slate-600 max-w-md mx-auto mt-1 leading-relaxed">
-                    Upload your CV (`.pdf`, `.docx`, `.txt`) to instantly calculate your ATS match accuracy score and skill overlap for this position.
+                    Upload your CV (`.pdf`, `.docx`, `.txt`) to instantly calculate your ATS match accuracy score and skill overlap.
                   </p>
-
                   <div className="mt-4 max-w-sm mx-auto">
                     <label className="cursor-pointer block">
                       <input
@@ -445,17 +638,10 @@ export function JobDetailDrawer({
                         className="hidden"
                       />
                       <div className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 transition shadow-md shadow-indigo-600/20">
-                        {isUploading ? (
-                          <span>Parsing CV...</span>
-                        ) : (
-                          <>
-                            <Upload size={15} /> Upload Resume Now
-                          </>
-                        )}
+                        {isUploading ? <span>Parsing CV...</span> : <><Upload size={15} /> Upload Resume Now</>}
                       </div>
                     </label>
                   </div>
-
                   {uploadError && (
                     <p className="text-xs text-rose-600 font-semibold mt-2">⚠️ {uploadError}</p>
                   )}
@@ -465,7 +651,7 @@ export function JobDetailDrawer({
           )}
         </div>
 
-        {/* Apply CTA Footer */}
+        {/* ── APPLY CTA FOOTER ──────────────────────────────────── */}
         <div className="pt-4 border-t border-slate-200 mt-6 pb-2 sticky bottom-0 bg-white">
           <div className="flex items-center gap-3">
             <a
@@ -474,7 +660,7 @@ export function JobDetailDrawer({
               rel="noopener noreferrer"
               className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-extrabold text-sm rounded-xl flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-600/25"
             >
-              Apply Directly on {job.source ? (job.source.toUpperCase()) : 'Portal'} <ExternalLink size={16} />
+              Apply Directly on {job.source ? job.source.toUpperCase() : 'Portal'} <ExternalLink size={16} />
             </a>
           </div>
           <p className="text-[10px] text-slate-400 text-center mt-2 font-medium">

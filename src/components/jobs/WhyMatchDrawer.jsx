@@ -58,25 +58,25 @@ export function WhyMatchDrawer({ isOpen, onClose, job, scoreData }) {
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border inline-block mb-0.5 ${currentTier.bg} ${currentTier.text} ${currentTier.border}`}>
                 {tier} Match Grade
               </span>
-              <div className="text-xs font-bold text-slate-900">ATS Score Compatibility</div>
-              <p className="text-[10px] text-slate-400 font-medium">Weighted Skills, Title & Experience</p>
+              <div className="text-xs font-bold text-slate-900">ATS Match Analysis</div>
+              <p className="text-[10px] text-slate-400 font-medium">Based on required skills</p>
             </div>
-            <div className={`w-10 h-10 rounded-full border-2 ${currentTier.ring} flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-              {score}%
+            <div className={`px-2.5 py-1 rounded-full border text-xs font-extrabold shrink-0 shadow-2xs ${currentTier.bg} ${currentTier.text} ${currentTier.border}`}>
+              {tier} Match
             </div>
           </div>
 
           {/* Matched Skills */}
-          <div className="my-2.5">
-            <h5 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <CheckCircle2 size={13} className={isStrong ? 'text-indigo-500' : isGood ? 'text-sky-500' : 'text-amber-500'} />
-              Matched Skills ({matched.length})
+          <div className="my-4">
+            <h5 className="text-[11px] font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+              Matched Requirements
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">{matched.length}</span>
             </h5>
             {matched.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {matched.map(skill => (
-                  <span key={skill} className={`px-2 py-0.5 text-[11px] font-medium rounded border ${isStrong ? 'bg-indigo-50 border-indigo-200/70 text-indigo-800' : isGood ? 'bg-sky-50 border-sky-200/70 text-sky-800' : 'bg-amber-50 border-amber-200/70 text-amber-800'}`}>
-                    ✓ {skill}
+                  <span key={skill} className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border ${isStrong ? 'bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-xs' : isGood ? 'bg-sky-50/80 border-sky-200 text-sky-700 shadow-xs' : 'bg-amber-50/80 border-amber-200 text-amber-700 shadow-xs'}`}>
+                    {skill}
                   </span>
                 ))}
               </div>
@@ -86,42 +86,25 @@ export function WhyMatchDrawer({ isOpen, onClose, job, scoreData }) {
           </div>
 
           {/* Missing Skills */}
-          <div className="my-2.5">
-            <h5 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <AlertCircle size={13} className="text-rose-500" />
-              Missing Skills ({missing.length})
+          <div className="my-4">
+            <h5 className="text-[11px] font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+              Missing Requirements
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">{missing.length}</span>
             </h5>
             {missing.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {missing.map(skill => (
-                  <span key={skill} className="px-2 py-0.5 bg-rose-50 border border-rose-200/70 text-rose-800 text-[11px] font-medium rounded">
-                    + {skill}
+                  <span key={skill} className="px-2.5 py-1 bg-white border border-slate-200 text-slate-500 text-[11px] font-medium rounded-md shadow-xs">
+                    {skill}
                   </span>
                 ))}
               </div>
             ) : (
-              <div className={`p-1.5 border rounded-md text-[11px] font-semibold flex items-center gap-1.5 ${isStrong ? 'bg-indigo-50/70 border-indigo-200/80 text-indigo-800' : isGood ? 'bg-sky-50/70 border-sky-200/80 text-sky-800' : 'bg-amber-50/70 border-amber-200/80 text-amber-800'}`}>
-                <CheckCircle2 size={12} className={isStrong ? 'text-indigo-600' : isGood ? 'text-sky-600' : 'text-amber-600'} /> Matched all {matched.length} detected role skills
+              <div className={`text-[11px] font-semibold ${isStrong ? 'text-indigo-700' : isGood ? 'text-sky-700' : 'text-amber-700'}`}>
+                Perfect Match! Your resume contains all detected technical requirements.
               </div>
             )}
           </div>
-
-          {/* Score Breakdown Factors */}
-          {reasons && reasons.length > 0 && (
-            <div className="my-2.5">
-              <h5 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <Award size={12} className="text-indigo-600" /> Scoring Breakdown Factors
-              </h5>
-              <ul className="space-y-1">
-                {reasons.map((reason, idx) => (
-                  <li key={idx} className="text-[11px] text-slate-700 bg-slate-50/80 p-2 rounded-md border border-slate-200/60 flex items-start gap-1.5 font-medium leading-snug">
-                    <span className="text-indigo-600 font-bold">•</span>
-                    <span>{reason}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
         {/* Apply CTA Footer */}
