@@ -2431,11 +2431,11 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
           <section className="section-community">
             <div className="section-title">
               <h2>Community & Growth</h2>
-              <p>Connect, learn, and advance your AI career</p>
+              <p>Connect, learn, and advance your AI & Tech career</p>
             </div>
             <div className="community-grid">
               <div className="events-col" style={{ display: 'flex', flexDirection: 'column' }}>
-                <h3>Upcoming AI Events</h3>
+                <h3>Upcoming AI & Tech Events</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
                   {eventsList.slice(0, 3).map((event) => (
                     <div
@@ -2493,8 +2493,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
 
           {/* ===== EMPLOYER CTA ===== */}
           <section className="section-employer-cta">
-            <h2>Build your AI dream team, right here in the UAE</h2>
-            <p>Join 65+ companies already hiring through Hini – UAE Job Hub. We connect you with pre-vetted AI professionals who are ready to make an impact.</p>
+            <h2>Build your AI & Tech dream team, right here in the UAE</h2>
+            <p>Join 65+ companies already hiring through Hini – UAE Job Hub. We connect you with pre-vetted AI & Tech professionals who are ready to make an impact.</p>
             <div className="cta-buttons">
               <button className="btn-cta-primary" onClick={() => setShowPostJobModal(true)}>Post Your First Job</button>
               <button className="btn-cta-outline" onClick={() => setShowPostJobModal(true)}>Recruiter Portal</button>
@@ -2503,10 +2503,10 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
 
           {/* ===== FINAL CTA ===== */}
           <section className="section-final-cta">
-            <h2>Ready to advance your AI career in the UAE?</h2>
-            <p>Join thousands of AI professionals who've found their dream jobs through our platform.</p>
+            <h2>Ready to advance your AI & Tech career in the UAE?</h2>
+            <p>Join thousands of AI & Tech professionals who've found their dream jobs through our platform.</p>
             <div className="final-cta-buttons">
-              <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse All Jobs</button>
+              <button className="btn-primary" style={{ padding: '0.75rem 2rem' }} onClick={() => document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })}>Browse AI & Tech Jobs</button>
             </div>
             <div className="final-cta-note">
               <span style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '500' }}>100% Free Forever • No Subscriptions • Built for Job Seekers</span>
