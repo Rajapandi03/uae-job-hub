@@ -1776,7 +1776,7 @@ function App() {
                 position: 'relative',
                 overflow: 'hidden'
               }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3.5px', background: 'linear-gradient(90deg, #4f46e5 0%, #9333ea 50%, #10b981 100%)' }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3.5px', background: 'linear-gradient(90deg, #4f46e5 0%, #9333ea 50%, #38bdf8 100%)' }} />
 
                 {/* Left Info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: '1 1 320px' }}>
@@ -1849,42 +1849,58 @@ function App() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {topMatches.map(({ job, scoreData }) => (
-                  <div
-                    key={job.id}
-                    onClick={(e) => {
-                      if (e.target.closest('button') || e.target.closest('a')) return
-                      openJobDrawer(job, scoreData, 'description')
-                    }}
-                    className="bg-white rounded-2xl p-5 text-slate-900 border border-indigo-100/80 shadow-md shadow-indigo-950/5 hover:border-indigo-300 transition-all flex flex-col justify-between relative overflow-hidden group cursor-pointer"
-                  >
-                    {/* Top gradient accent */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-indigo-500 to-purple-500 opacity-80" />
+                {topMatches.map(({ job, scoreData }) => {
+                  const isStrong = scoreData.tier === 'Strong'
+                  const isGood = scoreData.tier === 'Good'
 
-                    <div>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
-                            {scoreData.tier} Match ({scoreData.score}%)
-                          </span>
-                          <h3 className="font-extrabold text-base mt-2.5 text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition">{job.title}</h3>
-                          <p className="text-xs text-slate-500 font-semibold mt-0.5">{job.company} • {job.location}</p>
-                        </div>
-                        <div className="w-12 h-12 rounded-full border-2 border-emerald-500 flex items-center justify-center bg-emerald-50 text-emerald-700 font-black text-sm shrink-0 shadow-xs">
-                          {scoreData.score}%
-                        </div>
-                      </div>
+                  return (
+                    <div
+                      key={job.id}
+                      onClick={(e) => {
+                        if (e.target.closest('button') || e.target.closest('a')) return
+                        openJobDrawer(job, scoreData, 'description')
+                      }}
+                      className="bg-white rounded-2xl p-5 text-slate-900 border border-indigo-100/80 shadow-md shadow-indigo-950/5 hover:border-indigo-300 transition-all flex flex-col justify-between relative overflow-hidden group cursor-pointer"
+                    >
+                      {/* Top gradient accent */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-400 opacity-80" />
 
-                      <div className="my-3 pt-3 border-t border-slate-100">
-                        <div className="flex flex-wrap gap-1">
-                          {scoreData.matched.slice(0, 3).map(skill => (
-                            <span key={skill} className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-md">
-                              ✓ {skill}
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold inline-block border ${
+                              isStrong ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                              isGood ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                              'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>
+                              {scoreData.tier} Match ({scoreData.score}%)
                             </span>
-                          ))}
+                            <h3 className="font-extrabold text-base mt-2.5 text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition">{job.title}</h3>
+                            <p className="text-xs text-slate-500 font-semibold mt-0.5">{job.company} • {job.location}</p>
+                          </div>
+                          <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-sm shrink-0 shadow-xs ${
+                            isStrong ? 'border-indigo-600 bg-indigo-50 text-indigo-700' :
+                            isGood ? 'border-sky-500 bg-sky-50 text-sky-700' :
+                            'border-amber-500 bg-amber-50 text-amber-700'
+                          }`}>
+                            {scoreData.score}%
+                          </div>
+                        </div>
+
+                        <div className="my-3 pt-3 border-t border-slate-100">
+                          <div className="flex flex-wrap gap-1">
+                            {scoreData.matched.slice(0, 3).map(skill => (
+                              <span key={skill} className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${
+                                isStrong ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
+                                isGood ? 'bg-sky-50 border-sky-200 text-sky-700' :
+                                'bg-amber-50 border-amber-200 text-amber-700'
+                              }`}>
+                                ✓ {skill}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
                     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
                       <button
@@ -1907,7 +1923,8 @@ function App() {
                       </a>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )}
@@ -2183,7 +2200,13 @@ function App() {
 
                         {job.description && (
                           <p className="job-desc" style={{ cursor: 'pointer' }}>
-                            {job.description.replace(/\*\*/g, '').substring(0, 200)}...
+                            {(() => {
+                              const clean = job.description.replace(/\*\*/g, '').replace(/\n+/g, ' ').trim()
+                              if (clean.length <= 300) return clean
+                              const truncated = clean.substring(0, 300)
+                              const lastSpace = truncated.lastIndexOf(' ')
+                              return (lastSpace > 200 ? truncated.substring(0, lastSpace) : truncated) + '…'
+                            })()}
                           </p>
                         )}
 

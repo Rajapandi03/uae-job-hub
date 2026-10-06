@@ -107,16 +107,18 @@ def scrape_naukrigulf() -> list[dict]:
                             company_el = card.select_one(".comp-name, .company-name, .tuple-header a, .info-org")
                             location_el = card.select_one(".loc, .location, .tuple-footer span, .info-loc")
                             link_el = card.select_one("a[href]")
+                            desc_el = card.select_one(".job-desc, .tuple-desc, .job-description, .job-snippet, .content")
 
                             title = title_el.get_text(strip=True) if title_el else None
                             company = company_el.get_text(strip=True) if company_el else None
                             loc = location_el.get_text(strip=True) if location_el else "UAE"
                             href = link_el.get("href", "") if link_el else ""
+                            desc = desc_el.get_text(strip=True) if desc_el else None
 
                             if not title or not company:
                                 continue
 
-                            if not is_relevant_tech_job(title):
+                            if not is_relevant_tech_job(title, desc or ""):
                                 continue
 
                             if href and not href.startswith("http"):
@@ -128,6 +130,7 @@ def scrape_naukrigulf() -> list[dict]:
                                 location=loc,
                                 url=href or url,
                                 source="naukrigulf",
+                                description=desc,
                             )
                             jobs.append(job)
                         except Exception:
@@ -207,16 +210,18 @@ def scrape_gulftalent() -> list[dict]:
                             company_el = card.select_one(".company, .employer, .company-name")
                             location_el = card.select_one(".location, .loc")
                             link_el = card.select_one("a[href]")
+                            desc_el = card.select_one(".job-desc, .job-description, .job-snippet, .description, .content")
 
                             title = title_el.get_text(strip=True) if title_el else None
                             company = company_el.get_text(strip=True) if company_el else None
                             loc = location_el.get_text(strip=True) if location_el else "UAE"
                             href = link_el.get("href", "") if link_el else ""
+                            desc = desc_el.get_text(strip=True) if desc_el else None
 
                             if not title or not company:
                                 continue
 
-                            if not is_relevant_tech_job(title):
+                            if not is_relevant_tech_job(title, desc or ""):
                                 continue
 
                             if href and not href.startswith("http"):
@@ -228,6 +233,7 @@ def scrape_gulftalent() -> list[dict]:
                                 location=loc,
                                 url=href or url,
                                 source="gulftalent",
+                                description=desc,
                             )
                             jobs.append(job)
                         except Exception:

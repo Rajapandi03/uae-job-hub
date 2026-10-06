@@ -45,7 +45,7 @@ LOCATIONS = ["Dubai", "UAE"]
 SITES = ["indeed", "linkedin", "google", "bayt"]
 
 HOURS_OLD = 48          # jobs posted in the last 48 hours
-RESULTS_PER_QUERY = 20  # per site per search term
+RESULTS_PER_QUERY = 15  # per site per search term (reduced to offset description fetch load)
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ def scrape_combo(search_term: str, location: str) -> list[dict]:
             results_wanted=RESULTS_PER_QUERY,
             hours_old=HOURS_OLD,
             country_indeed="United Arab Emirates",
-            fetch_description=False,   # avoid heavy rate limits
+            fetch_description=True,    # fetch full job descriptions from LinkedIn/Indeed/Bayt
             verbose=0,
         )
 
@@ -180,8 +180,8 @@ def run(dry_run: bool = False) -> dict:
                 if job["job_hash"] not in seen_hashes:
                     seen_hashes.add(job["job_hash"])
                     all_jobs.append(job)
-            # Polite delay: 1-2 seconds between queries
-            delay = random.uniform(1, 2)
+            # Polite delay: 2-4 seconds between queries (increased for description fetching)
+            delay = random.uniform(2, 4)
             logger.info(f"  Sleeping {delay:.1f}s...")
             time.sleep(delay)
 

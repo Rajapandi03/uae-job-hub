@@ -238,7 +238,7 @@ def normalize_job(
     loc = clean_location(location)
     u = clean_string(url)
     app_u = clean_string(apply_url) if apply_url else u
-    desc = clean_string(description)[:3000] if description else None
+    desc = clean_string(description)[:5000] if description else None
     
     return {
         "job_hash":    make_job_hash(t, c, loc),

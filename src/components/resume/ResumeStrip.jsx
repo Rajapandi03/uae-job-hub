@@ -32,7 +32,7 @@ export function ResumeStrip({ resumeData, onUpdateSkills, onReplaceResume, onRem
     <div className="max-w-7xl mx-auto px-4 sm:px-6 my-4">
       <div className="bg-white rounded-xl p-4 sm:p-5 border border-indigo-100 shadow-sm shadow-indigo-950/5 relative overflow-hidden transition-all">
         {/* Top accent border */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-400" />
 
         {/* Main Row: Meta + Compact Tier Stats + Actions */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 pb-3 border-b border-slate-100">
@@ -47,8 +47,8 @@ export function ResumeStrip({ resumeData, onUpdateSkills, onReplaceResume, onRem
                 <h3 className="font-extrabold text-base text-slate-900 tracking-tight">
                   {resumeData.fileName || 'Active Candidate Resume'}
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                   {resumeData.skills.length} Skills
                 </span>
               </div>
@@ -64,19 +64,19 @@ export function ResumeStrip({ resumeData, onUpdateSkills, onReplaceResume, onRem
 
           {/* Compact Inline Tier Badges */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
-            <div className="px-3 py-1.5 rounded-lg bg-emerald-50/70 border border-emerald-200/70 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div className="px-3 py-1.5 rounded-lg bg-indigo-50/80 border border-indigo-200/80 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
               <span className="font-semibold text-slate-700">Strong:</span>
-              <span className="font-black text-emerald-700">{strongCount}</span>
+              <span className="font-black text-indigo-700">{strongCount}</span>
             </div>
 
-            <div className="px-3 py-1.5 rounded-lg bg-indigo-50/70 border border-indigo-200/70 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+            <div className="px-3 py-1.5 rounded-lg bg-sky-50/80 border border-sky-200/80 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky-500"></span>
               <span className="font-semibold text-slate-700">Good:</span>
-              <span className="font-black text-indigo-700">{goodCount}</span>
+              <span className="font-black text-sky-700">{goodCount}</span>
             </div>
 
-            <div className="px-3 py-1.5 rounded-lg bg-amber-50/70 border border-amber-200/70 flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-amber-50/80 border border-amber-200/80 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500"></span>
               <span className="font-semibold text-slate-700">Stretch:</span>
               <span className="font-black text-amber-700">{stretchCount}</span>
@@ -89,7 +89,7 @@ export function ResumeStrip({ resumeData, onUpdateSkills, onReplaceResume, onRem
               onClick={() => setIsEditing(!isEditing)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
                 isEditing
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                   : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70'
               }`}
             >

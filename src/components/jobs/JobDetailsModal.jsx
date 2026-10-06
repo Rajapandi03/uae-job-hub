@@ -7,13 +7,16 @@ export function JobDetailsModal({ isOpen, onClose, job, scoreData, resumeData, o
   const { score, tier, matched = [], missing = [] } = scoreData || {}
 
   const tierStyles = {
-    Strong: { bg: 'bg-emerald-50/80', text: 'text-emerald-700', border: 'border-emerald-200', ring: 'border-emerald-500 bg-emerald-50 text-emerald-800' },
-    Good: { bg: 'bg-indigo-50/80', text: 'text-indigo-700', border: 'border-indigo-200', ring: 'border-indigo-500 bg-indigo-50 text-indigo-800' },
+    Strong: { bg: 'bg-indigo-50/80', text: 'text-indigo-700', border: 'border-indigo-200', ring: 'border-indigo-500 bg-indigo-50 text-indigo-800' },
+    Good: { bg: 'bg-sky-50/80', text: 'text-sky-700', border: 'border-sky-200', ring: 'border-sky-500 bg-sky-50 text-sky-800' },
     Stretch: { bg: 'bg-amber-50/80', text: 'text-amber-700', border: 'border-amber-200', ring: 'border-amber-500 bg-amber-50 text-amber-800' },
     Weak: { bg: 'bg-slate-50/80', text: 'text-slate-700', border: 'border-slate-200', ring: 'border-slate-400 bg-slate-50 text-slate-800' },
   }
 
   const currentTier = tierStyles[tier] || tierStyles.Weak
+
+  const isStrong = tier === 'Strong'
+  const isGood = tier === 'Good'
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 transition-opacity">
@@ -74,11 +77,11 @@ export function JobDetailsModal({ isOpen, onClose, job, scoreData, resumeData, o
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
                   <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-                    <CheckCircle2 size={12} className="text-emerald-600" /> Matched Skills ({matched.length})
+                    <CheckCircle2 size={12} className={isStrong ? 'text-indigo-600' : isGood ? 'text-sky-600' : 'text-amber-600'} /> Matched Skills ({matched.length})
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {matched.map(skill => (
-                      <span key={skill} className="px-2 py-0.5 bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-[11px] font-medium rounded">
+                      <span key={skill} className={`px-2 py-0.5 border text-[11px] font-medium rounded ${isStrong ? 'bg-indigo-50 border-indigo-200/70 text-indigo-800' : isGood ? 'bg-sky-50 border-sky-200/70 text-sky-800' : 'bg-amber-50 border-amber-200/70 text-amber-800'}`}>
                         ✓ {skill}
                       </span>
                     ))}
@@ -97,7 +100,7 @@ export function JobDetailsModal({ isOpen, onClose, job, scoreData, resumeData, o
                       </span>
                     ))}
                     {missing.length === 0 && (
-                      <span className="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
+                      <span className={`font-bold text-[11px] flex items-center gap-1 ${isStrong ? 'text-indigo-700' : isGood ? 'text-sky-700' : 'text-amber-700'}`}>
                         <CheckCircle2 size={12} /> All detected role skills matched!
                       </span>
                     )}

@@ -7,13 +7,16 @@ export function WhyMatchDrawer({ isOpen, onClose, job, scoreData }) {
   const { score, tier, matched = [], missing = [], reasons = [] } = scoreData
 
   const tierStyles = {
-    Strong: { bg: 'bg-emerald-50/80', text: 'text-emerald-700', border: 'border-emerald-200', ring: 'border-emerald-500 bg-emerald-50 text-emerald-800' },
-    Good: { bg: 'bg-indigo-50/80', text: 'text-indigo-700', border: 'border-indigo-200', ring: 'border-indigo-500 bg-indigo-50 text-indigo-800' },
+    Strong: { bg: 'bg-indigo-50/80', text: 'text-indigo-700', border: 'border-indigo-200', ring: 'border-indigo-500 bg-indigo-50 text-indigo-800' },
+    Good: { bg: 'bg-sky-50/80', text: 'text-sky-700', border: 'border-sky-200', ring: 'border-sky-500 bg-sky-50 text-sky-800' },
     Stretch: { bg: 'bg-amber-50/80', text: 'text-amber-700', border: 'border-amber-200', ring: 'border-amber-500 bg-amber-50 text-amber-800' },
     Weak: { bg: 'bg-slate-50/80', text: 'text-slate-700', border: 'border-slate-200', ring: 'border-slate-400 bg-slate-50 text-slate-800' },
   }
 
   const currentTier = tierStyles[tier] || tierStyles.Weak
+  
+  const isStrong = tier === 'Strong'
+  const isGood = tier === 'Good'
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end transition-opacity">
@@ -52,7 +55,7 @@ export function WhyMatchDrawer({ isOpen, onClose, job, scoreData }) {
           {/* Score Hero Card */}
           <div className="p-2.5 rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-between my-2.5 shadow-2xs">
             <div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-block mb-0.5">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border inline-block mb-0.5 ${currentTier.bg} ${currentTier.text} ${currentTier.border}`}>
                 {tier} Match Grade
               </span>
               <div className="text-xs font-bold text-slate-900">ATS Score Compatibility</div>
@@ -66,13 +69,13 @@ export function WhyMatchDrawer({ isOpen, onClose, job, scoreData }) {
           {/* Matched Skills */}
           <div className="my-2.5">
             <h5 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <CheckCircle2 size={13} className="text-emerald-600" />
+              <CheckCircle2 size={13} className={isStrong ? 'text-indigo-500' : isGood ? 'text-sky-500' : 'text-amber-500'} />
               Matched Skills ({matched.length})
             </h5>
             {matched.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {matched.map(skill => (
-                  <span key={skill} className="px-2 py-0.5 bg-emerald-50 border border-emerald-200/70 text-emerald-800 text-[11px] font-medium rounded">
+                  <span key={skill} className={`px-2 py-0.5 text-[11px] font-medium rounded border ${isStrong ? 'bg-indigo-50 border-indigo-200/70 text-indigo-800' : isGood ? 'bg-sky-50 border-sky-200/70 text-sky-800' : 'bg-amber-50 border-amber-200/70 text-amber-800'}`}>
                     ✓ {skill}
                   </span>
                 ))}
@@ -97,8 +100,8 @@ export function WhyMatchDrawer({ isOpen, onClose, job, scoreData }) {
                 ))}
               </div>
             ) : (
-              <div className="p-1.5 bg-emerald-50/70 border border-emerald-200/80 rounded-md text-[11px] font-semibold text-emerald-800 flex items-center gap-1.5">
-                <CheckCircle2 size={12} className="text-emerald-600" /> Matched all {matched.length} detected role skills
+              <div className={`p-1.5 border rounded-md text-[11px] font-semibold flex items-center gap-1.5 ${isStrong ? 'bg-indigo-50/70 border-indigo-200/80 text-indigo-800' : isGood ? 'bg-sky-50/70 border-sky-200/80 text-sky-800' : 'bg-amber-50/70 border-amber-200/80 text-amber-800'}`}>
+                <CheckCircle2 size={12} className={isStrong ? 'text-indigo-600' : isGood ? 'text-sky-600' : 'text-amber-600'} /> Matched all {matched.length} detected role skills
               </div>
             )}
           </div>
