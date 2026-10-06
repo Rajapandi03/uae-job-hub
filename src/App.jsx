@@ -154,13 +154,16 @@ function eventTypeLabel(type) {
 // Filter out non-job titles (dictionary definitions, Wikipedia pages, W3Schools tutorials, download pages)
 const INVALID_JOB_TITLE_REGEX = /\b(definition|meaning|tutorial|download|downloads|wikipedia|w3schools|geeksforgeeks|dictionary|what is|how it works|documentation|guides|merriam-webster|cheat sheet|course|learn|faq|overview|basics|introduction to|lesson|types and how)\b/i
 
-// 🚫 Non-IT job blocklist — reject non-tech roles (Civil, MEP, Mechanical, Structural, Construction, Draftsman, QA/QC, Customer Support, etc.)
-const NON_IT_BLOCKLIST_REGEX = /\b(civil|structural|steel structure|structure engineer|mep|mechanical|draftsman|draughtsman|drafting|autocad|cad technician|quantity surveyor|land surveyor|piping engineer|process engineer(?! .*data)|site engineer|site manager|construction|contracting|fabrication|welding|pipefitter|rigger|scaffolding|formwork|rebar|concrete|mason|carpenter|painter|plumber|electrician(?! .*it)|hvac|fire fighting|sprinkler|landscape|horticulture|interior|upholstery|cabin crew|pilot|flight crew|aircraft maintenance|automobile engineer(?! .*software)|automotive engineer(?! .*software)|environmental|planning engineer|wet utilities|utilities design|utilities engineer|coastal engineer|marine surveyor|estimator(?! .*software)|cost engineer|drafter|technical drawing|rebar detailer|steel detailer|scaffolder|fit out|fitout|driver|delivery rider|mechanic|logistics|procurement|qa\/qc|qa qc|quality administrator|quality inspector|customer support|customer service|customer care|receptionist|office administrator|secretary|teacher(?! .*coding|.*cs|.*ai)|professor(?! .*cs|.*ai)|doctor|physician|nurse|pharmacist|dentist|physiotherapist|real estate|property manager|facilities manager|building manager|drilling|petroleum|reservoir|geophysicist|well engineer|wellsite|refinery engineer|oil gas(?! .*software|.*tech)|solar engineer(?! .*software)|wind engineer|engineer internship|engineering intern|architectural consultancy)\b/i
-
 function isValidJob(job) {
   if (!job || !job.title) return false
   const title = String(job.title).toLowerCase().trim()
   const comp = String(job.company || '').toLowerCase().trim()
+  const url = String(job.apply_url || job.url || job.applyUrl || '').toLowerCase().trim()
+  const source = String(job.source || '').toLowerCase().trim()
+
+  // Strict Source Domain Check: Naukrigulf & GulfTalent links MUST belong to their official domains
+  if (source === 'naukrigulf' && url && !url.includes('naukrigulf.com')) return false
+  if (source === 'gulftalent' && url && !url.includes('gulftalent.com')) return false
 
   if (INVALID_JOB_TITLE_REGEX.test(title)) return false
 
@@ -172,9 +175,6 @@ function isValidJob(job) {
   if (['artificial intelligence', 'data', 'generative ai', 'java', 'data.gov home', 'free ai prompt generator', 'java software | oracle'].includes(title)) {
     return false
   }
-
-  // 🚫 Block non-IT roles (Civil, MEP, Mechanical, Construction, Draftsman, etc.)
-  if (NON_IT_BLOCKLIST_REGEX.test(title)) return false
 
   return true
 }
@@ -413,13 +413,13 @@ function App() {
       try {
         const topJobsList = matches.map(m => ({ title: m.title, company: m.company, match_score: m.atsScore })).slice(0, 3);
         const hasResume = activeResumeText.length > 0;
-        
+
         const systemPrompt = `You are Hini AI, an expert UAE Tech Recruiter & Job Search Assistant.
 Rules:
 1. Talk like a friendly human recruiter. Use professional, conversational language.
 2. If the user asks general-knowledge or non-career related questions (e.g. coding help, recipes, history), you MUST politely refuse and guide them back to UAE jobs and their tech career.
 3. If they ask for the "Best jobs to apply today" or an "AI Job Search Agent", give them actionable advice based on the provided Job list or ask clarifying career questions.`
-        
+
         const dynamicUserPrompt = `Context: ${hasResume ? 'Candidate resume provided.' : 'No resume provided yet.'}
 Top matching jobs from database: ${JSON.stringify(topJobsList)}
 User Query: "${userText}"
@@ -1124,7 +1124,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
     const NON_UAE_LOC_REGEX = /\b(pakistan|india|bangladesh|philippines|egypt|jordan|lebanon|saudi|qatar|oman|kuwait|bahrain|hyderabad|bengaluru|mumbai|delhi|karachi|lahore|islamabad|chennai|pune|gurgaon|noida)\b/i
 
     // Non-IT job title blocklist (defense in depth - catches stale non-IT jobs in DB)
-    const NON_IT_TITLE_REGEX = /\b(civil|structural|steel structure|structure engineer|mep|mechanical|draftsman|draughtsman|drafting|autocad|cad technician|quantity surveyor|land surveyor|piping engineer|process engineer(?! .*data)|site engineer|site manager|construction|contracting|fabrication|welding|pipefitter|rigger|scaffolding|formwork|rebar|concrete|mason|carpenter|painter|plumber|electrician(?! .*it)|hvac|fire fighting|sprinkler|landscape|horticulture|interior|upholstery|cabin crew|pilot|flight crew|aircraft maintenance|automobile engineer(?! .*software)|automotive engineer(?! .*software)|environmental|planning engineer|wet utilities|utilities design|utilities engineer|coastal engineer|marine surveyor|estimator(?! .*software)|cost engineer|drafter|technical drawing|rebar detailer|steel detailer|scaffolder|fit out|fitout|driver|delivery rider|mechanic|logistics|procurement|qa\/qc|qa qc|quality administrator|quality inspector|customer support|customer service|customer care|receptionist|office administrator|secretary|teacher(?! .*coding|.*cs|.*ai)|professor(?! .*cs|.*ai)|doctor|physician|nurse|pharmacist|dentist|physiotherapist|real estate|property manager|facilities manager|building manager|drilling|petroleum|reservoir|geophysicist|well engineer|wellsite|refinery engineer|oil gas(?! .*software|.*tech)|solar engineer(?! .*software)|wind engineer|engineer internship|engineering intern|architectural consultancy)\b/i
+    const NON_IT_TITLE_REGEX = /\b(nurse|doctor|pharmacist|dentist|physiotherapist|radiologist|surgeon|barista|waiter|waitress|cook|chef|housekeeper|cleaner|hotel manager|concierge|front desk agent|mason|plumber|electrician|carpenter|welder|painter|real estate|property consultant|leasing agent|sales agent|sales executive|sales representative|sales manager|business development manager|business development executive|marketing manager|marketing executive|brand manager|content writer|copywriter|social media manager|accountant|auditor|financial analyst|bookkeeper|tax consultant|hr manager|hr executive|recruiter|receptionist|cashier|office manager|personal assistant|executive assistant|office boy|admin assistant|secretary|legal counsel|paralegal|lawyer|security guard|storekeeper|warehouse manager|facilities manager|tailor|beautician|hair stylist|fashion designer|interior designer|designer \(retail|retail shops|fit out|fitout|driver|delivery rider|mechanic|logistics coordinator|logistics manager|supply chain manager|procurement officer|teacher|tutor|nanny|lecturer|mechanical engineer|civil engineer|structural engineer|electrical engineer|field engineer|maintenance engineer|production engineer|manufacturing engineer|piping engineer|hvac engineer|instrumentation engineer|quantity surveyor|site engineer|process engineer|plant engineer|welding engineer|marine engineer|chemical engineer|petroleum engineer|safety engineer|quality inspector|drilling engineer|project engineer|hospitality construction|construction|operations manager|store manager|retail manager|general manager)\b/i
 
     result = result.filter(j => {
       const u = (j.applyUrl || j.url || '').toLowerCase()
@@ -1354,16 +1354,29 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
           <a href="/events" className={currentView === 'events' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('events') }}>Events</a>
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
-        <div className="nav-actions">
+        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
-            className="btn-upload-resume"
             onClick={() => fileInputRef.current?.click()}
+            style={{
+              background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+              color: '#ffffff',
+              padding: '0.45rem 0.95rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: '700',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 3px 10px rgba(79, 70, 229, 0.3)'
+            }}
           >
-            <Upload size={14} /> <span>{resumeData ? 'Replace Resume' : 'Upload Resume'}</span>
+            <Upload size={14} /> {resumeData ? 'Replace Resume' : 'Upload Resume'}
           </button>
-          <div className="nav-live-pill" title="Live data updated automatically">
+          <div className="nav-live-pill" title="Live data updated automatically" style={{ gap: '0.4rem', padding: '0.35rem 0.75rem' }}>
             <span className="live-dot" />
-            <span className="nav-live-count">Updated {lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</span>
+            <span className="nav-live-count" style={{ fontWeight: '500' }}>Updated {lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</span>
           </div>
         </div>
       </nav>
@@ -1714,7 +1727,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
               <div className="hero-stats">
                 <div className="stat">
                   <h3 className="stat-number">{loading ? '...' : `${totalJobs}`}<span className="stat-plus">+</span></h3>
-                  <p className="stat-label">Active AI Jobs</p>
+                  <p className="stat-label">Active AI & Tech Jobs</p>
                 </div>
                 <div className="stat">
                   <h3 className="stat-number">{loading ? '...' : `${totalCompanies}`}<span className="stat-plus">+</span></h3>
@@ -1771,24 +1784,38 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
             />
           ) : (
             <section className="homepage-resume-section" style={{ maxWidth: '1200px', margin: '1rem auto', padding: '0 1.25rem' }}>
-              <div className="resume-matcher-card">
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                padding: '1.25rem 1.75rem',
+                color: 'var(--text-main)',
+                boxShadow: '0 4px 20px rgba(79, 70, 229, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03)',
+                border: '1px solid #e0e7ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1.25rem',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3.5px', background: 'linear-gradient(90deg, #4f46e5 0%, #9333ea 50%, #38bdf8 100%)' }} />
 
                 {/* Left Info */}
-                <div className="resume-matcher-info">
-                  <div className="resume-matcher-star-icon">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: '1 1 320px' }}>
+                  <div style={{ background: '#e0e7ff', padding: '0.6rem', borderRadius: '12px', display: 'flex', color: '#4338ca', shrink: 0 }}>
                     <Sparkles size={22} />
                   </div>
                   <div>
-                    <div className="resume-matcher-title-wrapper">
-                      <h3 className="resume-matcher-title">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: '#0f172a' }}>
                         Instant AI Resume Matcher
                       </h3>
-                      <span className="resume-matcher-badge">
+                      <span style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', fontSize: '0.72rem', fontWeight: '800', padding: '0.15rem 0.6rem', borderRadius: '12px' }}>
                         ATS Scoring Engine
                       </span>
                     </div>
-                    <p className="resume-matcher-desc">
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0.15rem 0 0 0', fontWeight: '500' }}>
                       Upload CV to score & rank all 900+ live UAE AI & Tech roles by your skill match.
                     </p>
                   </div>
@@ -1797,14 +1824,26 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                 {/* Right Compact Upload Button */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="resume-matcher-upload-box hover:border-indigo-600 transition"
+                  style={{
+                    border: '1.5px dashed #818cf8',
+                    borderRadius: '12px',
+                    padding: '0.65rem 1.25rem',
+                    background: 'linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.05)'
+                  }}
+                  className="hover:border-indigo-600 transition"
                 >
-                  <Upload size={18} style={{ color: '#4f46e5', flexShrink: 0 }} />
-                  <div className="resume-matcher-upload-text">
-                    <span className="resume-matcher-upload-label">
+                  <Upload size={20} style={{ color: '#4f46e5' }} />
+                  <div style={{ textAlign: 'left' }}>
+                    <span style={{ fontWeight: '800', fontSize: '0.88rem', color: '#0f172a', display: 'block' }}>
                       {isUploading ? 'Parsing Resume...' : 'Upload CV / Resume'}
                     </span>
-                    <span className="resume-matcher-upload-sub">
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: '600' }}>
                       Supports PDF, DOCX, TXT
                     </span>
                   </div>
@@ -1852,21 +1891,19 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                       <div>
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold inline-block border ${
-                              isStrong ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                              isGood ? 'bg-sky-50 text-sky-700 border-sky-200' :
-                              'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold inline-block border ${isStrong ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                isGood ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                                  'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
                               {scoreData.tier} Match
                             </span>
                             <h3 className="font-extrabold text-base mt-2.5 text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition">{job.title}</h3>
                             <p className="text-xs text-slate-500 font-semibold mt-0.5">{job.company} • {job.location}</p>
                           </div>
-                          <div className={`px-3 py-1 rounded-full border flex items-center justify-center font-extrabold text-xs shrink-0 shadow-xs ${
-                            isStrong ? 'border-indigo-600 bg-indigo-50 text-indigo-700' :
-                            isGood ? 'border-sky-500 bg-sky-50 text-sky-700' :
-                            'border-amber-500 bg-amber-50 text-amber-700'
-                          }`}>
+                          <div className={`px-3 py-1 rounded-full border flex items-center justify-center font-extrabold text-xs shrink-0 shadow-xs ${isStrong ? 'border-indigo-600 bg-indigo-50 text-indigo-700' :
+                              isGood ? 'border-sky-500 bg-sky-50 text-sky-700' :
+                                'border-amber-500 bg-amber-50 text-amber-700'
+                            }`}>
                             {scoreData.tier} Match
                           </div>
                         </div>
@@ -1874,11 +1911,10 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         <div className="my-3 pt-3 border-t border-slate-100">
                           <div className="flex flex-wrap gap-1">
                             {scoreData.matched.slice(0, 3).map(skill => (
-                              <span key={skill} className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${
-                                isStrong ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
-                                isGood ? 'bg-sky-50 border-sky-200 text-sky-700' :
-                                'bg-amber-50 border-amber-200 text-amber-700'
-                              }`}>
+                              <span key={skill} className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${isStrong ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
+                                  isGood ? 'bg-sky-50 border-sky-200 text-sky-700' :
+                                    'bg-amber-50 border-amber-200 text-amber-700'
+                                }`}>
                                 ✓ {skill}
                               </span>
                             ))}
@@ -1886,27 +1922,27 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         </div>
                       </div>
 
-                    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openJobDrawer(job, scoreData, 'ats')
-                        }}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center gap-1"
-                      >
-                        Why match?
-                      </button>
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openJobDrawer(job, scoreData, 'ats')
+                          }}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center gap-1"
+                        >
+                          Why match?
+                        </button>
 
-                      <a
-                        href={job.applyUrl || job.url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 transition shadow-xs"
-                      >
-                        Apply <ExternalLink size={12} />
-                      </a>
+                        <a
+                          href={job.applyUrl || job.url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 transition shadow-xs"
+                        >
+                          Apply <ExternalLink size={12} />
+                        </a>
+                      </div>
                     </div>
-                  </div>
                   )
                 })}
               </div>
@@ -2120,21 +2156,19 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                                 whiteSpace: 'nowrap',
                                 display: 'inline-block',
                                 color: scoreData.tier === 'Strong' ? '#4338ca' :
-                                       scoreData.tier === 'Good' ? '#0369a1' :
-                                       scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
+                                  scoreData.tier === 'Good' ? '#0369a1' :
+                                    scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
                                 background: scoreData.tier === 'Strong' ? '#eef2ff' :
-                                            scoreData.tier === 'Good' ? '#f0f9ff' :
-                                            scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
-                                border: `1.5px solid ${
-                                  scoreData.tier === 'Strong' ? '#c7d2fe' :
-                                  scoreData.tier === 'Good' ? '#bae6fd' :
-                                  scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
-                                }`,
-                                boxShadow: `0 2px 6px ${
-                                  scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.12)' :
-                                  scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
-                                  scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
-                                }`
+                                  scoreData.tier === 'Good' ? '#f0f9ff' :
+                                    scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
+                                border: `1.5px solid ${scoreData.tier === 'Strong' ? '#c7d2fe' :
+                                    scoreData.tier === 'Good' ? '#bae6fd' :
+                                      scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
+                                  }`,
+                                boxShadow: `0 2px 6px ${scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.12)' :
+                                    scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
+                                      scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
+                                  }`
                               }}>
                                 {scoreData.tier === 'Strong' ? 'Strong Match' : scoreData.tier === 'Good' ? 'Good Match' : scoreData.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
                               </span>
@@ -2262,7 +2296,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                               <MessageCircle size={18} />
                             </button>
                           </div>
-                          
+
                           <a
                             href={job.applyUrl || job.url || '#'}
                             target="_blank"
@@ -2480,9 +2514,6 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   {resources.map((res) => {
                     const IconLookup = { GraduationCap, DollarSign, Newspaper }
                     const IconComponent = IconLookup[res.iconName] || BookOpen
-                    const latestNewsTitle = res.id === 'news' && resourcesList?.news?.[0]?.title
-                    const cardDesc = latestNewsTitle ? `Latest: ${latestNewsTitle}` : res.description
-
                     return (
                       <div
                         className="resource-card"
@@ -2494,7 +2525,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         <div className="resource-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', flex: 1 }}>
                           <div>
                             <div className="resource-title">{res.title}</div>
-                            <div className="resource-desc" style={{ lineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cardDesc}</div>
+                            <div className="resource-desc">{res.description}</div>
                           </div>
                           <span className="resource-link" style={{ marginTop: '0.8rem' }}>{res.linkText} <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
                         </div>
@@ -2713,204 +2744,204 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
 
           {isChatOpen && (
             <div className="ai-chat-window">
-          {/* Header */}
-          <div className="ai-chat-header">
-            <div className="ai-chat-title">
-              <Bot size={22} className="ai-bot-icon" />
-              <div>
-                <h4>Hini Career AI</h4>
-                <span className="ai-status-online">● Powered by Groq LLM</span>
+              {/* Header */}
+              <div className="ai-chat-header">
+                <div className="ai-chat-title">
+                  <Bot size={22} className="ai-bot-icon" />
+                  <div>
+                    <h4>Hini Career AI</h4>
+                    <span className="ai-status-online">● Powered by Groq LLM</span>
+                  </div>
+                </div>
+                <div className="ai-chat-controls">
+                  <button
+                    className="ai-icon-btn"
+                    title="Groq API Key Settings"
+                    onClick={() => setShowSettings(!showSettings)}
+                  >
+                    <Settings size={18} />
+                  </button>
+                  <button
+                    className="ai-icon-btn"
+                    title="Close Chat"
+                    onClick={() => setIsChatOpen(false)}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="ai-chat-controls">
-              <button
-                className="ai-icon-btn"
-                title="Groq API Key Settings"
-                onClick={() => setShowSettings(!showSettings)}
-              >
-                <Settings size={18} />
-              </button>
-              <button
-                className="ai-icon-btn"
-                title="Close Chat"
-                onClick={() => setIsChatOpen(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
 
-          {/* Settings Modal Bar */}
-          {showSettings && (
-            <div className="ai-chat-settings-bar">
-              <label className="ai-settings-label">Groq API Key (Optional):</label>
-              <div className="ai-settings-input-row">
+              {/* Settings Modal Bar */}
+              {showSettings && (
+                <div className="ai-chat-settings-bar">
+                  <label className="ai-settings-label">Groq API Key (Optional):</label>
+                  <div className="ai-settings-input-row">
+                    <input
+                      type="password"
+                      placeholder="gsk_..."
+                      value={groqApiKey}
+                      onChange={(e) => {
+                        setGroqApiKey(e.target.value)
+                        localStorage.setItem('groq_api_key', e.target.value)
+                      }}
+                    />
+                    <button
+                      className="ai-btn-save-key"
+                      onClick={() => setShowSettings(false)}
+                    >
+                      Save
+                    </button>
+                  </div>
+                  <span className="ai-settings-hint">Using Groq Llama-3.3-70B for instant resume analysis.</span>
+                </div>
+              )}
+
+              {/* Genuine Resume Upload / Dropzone Banner */}
+              <div className="ai-chat-resume-banner">
                 <input
-                  type="password"
-                  placeholder="gsk_..."
-                  value={groqApiKey}
-                  onChange={(e) => {
-                    setGroqApiKey(e.target.value)
-                    localStorage.setItem('groq_api_key', e.target.value)
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.docx,.txt"
+                  style={{ display: 'none' }}
+                />
+
+                <div className="ai-resume-file-zone">
+                  {resumeData || userResumeText.trim() ? (
+                    <div className="ai-resume-uploaded-badge">
+                      <div className="ai-resume-file-info">
+                        <FileCheck size={16} className="text-green-500" />
+                        <div>
+                          <span className="ai-filename">{resumeData ? resumeData.fileName : (resumeFileName || 'Resume CV Text')}</span>
+                          <span className="ai-filesize">({resumeData ? resumeData.skills.length + ' skills detected' : userResumeText.split(/\s+/).length + ' words parsed'})</span>
+                        </div>
+                      </div>
+                      <button
+                        className="ai-btn-remove-resume"
+                        onClick={handleClearResume}
+                        title="Remove Resume"
+                      >
+                        <Trash2 size={14} /> Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="ai-btn-upload-file"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={16} />
+                      <span>Upload Resume File (.pdf, .docx, .txt)</span>
+                    </button>
+                  )}
+                </div>
+
+                {!resumeData && (
+                  <textarea
+                    className="ai-resume-textarea"
+                    placeholder="Or paste your CV / Resume text manually here..."
+                    value={userResumeText}
+                    onChange={(e) => {
+                      setUserResumeText(e.target.value)
+                      localStorage.setItem('hini_user_resume', e.target.value)
+                    }}
+                  />
+                )}
+
+              </div>
+
+              {/* Messages Body */}
+              <div className="ai-chat-messages">
+                {chatMessages.map((msg) => (
+                  <div key={msg.id} className={`ai-msg-row ${msg.sender}`}>
+                    {msg.sender === 'bot' && <div className="ai-bot-avatar"><Bot size={16} /></div>}
+                    <div className="ai-msg-bubble">
+                      <div className="ai-msg-text">{msg.text}</div>
+
+                      {/* Matched Job Cards */}
+                      {msg.jobs && msg.jobs.length > 0 && (
+                        <div className="ai-matched-jobs-list">
+                          {msg.jobs.map(j => (
+                            <div key={j.id} className="ai-job-card">
+                              <div className="ai-job-card-header">
+                                <span className="ai-job-title">{j.title}</span>
+                                <span className={`ai-ats-badge ${j.atsScore >= 75 ? 'high' : j.atsScore >= 50 ? 'med' : 'low'}`}>
+                                  {j.atsScore}% Genuine Match
+                                </span>
+                              </div>
+                              <div className="ai-job-card-meta">
+                                <span>{j.company}</span> • <span>{j.location}</span>
+                              </div>
+
+                              {/* Skill Audit Pill Lists */}
+                              {j.matchedSkills && j.matchedSkills.length > 0 && (
+                                <div className="ai-skills-audit">
+                                  <span className="ai-skill-label matched">Matched:</span>
+                                  {j.matchedSkills.slice(0, 4).map(s => (
+                                    <span key={s} className="ai-skill-pill match">{s}</span>
+                                  ))}
+                                </div>
+                              )}
+                              {j.missingSkills && j.missingSkills.length > 0 && (
+                                <div className="ai-skills-audit">
+                                  <span className="ai-skill-label missing">Missing:</span>
+                                  {j.missingSkills.slice(0, 3).map(s => (
+                                    <span key={s} className="ai-skill-pill miss">{s}</span>
+                                  ))}
+                                </div>
+                              )}
+
+                              <a
+                                href={j.applyUrl || j.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ai-job-apply-link"
+                              >
+                                Apply Now <ExternalLink size={12} />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <span className="ai-msg-time">{msg.timestamp}</span>
+                    </div>
+                  </div>
+                ))}
+                {isAiThinking && (
+                  <div className="ai-msg-row bot">
+                    <div className="ai-bot-avatar"><Bot size={16} /></div>
+                    <div className="ai-msg-bubble thinking">
+                      <Loader2 size={16} className="spin" />
+                      <span>Scanning live UAE jobs & calculating ATS score...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatMessagesEndRef} />
+              </div>
+
+              {/* Input Footer */}
+              <div className="ai-chat-footer">
+                <input
+                  type="text"
+                  className="ai-chat-input"
+                  placeholder="Ask Hini AI about jobs, ATS, skills..."
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSendChatMessage()
                   }}
                 />
                 <button
-                  className="ai-btn-save-key"
-                  onClick={() => setShowSettings(false)}
+                  className="ai-chat-send-btn"
+                  onClick={() => handleSendChatMessage()}
+                  disabled={isAiThinking}
                 >
-                  Save
+                  <Send size={16} />
                 </button>
               </div>
-              <span className="ai-settings-hint">Using Groq Llama-3.3-70B for instant resume analysis.</span>
             </div>
           )}
-
-          {/* Genuine Resume Upload / Dropzone Banner */}
-          <div className="ai-chat-resume-banner">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept=".pdf,.docx,.txt"
-              style={{ display: 'none' }}
-            />
-
-            <div className="ai-resume-file-zone">
-              {resumeData || userResumeText.trim() ? (
-                <div className="ai-resume-uploaded-badge">
-                  <div className="ai-resume-file-info">
-                    <FileCheck size={16} className="text-green-500" />
-                    <div>
-                      <span className="ai-filename">{resumeData ? resumeData.fileName : (resumeFileName || 'Resume CV Text')}</span>
-                      <span className="ai-filesize">({resumeData ? resumeData.skills.length + ' skills detected' : userResumeText.split(/\s+/).length + ' words parsed'})</span>
-                    </div>
-                  </div>
-                  <button
-                    className="ai-btn-remove-resume"
-                    onClick={handleClearResume}
-                    title="Remove Resume"
-                  >
-                    <Trash2 size={14} /> Remove
-                  </button>
-                </div>
-              ) : (
-                <button
-                  className="ai-btn-upload-file"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload size={16} />
-                  <span>Upload Resume File (.pdf, .docx, .txt)</span>
-                </button>
-              )}
-            </div>
-
-            {!resumeData && (
-              <textarea
-                className="ai-resume-textarea"
-                placeholder="Or paste your CV / Resume text manually here..."
-                value={userResumeText}
-                onChange={(e) => {
-                  setUserResumeText(e.target.value)
-                  localStorage.setItem('hini_user_resume', e.target.value)
-                }}
-              />
-            )}
-
-          </div>
-
-          {/* Messages Body */}
-          <div className="ai-chat-messages">
-            {chatMessages.map((msg) => (
-              <div key={msg.id} className={`ai-msg-row ${msg.sender}`}>
-                {msg.sender === 'bot' && <div className="ai-bot-avatar"><Bot size={16} /></div>}
-                <div className="ai-msg-bubble">
-                  <div className="ai-msg-text">{msg.text}</div>
-
-                  {/* Matched Job Cards */}
-                  {msg.jobs && msg.jobs.length > 0 && (
-                    <div className="ai-matched-jobs-list">
-                      {msg.jobs.map(j => (
-                        <div key={j.id} className="ai-job-card">
-                          <div className="ai-job-card-header">
-                            <span className="ai-job-title">{j.title}</span>
-                            <span className={`ai-ats-badge ${j.atsScore >= 75 ? 'high' : j.atsScore >= 50 ? 'med' : 'low'}`}>
-                              {j.atsScore}% Genuine Match
-                            </span>
-                          </div>
-                          <div className="ai-job-card-meta">
-                            <span>{j.company}</span> • <span>{j.location}</span>
-                          </div>
-
-                          {/* Skill Audit Pill Lists */}
-                          {j.matchedSkills && j.matchedSkills.length > 0 && (
-                            <div className="ai-skills-audit">
-                              <span className="ai-skill-label matched">Matched:</span>
-                              {j.matchedSkills.slice(0, 4).map(s => (
-                                <span key={s} className="ai-skill-pill match">{s}</span>
-                              ))}
-                            </div>
-                          )}
-                          {j.missingSkills && j.missingSkills.length > 0 && (
-                            <div className="ai-skills-audit">
-                              <span className="ai-skill-label missing">Missing:</span>
-                              {j.missingSkills.slice(0, 3).map(s => (
-                                <span key={s} className="ai-skill-pill miss">{s}</span>
-                              ))}
-                            </div>
-                          )}
-
-                          <a
-                            href={j.applyUrl || j.url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ai-job-apply-link"
-                          >
-                            Apply Now <ExternalLink size={12} />
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <span className="ai-msg-time">{msg.timestamp}</span>
-                </div>
-              </div>
-            ))}
-            {isAiThinking && (
-              <div className="ai-msg-row bot">
-                <div className="ai-bot-avatar"><Bot size={16} /></div>
-                <div className="ai-msg-bubble thinking">
-                  <Loader2 size={16} className="spin" />
-                  <span>Scanning live UAE jobs & calculating ATS score...</span>
-                </div>
-              </div>
-            )}
-            <div ref={chatMessagesEndRef} />
-          </div>
-
-          {/* Input Footer */}
-          <div className="ai-chat-footer">
-            <input
-              type="text"
-              className="ai-chat-input"
-              placeholder="Ask Hini AI about jobs, ATS, skills..."
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSendChatMessage()
-              }}
-            />
-            <button
-              className="ai-chat-send-btn"
-              onClick={() => handleSendChatMessage()}
-              disabled={isAiThinking}
-            >
-              <Send size={16} />
-            </button>
-          </div>
-        </div>
+        </>
       )}
-      </>
-    )}
 
       {/* Job Description & ATS Resume Match Side Drawer */}
       <JobDetailDrawer
