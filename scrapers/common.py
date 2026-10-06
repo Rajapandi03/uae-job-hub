@@ -83,6 +83,8 @@ NON_TECH_BLOCKLIST = re.compile(
     r'barista|waiter|waitress|cook|chef|housekeeper|cleaner|'
     r'hotel manager|concierge|front desk agent|bell boy|room attendant|'
     r'food and beverage|sommelier|banquet|pastry chef|sous chef|'
+    # Customer Support & Service (non-tech)
+    r'customer support|customer service|customer care|customer experience manager|'
     # Construction & Trades
     r'mason|plumber|electrician|hvac|carpenter|welding|welder|painter|tiler|'
     # Real Estate
@@ -108,7 +110,7 @@ NON_TECH_BLOCKLIST = re.compile(
     r'security guard|storekeeper|warehouse manager|warehouse supervisor|'
     r'facilities manager|janitor|steward|'
     # Fashion, Interior & Design (non-tech)
-    r'tailor|beautician|hair stylist|fashion designer|stylist|interior designer|fit out|fitout|'
+    r'tailor|beautician|hair stylist|fashion designer|stylist|interior designer|fit out|fitout|upholstery|'
     # Transport & Logistics (non-tech)
     r'driver|delivery rider|car washer|mechanic|'
     r'logistics coordinator|logistics manager|supply chain manager|'
@@ -117,13 +119,16 @@ NON_TECH_BLOCKLIST = re.compile(
     # Education (non-tech)
     r'teacher|tutor|nanny|lecturer|academic coordinator|'
     # Non-IT Engineering & Construction
-    r'mechanical engineer|mechanical technician|civil engineer|'
-    r'structural engineer|electrical engineer|field engineer|maintenance engineer|'
+    r'civil|structural|steel structure|structure engineer|mechanical engineer|mechanical technician|'
+    r'electrical engineer|field engineer|maintenance engineer|'
     r'production engineer|manufacturing engineer|piping engineer|hvac engineer|'
     r'instrumentation engineer|geotechnical|quantity surveyor|site engineer|'
     r'process engineer|plant engineer|welding engineer|marine engineer|'
-    r'chemical engineer|petroleum engineer|safety engineer|quality inspector|'
+    r'chemical engineer|petroleum engineer|safety engineer|environmental|planning engineer|'
+    r'wet utilities|utilities design|utilities engineer|cad|autocad|cad technician|draftsman|draughtsman|drafting|'
+    r'qa\/qc|qa qc|quality administrator|quality inspector|'
     r'drilling engineer|reservoir engineer|project engineer|hospitality construction|construction|'
+    r'architectural consultancy|engineer internship|engineering intern|'
     # Operations (non-tech)
     r'operations manager|store manager|retail manager|retail assistant|'
     r'general manager|area manager|regional manager'

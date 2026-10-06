@@ -115,20 +115,21 @@ def scrape_naukrigulf() -> list[dict]:
                             href = link_el.get("href", "") if link_el else ""
                             desc = desc_el.get_text(strip=True) if desc_el else None
 
-                            if not title or not company:
+                            if not title or not company or not href:
                                 continue
 
                             if not is_relevant_tech_job(title, desc or ""):
                                 continue
 
-                            if href and not href.startswith("http"):
+                            if not href.startswith("http"):
                                 href = f"https://www.naukrigulf.com{href}"
 
                             job = normalize_job(
                                 title=title,
                                 company=company,
                                 location=loc,
-                                url=href or url,
+                                url=href,
+                                apply_url=href,
                                 source="naukrigulf",
                                 description=desc,
                             )
@@ -218,20 +219,21 @@ def scrape_gulftalent() -> list[dict]:
                             href = link_el.get("href", "") if link_el else ""
                             desc = desc_el.get_text(strip=True) if desc_el else None
 
-                            if not title or not company:
+                            if not title or not company or not href:
                                 continue
 
                             if not is_relevant_tech_job(title, desc or ""):
                                 continue
 
-                            if href and not href.startswith("http"):
+                            if not href.startswith("http"):
                                 href = f"https://www.gulftalent.com{href}"
 
                             job = normalize_job(
                                 title=title,
                                 company=company,
                                 location=loc,
-                                url=href or url,
+                                url=href,
+                                apply_url=href,
                                 source="gulftalent",
                                 description=desc,
                             )
