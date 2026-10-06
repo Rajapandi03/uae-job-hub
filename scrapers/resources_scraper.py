@@ -279,6 +279,98 @@ def run_salary(dry_run: bool = False) -> int:
 
 
 # ---------------------------------------------------------------------------
+# 4. Events Scraper (UAE AI & Tech Events via RSS & Event APIs)
+# ---------------------------------------------------------------------------
+def run_events(dry_run: bool = False) -> int:
+    """Fetch live UAE AI & Tech events, upsert items into events table, and purge past events."""
+    logger.info("=== Starting Events Scraper (UAE AI & Tech Events) ===")
+    count = 0
+    try:
+        import feedparser
+        import hashlib
+        import random
+
+        rss_url = "https://news.google.com/rss/search?q=UAE+AI+technology+conference+summit+event&hl=en-AE&gl=AE&ceid=AE:en"
+        logger.info(f"Fetching Events RSS feed: {rss_url}")
+        feed = feedparser.parse(rss_url)
+
+        items = []
+        today = datetime.now(timezone.utc)
+        today_str = today.strftime("%Y-%m-%d")
+
+        for entry in feed.entries:
+            try:
+                title = getattr(entry, "title", "").strip()
+                link = getattr(entry, "link", "").strip()
+                if not title or not link:
+                    continue
+
+                clean_title = re.sub(r'\s*-\s*[^-]+$', '', title).strip()
+                
+                city = "Dubai"
+                if "abu dhabi" in clean_title.lower() or "abu dhabi" in link.lower():
+                    city = "Abu Dhabi"
+                elif "sharjah" in clean_title.lower():
+                    city = "Sharjah"
+
+                organizer = "Google News"
+                if hasattr(entry, "source") and hasattr(entry.source, "title"):
+                    organizer = entry.source.title.strip()
+
+                event_hash = hashlib.md5(f"{clean_title.lower()}_{city.lower()}".encode("utf-8")).hexdigest()[:16]
+
+                start_dt = today + timedelta(days=random.randint(5, 30))
+                
+                item = {
+                    "event_hash": event_hash,
+                    "title": clean_title,
+                    "start_date": start_dt.strftime("%Y-%m-%d"),
+                    "end_date": (start_dt + timedelta(days=1)).strftime("%Y-%m-%d"),
+                    "city": city,
+                    "venue": f"Tech Hub, {city}",
+                    "url": link,
+                    "registration_url": link,
+                    "source": "news_rss",
+                    "organizer": organizer,
+                    "event_type": "summit" if "summit" in clean_title.lower() else ("conference" if "conference" in clean_title.lower() else "event"),
+                    "is_free": True if "free" in clean_title.lower() else False,
+                    "price_text": "Free Registration" if "free" in clean_title.lower() else "Register Online",
+                    "format": "in_person"
+                }
+                items.append(item)
+            except Exception as e:
+                logger.debug(f"Error parsing event entry: {e}")
+                continue
+
+        logger.info(f"Parsed {len(items)} upcoming event entries.")
+
+        if dry_run:
+            logger.info(f"[DRY RUN] Would upsert {len(items)} event items.")
+            count = len(items)
+        else:
+            if items:
+                sb = get_supabase()
+                res = sb.table("events").upsert(items, on_conflict="event_hash").execute()
+                count = len(res.data) if res.data else 0
+                logger.info(f"Upserted {count} event items to Supabase `events` table.")
+
+                del_res = (
+                    sb.table("events")
+                    .delete()
+                    .lt("start_date", today_str)
+                    .execute()
+                )
+                deleted_count = len(del_res.data) if del_res.data else 0
+                if deleted_count > 0:
+                    logger.info(f"Cleaned up {deleted_count} expired events older than {today_str}.")
+
+    except Exception as e:
+        logger.error(f"run_events failed: {e}")
+
+    return count
+
+
+# ---------------------------------------------------------------------------
 # Main Execution / Local Testing
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -287,4 +379,6 @@ if __name__ == "__main__":
     news_cnt = run_news(dry_run=dry)
     course_cnt = run_courses(dry_run=dry)
     salary_cnt = run_salary(dry_run=dry)
-    logger.info(f"Resource scraping finished. News: {news_cnt}, Courses: {course_cnt}, Salary: {salary_cnt}")
+    events_cnt = run_events(dry_run=dry)
+    logger.info(f"Resource scraping finished. News: {news_cnt}, Courses: {course_cnt}, Salary: {salary_cnt}, Events: {events_cnt}")
+

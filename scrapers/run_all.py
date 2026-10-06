@@ -86,13 +86,15 @@ def main():
     now_utc = datetime.now(timezone.utc)
     resource_counts = {}
 
-    # 4a. News - runs every time
+    # 4a. News & Events - runs every time
     try:
-        from resources_scraper import run_news
-        cnt = run_news(dry_run=DRY_RUN)
-        resource_counts["news"] = cnt
+        from resources_scraper import run_news, run_events
+        cnt_news = run_news(dry_run=DRY_RUN)
+        cnt_events = run_events(dry_run=DRY_RUN)
+        resource_counts["news"] = cnt_news
+        resource_counts["events"] = cnt_events
     except Exception as e:
-        logger.error(f"Resource news scraper failed: {e}")
+        logger.error(f"Resource news/events scraper failed: {e}")
 
     # 4b. Courses - only on Mondays (weekday 0)
     if now_utc.weekday() == 0:

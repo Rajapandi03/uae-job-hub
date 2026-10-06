@@ -2519,6 +2519,9 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   {resources.map((res) => {
                     const IconLookup = { GraduationCap, DollarSign, Newspaper }
                     const IconComponent = IconLookup[res.iconName] || BookOpen
+                    const latestNewsTitle = res.id === 'news' && resourcesList?.news?.[0]?.title
+                    const cardDesc = latestNewsTitle ? `Latest: ${latestNewsTitle}` : res.description
+
                     return (
                       <div
                         className="resource-card"
@@ -2530,7 +2533,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         <div className="resource-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', flex: 1 }}>
                           <div>
                             <div className="resource-title">{res.title}</div>
-                            <div className="resource-desc">{res.description}</div>
+                            <div className="resource-desc" style={{ lineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cardDesc}</div>
                           </div>
                           <span className="resource-link" style={{ marginTop: '0.8rem' }}>{res.linkText} <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
                         </div>
