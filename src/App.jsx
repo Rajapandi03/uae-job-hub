@@ -1341,8 +1341,11 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
 
       {/* ===== NAVBAR ===== */}
       <nav className="navbar">
-        <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigateTo('jobs')}>
-          <span className="nav-wordmark">Hini</span><span className="nav-wordmark-uae"> UAE Job Hub</span>
+        <div className="nav-brand" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.65rem' }} onClick={() => navigateTo('jobs')}>
+          <img src="/logo.png" alt="Hini UAE Job Hub" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
+          <div>
+            <span className="nav-wordmark">Hini</span><span className="nav-wordmark-uae"> UAE Job Hub</span>
+          </div>
         </div>
         <div className="nav-links">
           <a href="/" className={currentView === 'jobs' ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('jobs') }}>Find Jobs</a>
@@ -2520,7 +2523,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       <footer className="footer">
         <div className="footer-top">
           <div>
-            <div className="nav-brand" style={{ color: 'white', marginBottom: '0.75rem', cursor: 'pointer' }} onClick={() => setCurrentView('jobs')}>
+            <div className="nav-brand" style={{ color: '#0f172a', marginBottom: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.65rem' }} onClick={() => setCurrentView('jobs')}>
+              <img src="/logo.png" alt="Hini UAE Job Hub" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
               <span className="footer-wordmark">Hini – UAE Job Hub</span>
             </div>
             <p className="footer-brand-desc">
