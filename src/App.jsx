@@ -901,18 +901,13 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       return
     }
     try {
-      const cutoff7d = new Date()
-      cutoff7d.setDate(cutoff7d.getDate() - 7)
-      const cutoffISO = cutoff7d.toISOString()
-
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .eq('active', true)
-        .gte('first_seen', cutoffISO)
         .order('posted_at', { ascending: false, nullsFirst: false })
         .order('first_seen', { ascending: false })
-        .limit(1000)
+        .range(0, 1999)
 
       if (error) throw error
       if (data && data.length > 0) {
@@ -1355,25 +1350,6 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
           <a href="/certificates" className={['certificates', 'salary', 'news'].includes(currentView) ? 'active-link' : ''} onClick={(e) => { e.preventDefault(); navigateTo('certificates') }}>Resources</a>
         </div>
         <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
-              color: '#ffffff',
-              padding: '0.45rem 0.95rem',
-              borderRadius: '8px',
-              fontSize: '0.82rem',
-              fontWeight: '700',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              boxShadow: '0 3px 10px rgba(79, 70, 229, 0.3)'
-            }}
-          >
-            <Upload size={14} /> {resumeData ? 'Replace Resume' : 'Upload Resume'}
-          </button>
           <div className="nav-live-pill" title="Live data updated automatically" style={{ gap: '0.4rem', padding: '0.35rem 0.75rem' }}>
             <span className="live-dot" />
             <span className="nav-live-count" style={{ fontWeight: '500' }}>Updated {lastUpdated ? lastUpdatedLabel(lastUpdated) : 'just now'}</span>
