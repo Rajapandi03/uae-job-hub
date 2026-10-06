@@ -282,10 +282,16 @@ function App() {
 
   // State for AI Career Assistant Chatbot
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [groqApiKey, setGroqApiKey] = useState(() => localStorage.getItem('groq_api_key') || '')
+  const [groqApiKey, setGroqApiKey] = useState(() => {
+    const local = localStorage.getItem('groq_api_key')
+    if (local && local.trim().length > 0) return local
+    return import.meta.env.VITE_GROQ_API_KEY || ''
+  })
   const [showSettings, setShowSettings] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [isAiThinking, setIsAiThinking] = useState(false)
+  const [userResumeText, setUserResumeText] = useState(() => localStorage.getItem('hini_user_resume') || '')
+  const [resumeFileName, setResumeFileName] = useState('')
   const fileInputRef = useRef(null)
 
   const [chatMessages, setChatMessages] = useState([
@@ -352,6 +358,8 @@ function App() {
   const handleClearResume = () => {
     clearSavedResume()
     setResumeData(null)
+    setUserResumeText('')
+    localStorage.removeItem('hini_user_resume')
     setSortOption('newest')
     setChatMessages(prev => [...prev, {
       id: Date.now(),
@@ -364,9 +372,10 @@ function App() {
   const handleSendChatMessage = async (customPrompt = null) => {
     const promptText = (customPrompt || chatInput).trim()
     const isATSRequest = customPrompt === "Find my top ATS job matches in UAE" || promptText.toLowerCase().includes('ats') || promptText.toLowerCase().includes('match')
+    const activeResumeText = (resumeData?.rawText || userResumeText || "").trim()
 
     // STRICT VALIDATION: If requesting ATS matches but no resume is uploaded/pasted
-    if (isATSRequest && !userResumeText.trim()) {
+    if (isATSRequest && !activeResumeText) {
       const noResumeMsg = {
         id: Date.now(),
         sender: 'bot',
@@ -381,7 +390,7 @@ function App() {
       return
     }
 
-    if (!promptText && !userResumeText.trim()) return
+    if (!promptText && !activeResumeText) return
 
     const userText = promptText || "Analyze my uploaded CV for live UAE jobs."
     const userMsg = {
@@ -395,11 +404,27 @@ function App() {
     if (!customPrompt) setChatInput('')
     setIsAiThinking(true)
 
-    const matches = userResumeText.trim() ? findBestJobMatches(userResumeText, allJobs, 5) : []
+    const matches = activeResumeText ? findBestJobMatches(activeResumeText, allJobs, 5) : []
 
     let botReplyText = ""
-    if (groqApiKey.trim()) {
+    if (!groqApiKey.trim()) {
+      botReplyText = `⚠️ **AI Brain Offline:** Please click the Settings gear icon (⚙️) above and enter your free Groq API key to chat with me!`
+    } else {
       try {
+        const topJobsList = matches.map(m => ({ title: m.title, company: m.company, match_score: m.atsScore })).slice(0, 3);
+        const hasResume = activeResumeText.length > 0;
+        
+        const systemPrompt = `You are Hini AI, an expert UAE Tech Recruiter & Job Search Assistant.
+Rules:
+1. Talk like a friendly human recruiter. Use professional, conversational language.
+2. If the user asks general-knowledge or non-career related questions (e.g. coding help, recipes, history), you MUST politely refuse and guide them back to UAE jobs and their tech career.
+3. If they ask for the "Best jobs to apply today" or an "AI Job Search Agent", give them actionable advice based on the provided Job list or ask clarifying career questions.`
+        
+        const dynamicUserPrompt = `Context: ${hasResume ? 'Candidate resume provided.' : 'No resume provided yet.'}
+Top matching jobs from database: ${JSON.stringify(topJobsList)}
+User Query: "${userText}"
+Respond directly to the user's query adhering STRICTLY to your rules. Do not just blindly summarize the resume.`
+
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -409,25 +434,22 @@ function App() {
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
             messages: [
-              {
-                role: 'system',
-                content: 'You are Hini Career AI, an expert UAE Tech Talent & ATS Advisor. Be concise, professional, and practical.'
-              },
-              {
-                role: 'user',
-                content: `Candidate resume: "${userResumeText.slice(0, 1000)}"\nMatched Jobs: ${JSON.stringify(matches.map(m => ({ title: m.title, company: m.company, score: m.atsScore })))}.\nUser query: "${userText}". Provide a 2-sentence summary and 2 ATS tips.`
-              }
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: dynamicUserPrompt }
             ],
             temperature: 0.7,
-            max_tokens: 300
+            max_tokens: 400
           })
         })
         if (response.ok) {
           const data = await response.json()
           botReplyText = data.choices?.[0]?.message?.content || ""
+        } else {
+          botReplyText = `⚠️ **API Error:** Groq returned an error (HTTP ${response.status}). Check if your API key is valid and has credits.`
         }
       } catch (err) {
         console.warn("Groq API error:", err)
+        botReplyText = `⚠️ **Network Error:** Could not connect to Groq API. Check your internet connection.`
       }
     }
 
@@ -436,7 +458,7 @@ function App() {
         const topScore = matches[0]?.atsScore || 0
         botReplyText = `🎯 **ATS Analysis Complete!** Based on your uploaded CV, I analyzed **${allJobs.length} live UAE opportunities**. Your top match is **${topScore}% compatible**!`
       } else {
-        botReplyText = `Here is key advice for your query regarding UAE Tech & AI opportunities:`
+        botReplyText = `I am your Hini AI Job Search Agent! Upload your resume and I'll find the best roles for you in the UAE.`
       }
     }
 
@@ -2712,19 +2734,21 @@ function App() {
         </div>
       )}
 
-      {/* ===== AI CAREER ASSISTANT CHATBOT ===== */}
-      <button
-        className="ai-chat-fab"
-        onClick={() => setIsChatOpen(!isChatOpen)}
-        title="Ask Hini AI Career Assistant"
-      >
-        <Sparkles size={20} className="ai-sparkle-spin" />
-        <span>Ask Hini AI</span>
-        <span className="ai-fab-badge">Groq</span>
-      </button>
+      {/* ===== AI CAREER ASSISTANT CHATBOT (HIDDEN FOR LIVE DEPLOYMENT) ===== */}
+      {false && (
+        <>
+          <button
+            className="ai-chat-fab"
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            title="Ask Hini AI Career Assistant"
+          >
+            <Sparkles size={20} className="ai-sparkle-spin" />
+            <span>Ask Hini AI</span>
+            <span className="ai-fab-badge">Groq</span>
+          </button>
 
-      {isChatOpen && (
-        <div className="ai-chat-window">
+          {isChatOpen && (
+            <div className="ai-chat-window">
           {/* Header */}
           <div className="ai-chat-header">
             <div className="ai-chat-title">
@@ -2788,13 +2812,13 @@ function App() {
             />
 
             <div className="ai-resume-file-zone">
-              {userResumeText.trim() ? (
+              {resumeData || userResumeText.trim() ? (
                 <div className="ai-resume-uploaded-badge">
                   <div className="ai-resume-file-info">
                     <FileCheck size={16} className="text-green-500" />
                     <div>
-                      <span className="ai-filename">{resumeFileName || 'Resume CV Text'}</span>
-                      <span className="ai-filesize">({userResumeText.split(/\s+/).length} words parsed)</span>
+                      <span className="ai-filename">{resumeData ? resumeData.fileName : (resumeFileName || 'Resume CV Text')}</span>
+                      <span className="ai-filesize">({resumeData ? resumeData.skills.length + ' skills detected' : userResumeText.split(/\s+/).length + ' words parsed'})</span>
                     </div>
                   </div>
                   <button
@@ -2816,27 +2840,18 @@ function App() {
               )}
             </div>
 
-            <textarea
-              className="ai-resume-textarea"
-              placeholder="Or paste your CV / Resume text manually here..."
-              value={userResumeText}
-              onChange={(e) => {
-                setUserResumeText(e.target.value)
-                localStorage.setItem('hini_user_resume', e.target.value)
-              }}
-            />
+            {!resumeData && (
+              <textarea
+                className="ai-resume-textarea"
+                placeholder="Or paste your CV / Resume text manually here..."
+                value={userResumeText}
+                onChange={(e) => {
+                  setUserResumeText(e.target.value)
+                  localStorage.setItem('hini_user_resume', e.target.value)
+                }}
+              />
+            )}
 
-            <div className="ai-quick-prompts">
-              <button onClick={() => handleSendChatMessage("Find my top ATS job matches in UAE")}>
-                🎯 Best ATS Matches
-              </button>
-              <button onClick={() => handleSendChatMessage("How can I improve my CV for Dubai AI roles?")}>
-                💡 Optimize CV
-              </button>
-              <button onClick={() => handleSendChatMessage("What is the average salary for my skills in UAE?")}>
-                💰 UAE Salary Range
-              </button>
-            </div>
           </div>
 
           {/* Messages Body */}
@@ -2930,6 +2945,8 @@ function App() {
           </div>
         </div>
       )}
+      </>
+    )}
 
       {/* Job Description & ATS Resume Match Side Drawer */}
       <JobDetailDrawer
