@@ -154,6 +154,9 @@ function eventTypeLabel(type) {
 // Filter out non-job titles (dictionary definitions, Wikipedia pages, W3Schools tutorials, download pages)
 const INVALID_JOB_TITLE_REGEX = /\b(definition|meaning|tutorial|download|downloads|wikipedia|w3schools|geeksforgeeks|dictionary|what is|how it works|documentation|guides|merriam-webster|cheat sheet|course|learn|faq|overview|basics|introduction to|lesson|types and how)\b/i
 
+// 🚫 Non-IT / Civil / Non-Tech job blocklist — reject non-tech roles (Civil, MEP, Mechanical, Structural, Construction, Draftsman, QA/QC, CAD, Wet Utilities, Planning, Estimator, etc.)
+const NON_IT_BLOCKLIST_REGEX = /\b(civil|structural|steel structure|mep|draftsman|draughtsman|drafting|drafter|autocad|cad technician|cad|quantity surveyor|land surveyor|piping engineer|process engineer(?! .*data)|site engineer|site manager|construction|contracting|fabrication|welding|pipefitter|rigger|scaffolding|formwork|rebar|concrete|mason|carpenter|painter|plumber|electrician(?! .*it)|hvac|fire fighting|sprinkler|landscape|horticulture|upholstery|cabin crew|pilot|flight crew|aircraft maintenance|automobile engineer(?! .*software)|automotive engineer(?! .*software)|environmental|planning engineer|wet utilities|utilities design|utilities engineer|coastal engineer|marine surveyor|estimator|cost engineer|technical drawing|rebar detailer|steel detailer|scaffolder|fit out|fitout|driver|delivery rider|mechanic|logistics|procurement|qa\/qc|qa qc|quality inspector|quality control|quality administrator|customer support|customer service|customer care|receptionist|office administrator|secretary|teacher(?! .*coding|.*cs|.*ai)|professor(?! .*cs|.*ai)|doctor|physician|nurse|pharmacist|dentist|physiotherapist|real estate|property manager|facilities manager|building manager|drilling|petroleum|reservoir|geophysicist|well engineer|wellsite|refinery engineer|oil gas(?! .*software|.*tech)|solar engineer(?! .*software)|wind engineer|engineer internship|engineering intern|architectural consultancy|architectural|lighting designer)\b/i
+
 function isValidJob(job) {
   if (!job || !job.title) return false
   const title = String(job.title).toLowerCase().trim()
@@ -166,6 +169,7 @@ function isValidJob(job) {
   if (source === 'gulftalent' && url && !url.includes('gulftalent.com')) return false
 
   if (INVALID_JOB_TITLE_REGEX.test(title)) return false
+  if (NON_IT_BLOCKLIST_REGEX.test(title)) return false
 
   if (comp.includes('merriam-webster') || comp.includes('w3schools') || comp.includes('wikipedia') || comp.includes('geeksforgeeks') || comp.includes('mech lesson') || comp.includes('scientific american') || comp.includes('data.gov')) {
     return false
@@ -1118,15 +1122,12 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
     const NON_UAE_URL_REGEX = /\/(pakistan|india|bangladesh|philippines|egypt|jordan|saudi|qatar|oman|kuwait|bahrain)\//i
     const NON_UAE_LOC_REGEX = /\b(pakistan|india|bangladesh|philippines|egypt|jordan|lebanon|saudi|qatar|oman|kuwait|bahrain|hyderabad|bengaluru|mumbai|delhi|karachi|lahore|islamabad|chennai|pune|gurgaon|noida)\b/i
 
-    // Non-IT job title blocklist (defense in depth - catches stale non-IT jobs in DB)
-    const NON_IT_TITLE_REGEX = /\b(nurse|doctor|pharmacist|dentist|physiotherapist|radiologist|surgeon|barista|waiter|waitress|cook|chef|housekeeper|cleaner|hotel manager|concierge|front desk agent|mason|plumber|electrician|carpenter|welder|painter|real estate|property consultant|leasing agent|sales agent|sales executive|sales representative|sales manager|business development manager|business development executive|marketing manager|marketing executive|brand manager|content writer|copywriter|social media manager|accountant|auditor|financial analyst|bookkeeper|tax consultant|hr manager|hr executive|recruiter|receptionist|cashier|office manager|personal assistant|executive assistant|office boy|admin assistant|secretary|legal counsel|paralegal|lawyer|security guard|storekeeper|warehouse manager|facilities manager|tailor|beautician|hair stylist|fashion designer|interior designer|designer \(retail|retail shops|fit out|fitout|driver|delivery rider|mechanic|logistics coordinator|logistics manager|supply chain manager|procurement officer|teacher|tutor|nanny|lecturer|mechanical engineer|civil engineer|structural engineer|electrical engineer|field engineer|maintenance engineer|production engineer|manufacturing engineer|piping engineer|hvac engineer|instrumentation engineer|quantity surveyor|site engineer|process engineer|plant engineer|welding engineer|marine engineer|chemical engineer|petroleum engineer|safety engineer|quality inspector|drilling engineer|project engineer|hospitality construction|construction|operations manager|store manager|retail manager|general manager)\b/i
-
     result = result.filter(j => {
       const u = (j.applyUrl || j.url || '').toLowerCase()
       const loc = (j.location || '').toLowerCase()
       const title = (j.title || '').toLowerCase()
       if (NON_UAE_URL_REGEX.test(u) || NON_UAE_LOC_REGEX.test(loc)) return false
-      if (NON_IT_TITLE_REGEX.test(title)) return false
+      if (NON_IT_BLOCKLIST_REGEX.test(title)) return false
       return true
     })
 
