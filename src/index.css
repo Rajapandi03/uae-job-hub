@@ -1453,11 +1453,83 @@ a {
 }
 
 @media (max-width: 768px) {
-  .footer-bottom {
-    flex-direction: column;
-    gap: 1.5rem;
+  .footer {
+    padding: 2.5rem 1.25rem 1.5rem;
     text-align: center;
   }
+
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+    padding-bottom: 2rem;
+  }
+
+  .footer-top .nav-brand {
+    justify-content: center !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .footer-brand-desc {
+    text-align: center;
+    max-width: 320px;
+    margin: 0 auto;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-col h4 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    text-transform: capitalize;
+    color: #0f172a;
+  }
+
+  .footer-col a {
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .footer-newsletter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 340px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .footer-newsletter p {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .newsletter-form {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .newsletter-form input {
+    text-align: center;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: center;
+  }
+
   .footer-links-bottom {
     justify-content: center;
   }

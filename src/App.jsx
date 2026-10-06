@@ -2528,7 +2528,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
               <span className="footer-wordmark">Hini – UAE Job Hub</span>
             </div>
             <p className="footer-brand-desc">
-              Connecting AI talent with opportunities across the United Arab Emirates.
+              Connecting AI & Tech talent with opportunities across the United Arab Emirates.
             </p>
           </div>
           <div className="footer-col">
@@ -2549,7 +2549,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
           </div>
           <div className="footer-col footer-newsletter">
             <h4>The Sunday Brief</h4>
-            <p>Your week in UAE AI — new roles, hiring trends, and one skill to learn. Free, every Sunday.</p>
+            <p>Your week in UAE AI & Tech — new roles, hiring trends, and key skills. Free, every Sunday.</p>
             <div className="newsletter-form">
               <input type="email" placeholder="Your email" />
               <button><Send size={14} /></button>
