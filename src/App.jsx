@@ -200,6 +200,9 @@ function mapDbJob(job) {
   }
   const postedRelative = timeAgo(bestDate) || timeAgo(job.first_seen) || 'Just now'
 
+  const isAiRole = /\b(ai engineer|artificial intelligence|machine learning|ml engineer|deep learning|generative ai|genai|llm|agentic|ai agent|multi-agent|applied ai|ai developer|full stack ai|nlp|computer vision|rag engineer|prompt engineer|conversational ai|mlops|llmops|ai platform|ai research|research scientist|applied scientist|data scientist|data engineer|data analyst|analytics engineer|ai|ml)\b/i.test(title)
+  const roleTag = isAiRole ? 'AI' : 'Tech'
+
   return {
     id: job.job_hash,
     title: title,
@@ -213,7 +216,8 @@ function mapDbJob(job) {
     postedDate: `Posted ${postedRelative}`,
     updatedDate: '',
     description: (job.description && job.description !== 'None') ? job.description : '',
-    tags: [],
+    tag: roleTag,
+    tags: [roleTag],
     applyUrl: job.apply_url || job.url,
     source: job.source,
     posted_at: job.posted_at,
@@ -886,6 +890,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
   const [searchTerm, setSearchTerm] = useState('')
   const [locationFilter, setLocationFilter] = useState('All Emirates')
   const [sourceFilter, setSourceFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
   const [levelFilter, setLevelFilter] = useState('all')
 
@@ -905,21 +910,32 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       return
     }
     try {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('active', true)
-        .order('posted_at', { ascending: false, nullsFirst: false })
-        .order('first_seen', { ascending: false })
-        .range(0, 1999)
+      let allData = []
+      let page = 0
+      const pageSize = 1000
 
-      if (error) throw error
-      if (data && data.length > 0) {
-        const validData = data.filter(isValidJob)
+      while (true) {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('active', true)
+          .order('posted_at', { ascending: false, nullsFirst: false })
+          .order('first_seen', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) throw error
+        if (!data || data.length === 0) break
+        allData = allData.concat(data)
+        if (data.length < pageSize) break
+        page++
+      }
+
+      if (allData && allData.length > 0) {
+        const validData = allData.filter(isValidJob)
         setLiveJobs(validData.map(mapDbJob))
         setDbConnected(true)
         // Track the newest job's first_seen as "last updated"
-        const newest = data.reduce((a, b) => ((a.first_seen || '') > (b.first_seen || '') ? a : b), data[0])
+        const newest = allData.reduce((a, b) => ((a.first_seen || '') > (b.first_seen || '') ? a : b), allData[0])
         setLastUpdated(newest.first_seen || new Date().toISOString())
         if (isRefresh) {
           setRefreshed(true)
@@ -1150,6 +1166,23 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       result = result.filter(j => j.source === sourceFilter)
     }
 
+    if (categoryFilter !== 'all') {
+      const CATEGORY_PATTERNS = {
+        ai: /\b(ai|artificial intelligence|machine learning|deep learning|genai|generative ai|llm|nlp|computer vision|prompt|rag|mlops|data scientist)\b/i,
+        software: /\b(software engineer|software developer|full stack|fullstack|frontend|backend|web developer|react|node|python|java|\.net|golang|c\+\+|mobile|ios|android|developer|coder|programmer)\b/i,
+        data: /\b(data scientist|data engineer|data analyst|bi developer|business intelligence|data architect|database|data)\b/i,
+        cloud: /\b(cloud|devops|site reliability|sre|system administrator|network engineer|infrastructure|aws|azure)\b/i,
+        security: /\b(cyber|security|information security|soc analyst|penetration tester|ethical hacker)\b/i,
+        qa: /\b(qa|quality assurance|software tester|automation engineer|testing)\b/i,
+        leadership: /\b(scrum master|agile|project manager|product manager|tech lead|solutions architect|it manager|cto|head of it)\b/i,
+        support: /\b(it support|helpdesk|desktop support|service desk|technical support|system support)\b/i,
+      }
+      const pattern = CATEGORY_PATTERNS[categoryFilter]
+      if (pattern) {
+        result = result.filter(j => pattern.test(j.title || ''))
+      }
+    }
+
     if (timeFilter !== 'all') {
       const now = new Date()
       const cutoff = new Date(now)
@@ -1160,24 +1193,17 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       else if (timeFilter === '3d') cutoff.setTime(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
       result = result.filter(j => {
-        let bestD = null
+        let maxMs = 0
         if (j.posted_at) {
-          const pa = new Date(j.posted_at)
-          if (!isNaN(pa.getTime())) {
-            const isMidnight = pa.getUTCHours() === 0 && pa.getUTCMinutes() === 0 && pa.getUTCSeconds() === 0
-            if (!isMidnight) {
-              bestD = pa
-            }
-          }
+          const pa = new Date(j.posted_at).getTime()
+          if (!isNaN(pa)) maxMs = Math.max(maxMs, pa)
         }
-        if (!bestD && j.first_seen) {
-          const fs = new Date(j.first_seen)
-          if (!isNaN(fs.getTime())) bestD = fs
+        if (j.first_seen) {
+          const fs = new Date(j.first_seen).getTime()
+          if (!isNaN(fs)) maxMs = Math.max(maxMs, fs)
         }
-        if (!bestD && j.posted_at) {
-          bestD = new Date(j.posted_at)
-        }
-        return bestD && bestD >= cutoff
+        if (!maxMs) return true
+        return maxMs >= cutoff.getTime()
       })
     }
 
@@ -1225,12 +1251,12 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
     })
 
     return result
-  }, [allJobs, searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter, resumeData, jobScores, sortOption, showWeakerMatches])
+  }, [allJobs, searchTerm, locationFilter, sourceFilter, categoryFilter, timeFilter, levelFilter, resumeData, jobScores, sortOption, showWeakerMatches])
 
   useEffect(() => {
     setVisibleJobsCount(10)
     setShowAllJobs(false)
-  }, [searchTerm, locationFilter, sourceFilter, timeFilter, levelFilter])
+  }, [searchTerm, locationFilter, sourceFilter, categoryFilter, timeFilter, levelFilter])
 
   const availableSources = useMemo(() => {
     const defaultSources = ['linkedin', 'indeed', 'bayt', 'naukrigulf', 'gulftalent']
@@ -1943,6 +1969,17 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   {availableSources.map(s => (
                     <option key={s} value={s}>{sourceLabel(s)}</option>
                   ))}
+                </select>
+                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                  <option value="all">All Role Categories</option>
+                  <option value="ai">AI & Machine Learning</option>
+                  <option value="software">Software & Full-Stack</option>
+                  <option value="data">Data Science & Analytics</option>
+                  <option value="cloud">Cloud & DevOps</option>
+                  <option value="security">Cybersecurity</option>
+                  <option value="qa">QA & Software Testing</option>
+                  <option value="leadership">IT Leadership & Architecture</option>
+                  <option value="support">IT Support & Systems</option>
                 </select>
                 <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
                   <option value="all">All Levels</option>

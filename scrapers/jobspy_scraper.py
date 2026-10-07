@@ -29,13 +29,23 @@ SEARCH_TERMS = [
     "MLOps engineer",
     "data engineer",
     "NLP engineer",
-    # --- Software & Cloud ---
+    "AI solutions architect",
+    "AI researcher",
+    "AI specialist",
+    "prompt engineer",
+    "RAG engineer",
+    # --- Software & Cloud (Trending IT Roles) ---
     "software engineer",
+    "senior software engineer",
     "full stack developer",
     "DevOps engineer",
     "cloud engineer",
     "backend developer",
+    "frontend developer",
+    "python developer",
     "cybersecurity analyst",
+    "tech lead",
+    "solutions architect",
 ]
 
 LOCATIONS = ["Dubai", "UAE"]
