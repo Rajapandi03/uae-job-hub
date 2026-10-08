@@ -155,7 +155,7 @@ function eventTypeLabel(type) {
 const INVALID_JOB_TITLE_REGEX = /\b(definition|meaning|tutorial|download|downloads|wikipedia|w3schools|geeksforgeeks|dictionary|what is|how it works|documentation|guides|merriam-webster|cheat sheet|course|learn|faq|overview|basics|introduction to|lesson|types and how)\b/i
 
 // 🚫 Non-IT / Civil / Non-Tech job blocklist — reject non-tech roles (Civil, MEP, Mechanical, Structural, Construction, Draftsman, QA/QC, CAD, Wet Utilities, Planning, Estimator, Survey, etc.)
-const NON_IT_BLOCKLIST_REGEX = /\b(civil|structural|steel structure|mep|draftsman|draughtsman|drafting|drafter|autocad|cad technician|cad|survey|surveyor|surveying|quantity surveyor|land surveyor|heavy civil|highway|bridge engineer|road engineer|geotechnical|materials engineer|bim|revit|piping engineer|process engineer(?! .*data)|site engineer|site manager|construction|contracting|fabrication|welding|pipefitter|rigger|scaffolding|formwork|rebar|concrete|mason|carpenter|painter|plumber|electrician(?! .*it)|hvac|fire fighting|sprinkler|landscape|horticulture|upholstery|cabin crew|pilot|flight crew|aircraft maintenance|automobile engineer(?! .*software)|automotive engineer(?! .*software)|environmental|planning engineer|wet utilities|utilities design|utilities engineer|coastal engineer|marine surveyor|estimator|cost engineer|technical drawing|rebar detailer|steel detailer|scaffolder|fit out|fitout|driver|delivery rider|mechanic|logistics|procurement|qa\/qc|qa qc|quality inspector|quality control|quality administrator|customer support|customer service|customer care|receptionist|office administrator|secretary|teacher(?! .*coding|.*cs|.*ai)|professor(?! .*cs|.*ai)|doctor|physician|nurse|pharmacist|dentist|physiotherapist|real estate|property manager|facilities manager|building manager|drilling|petroleum|reservoir|geophysicist|well engineer|wellsite|refinery engineer|oil gas(?! .*software|.*tech)|solar engineer(?! .*software)|wind engineer|engineer internship|engineering intern|architectural consultancy|architectural|lighting designer|resident engineer|estimation|material engineer|lifting|roads|bridges|façade|facade|aluminum|aluminium|glazing|joinery|stormwater|drainage|tunnel|railway|high-rise|p&m|p & m|hse|document controller|site planner|design architect|interior design|control panel|relay system|traffic signal|hook up|steelwork|petrochemical|steel fixer)\b/i
+const NON_IT_BLOCKLIST_REGEX = /\b(civil|structural|steel structure|mep|draftsman|draughtsman|drafting|drafter|autocad|cad technician|cad|survey|surveyor|surveying|quantity surveyor|land surveyor|heavy civil|highway|bridge engineer|road engineer|geotechnical|materials engineer|bim|revit|piping engineer|process engineer(?! .*data)|site engineer|site manager|construction|contracting|fabrication|welding|pipefitter|rigger|scaffolding|formwork|rebar|concrete|mason|carpenter|painter|plumber|electrician(?! .*it)|hvac|fire fighting|sprinkler|landscape|horticulture|upholstery|cabin crew|pilot|flight crew|aircraft maintenance|automobile engineer(?! .*software)|automotive engineer(?! .*software)|environmental|planning engineer|wet utilities|utilities design|utilities engineer|coastal engineer|marine surveyor|estimator|cost engineer|technical drawing|rebar detailer|steel detailer|scaffolder|fit out|fitout|driver|delivery rider|mechanic|logistics|procurement|qa\/qc|qa qc|quality inspector|quality control|quality administrator|customer support|customer service|customer care|receptionist|office administrator|secretary|teacher(?! .*coding|.*cs|.*ai)|professor(?! .*cs|.*ai)|doctor|physician|nurse|pharmacist|dentist|physiotherapist|real estate|property manager|facilities manager|building manager|drilling|petroleum|reservoir|geophysicist|well engineer|wellsite|refinery engineer|oil gas(?! .*software|.*tech)|solar engineer(?! .*software)|wind engineer|engineer internship|engineering intern|architectural consultancy|architectural|lighting designer)\b/i
 
 function isValidJob(job) {
   if (!job || !job.title) return false
@@ -1872,8 +1872,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold inline-block border ${isStrong ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                                isGood ? 'bg-sky-50 text-sky-700 border-sky-200' :
-                                  'bg-amber-50 text-amber-700 border-amber-200'
+                              isGood ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                                'bg-amber-50 text-amber-700 border-amber-200'
                               }`}>
                               {scoreData.tier} Match
                             </span>
@@ -1881,8 +1881,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                             <p className="text-xs text-slate-500 font-semibold mt-0.5">{job.company} • {job.location}</p>
                           </div>
                           <div className={`px-3 py-1 rounded-full border flex items-center justify-center font-extrabold text-xs shrink-0 shadow-xs ${isStrong ? 'border-indigo-600 bg-indigo-50 text-indigo-700' :
-                              isGood ? 'border-sky-500 bg-sky-50 text-sky-700' :
-                                'border-amber-500 bg-amber-50 text-amber-700'
+                            isGood ? 'border-sky-500 bg-sky-50 text-sky-700' :
+                              'border-amber-500 bg-amber-50 text-amber-700'
                             }`}>
                             {scoreData.tier} Match
                           </div>
@@ -1892,8 +1892,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                           <div className="flex flex-wrap gap-1">
                             {scoreData.matched.slice(0, 3).map(skill => (
                               <span key={skill} className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${isStrong ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
-                                  isGood ? 'bg-sky-50 border-sky-200 text-sky-700' :
-                                    'bg-amber-50 border-amber-200 text-amber-700'
+                                isGood ? 'bg-sky-50 border-sky-200 text-sky-700' :
+                                  'bg-amber-50 border-amber-200 text-amber-700'
                                 }`}>
                                 ✓ {skill}
                               </span>
@@ -2153,12 +2153,12 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                                   scoreData.tier === 'Good' ? '#f0f9ff' :
                                     scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
                                 border: `1.5px solid ${scoreData.tier === 'Strong' ? '#c7d2fe' :
-                                    scoreData.tier === 'Good' ? '#bae6fd' :
-                                      scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
+                                  scoreData.tier === 'Good' ? '#bae6fd' :
+                                    scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
                                   }`,
                                 boxShadow: `0 2px 6px ${scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.12)' :
-                                    scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
-                                      scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
+                                  scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
+                                    scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
                                   }`
                               }}>
                                 {scoreData.tier === 'Strong' ? 'Strong Match' : scoreData.tier === 'Good' ? 'Good Match' : scoreData.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}

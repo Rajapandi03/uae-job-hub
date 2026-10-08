@@ -202,13 +202,6 @@ NON_TECH_BLOCKLIST = re.compile(
     r'qa\/qc|qa qc|quality administrator|quality inspector|'
     r'drilling engineer|reservoir engineer|project engineer|hospitality construction|construction|'
     r'architectural consultancy|engineer internship|engineering intern|'
-    # Additional Construction / Civil / Trades
-    r'resident engineer|estimation|estimator|material engineer|lifting|roads|bridges|'
-    r'façade|facade|aluminum|aluminium|glazing|joinery|fit out|fitout|'
-    r'stormwater|drainage|tunnel|railway|high-rise|p&m|p & m|hse|'
-    r'document controller|site planner|architectural|design architect|technical architect.*fit-out|interior design|'
-    r'control panel|relay system|traffic signal|hook up|steelwork|'
-    r'oil & gas|oil and gas|petrochemical|scaffolding|rigger|steel fixer|painter|carpenter|'
     # Operations (non-tech)
     r'operations manager|store manager|retail manager|retail assistant|'
     r'general manager|area manager|regional manager'
@@ -219,11 +212,11 @@ NON_TECH_BLOCKLIST = re.compile(
 # Tech, Software, Data & AI allowlist pattern fallback
 TECH_ALLOWLIST = re.compile(
     r'\b(ai|ml|data|python|software|full stack|fullstack|frontend|backend|cloud|devops|'
-    r'cyber|cybersecurity|developer|machine learning|deep learning|nlp|'
+    r'cyber|security|engineer|developer|architect|machine learning|deep learning|nlp|'
     r'computer vision|genai|generative ai|llm|artificial intelligence|data science|'
     r'data scientist|data analyst|data engineer|web|react|node|vue|angular|java|c\+\+|\.net|'
-    r'golang|rust|embedded|qa|tester|automation|scrum|code|coding|programmer|'
-    r'database|network|it admin|it support|helpdesk|information technology)\b',
+    r'golang|rust|embedded|qa|tester|automation|scrum|tech|technical|fresher|graduate|'
+    r'intern|internship|junior|code|coding|programmer|system|database|network|infrastructure|it)\b',
     re.IGNORECASE
 )
 
@@ -246,9 +239,9 @@ IT_TECH_KEYWORDS_REGEX = re.compile(
 
 def classify_job_role(title: str, description: str = "") -> str:
     """
-    Classify job title into 'AI', 'Tech', or 'Blocked'.
-    Matches strictly against AI_ROLES and IT_TECH_ROLES.
-    Also falls back to TECH_ALLOWLIST for generic tech roles not explicitly named.
+    Classify job title strictly into 'AI', 'Tech', or 'Blocked'.
+    Matches STRICTLY against AI_ROLES, IT_TECH_ROLES, and AI/IT Keywords.
+    Does not use generic fallback or description parsing to avoid false positives.
     """
     t = clean_string(title)
     if not t:
@@ -264,21 +257,7 @@ def classify_job_role(title: str, description: str = "") -> str:
     if any(re.search(r'\b' + re.escape(role) + r'\b', t, re.IGNORECASE) for role in IT_TECH_ROLES) or IT_TECH_KEYWORDS_REGEX.search(t):
         return "Tech"
 
-    # Description fallback check
-    if description:
-        d = description[:500]
-        if AI_KEYWORDS_REGEX.search(d):
-            return "AI"
-        if IT_TECH_KEYWORDS_REGEX.search(d):
-            return "Tech"
-
-    # General tech fallback checks (TECH_ALLOWLIST) - verify possible tech job
-    if TECH_ALLOWLIST.search(t):
-        return "Tech"
-        
-    if description and TECH_ALLOWLIST.search(description[:500]):
-        return "Tech"
-
+    # Completely removed description checks and broad TECH_ALLOWLIST checks
     return "Blocked"
 
 
