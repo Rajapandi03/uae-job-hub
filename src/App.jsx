@@ -2304,29 +2304,41 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   )
                 })}
 
-                {/* "Back to Top" button inside scrollable area */}
-                {showAllJobs && filteredJobs.length > 10 && (
-                  <div className="btn-outline-center jobs-scroll-bottom-actions">
-                    <button
-                      className="btn-outline"
-                      onClick={() => {
-                        if (jobsScrollRef.current) {
-                          jobsScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' })
-                        }
-                      }}
-                    >
-                      ↑ Scroll to Top
-                    </button>
-                    <button
-                      className="btn-outline"
-                      onClick={() => {
-                        setShowAllJobs(false)
-                        setVisibleJobsCount(10)
-                        document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
-                      }}
-                    >
-                      ✕ Collapse Jobs
-                    </button>
+                {/* Load More & Navigation controls inside expanded view */}
+                {showAllJobs && (
+                  <div className="btn-outline-center flex flex-col items-center justify-center gap-3 my-4">
+                    {visibleJobsCount < filteredJobs.length && (
+                      <button
+                        className="btn-outline border-indigo-200 text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 font-bold px-6 py-2.5 rounded-xl transition shadow-xs flex items-center gap-2"
+                        onClick={() => setVisibleJobsCount(prev => Math.min(prev + 40, filteredJobs.length))}
+                      >
+                        <PlusCircle size={16} /> Load Next 40 Jobs ({filteredJobs.length - visibleJobsCount} remaining)
+                      </button>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <button
+                        className="btn-outline"
+                        onClick={() => {
+                          if (jobsScrollRef.current) {
+                            jobsScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+                          } else {
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }
+                        }}
+                      >
+                        ↑ Scroll to Top
+                      </button>
+                      <button
+                        className="btn-outline text-rose-600 border-rose-200 hover:bg-rose-50"
+                        onClick={() => {
+                          setShowAllJobs(false)
+                          setVisibleJobsCount(10)
+                          document.getElementById('jobs-section')?.scrollIntoView({ behavior: 'smooth' })
+                        }}
+                      >
+                        ✕ Collapse Jobs
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -2347,7 +2359,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   className="btn-outline btn-view-all-jobs"
                   onClick={() => {
                     setShowAllJobs(true)
-                    setVisibleJobsCount(filteredJobs.length)
+                    setVisibleJobsCount(Math.min(40, filteredJobs.length))
                     setTimeout(() => {
                       const container = document.querySelector('.jobs-scroll-wrapper')
                       if (container) {
@@ -2355,10 +2367,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         const y = container.getBoundingClientRect().top + window.pageYOffset + yOffset
                         window.scrollTo({ top: y, behavior: 'smooth' })
                       }
-                      if (jobsScrollRef.current) {
-                        jobsScrollRef.current.scrollTop = 0
-                      }
-                    }, 50)
+                    }, 10)
                   }}
                 >
                   View All {filteredJobs.length} Jobs →
