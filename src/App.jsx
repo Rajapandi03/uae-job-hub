@@ -2332,9 +2332,17 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
               </div>
             </div>
 
-            {/* View All / Show Less buttons (outside scrollable container) */}
+            {/* View All / Load More buttons */}
             {!showAllJobs && filteredJobs.length > visibleJobsCount && (
-              <div className="btn-outline-center">
+              <div className="btn-outline-center flex flex-wrap items-center justify-center gap-3 mt-6 mb-4">
+                <button
+                  className="btn-outline border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100/80 font-bold px-5 py-2.5 rounded-xl transition shadow-xs flex items-center gap-2"
+                  onClick={() => {
+                    setVisibleJobsCount(prev => Math.min(prev + 20, filteredJobs.length))
+                  }}
+                >
+                  <PlusCircle size={16} /> Load 20 More Jobs ({filteredJobs.length - visibleJobsCount} remaining)
+                </button>
                 <button
                   className="btn-outline btn-view-all-jobs"
                   onClick={() => {
@@ -2343,7 +2351,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                     setTimeout(() => {
                       const container = document.querySelector('.jobs-scroll-wrapper')
                       if (container) {
-                        const yOffset = -90 // header offset
+                        const yOffset = -90
                         const y = container.getBoundingClientRect().top + window.pageYOffset + yOffset
                         window.scrollTo({ top: y, behavior: 'smooth' })
                       }
