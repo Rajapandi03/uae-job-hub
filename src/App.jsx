@@ -2104,7 +2104,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                 )}
 
                 {/* Job Cards */}
-                {!loading && (showAllJobs ? filteredJobs : filteredJobs.slice(0, visibleJobsCount)).map((job) => {
+                {!loading && filteredJobs.slice(0, visibleJobsCount).map((job) => {
                   const scoreData = resumeData ? jobScores[job.id] : null
 
                   return (
