@@ -20,7 +20,7 @@ self.onmessage = function (e) {
     for (const job of jobs) {
       if (!job || !job.id) continue
 
-      const cacheKey = `${skillsHash}::${job.id}`
+      const cacheKey = `v2_strict::${skillsHash}::${job.id}`
 
       if (scoreCache.has(cacheKey)) {
         results[job.id] = scoreCache.get(cacheKey)

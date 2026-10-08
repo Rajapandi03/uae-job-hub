@@ -104,7 +104,13 @@ export function getSavedResume() {
   try {
     const item = localStorage.getItem(LOCAL_STORAGE_KEY)
     if (!item) return null
-    return JSON.parse(item)
+    const parsed = JSON.parse(item)
+    if (parsed && parsed.text) {
+      // Dynamic re-extraction with current clean skill definitions
+      const freshSkills = extractSkills(parsed.text)
+      parsed.skills = freshSkills
+    }
+    return parsed
   } catch (err) {
     return null
   }
