@@ -37,10 +37,11 @@ CREATE POLICY "Public can read active jobs"
     FOR SELECT
     USING (true);
 
--- 5. Public job submission policy (allows recruiters to post jobs)
+-- 5. Authenticated employer job submission policy (allows verified recruiters to post jobs)
 CREATE POLICY "Allow employer job submissions"
     ON jobs
     FOR INSERT
+    TO authenticated
     WITH CHECK (source = 'employer');
 
 -- 6. Service-role write policy (only the service_role key can manage all jobs)
