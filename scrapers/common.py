@@ -202,6 +202,13 @@ NON_TECH_BLOCKLIST = re.compile(
     r'qa\/qc|qa qc|quality administrator|quality inspector|'
     r'drilling engineer|reservoir engineer|project engineer|hospitality construction|construction|'
     r'architectural consultancy|engineer internship|engineering intern|'
+    # Additional Construction / Civil / Trades
+    r'resident engineer|estimation|estimator|material engineer|lifting|roads|bridges|'
+    r'façade|facade|aluminum|aluminium|glazing|joinery|fit out|fitout|'
+    r'stormwater|drainage|tunnel|railway|high-rise|p&m|p & m|hse|'
+    r'document controller|site planner|architectural|design architect|technical architect.*fit-out|interior design|'
+    r'control panel|relay system|traffic signal|hook up|steelwork|'
+    r'oil & gas|oil and gas|petrochemical|scaffolding|rigger|steel fixer|painter|carpenter|'
     # Operations (non-tech)
     r'operations manager|store manager|retail manager|retail assistant|'
     r'general manager|area manager|regional manager'
@@ -212,11 +219,11 @@ NON_TECH_BLOCKLIST = re.compile(
 # Tech, Software, Data & AI allowlist pattern fallback
 TECH_ALLOWLIST = re.compile(
     r'\b(ai|ml|data|python|software|full stack|fullstack|frontend|backend|cloud|devops|'
-    r'cyber|security|engineer|developer|architect|machine learning|deep learning|nlp|'
+    r'cyber|cybersecurity|developer|machine learning|deep learning|nlp|'
     r'computer vision|genai|generative ai|llm|artificial intelligence|data science|'
     r'data scientist|data analyst|data engineer|web|react|node|vue|angular|java|c\+\+|\.net|'
-    r'golang|rust|embedded|qa|tester|automation|scrum|tech|technical|fresher|graduate|'
-    r'intern|internship|junior|code|coding|programmer|system|database|network|infrastructure|it)\b',
+    r'golang|rust|embedded|qa|tester|automation|scrum|code|coding|programmer|'
+    r'database|network|it admin|it support|helpdesk|information technology)\b',
     re.IGNORECASE
 )
 
