@@ -2554,6 +2554,17 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   {resources.map((res) => {
                     const IconLookup = { GraduationCap, DollarSign, Newspaper }
                     const IconComponent = IconLookup[res.iconName] || BookOpen
+
+                    // Dynamic live sub-info badge based on resourcesList
+                    let liveBadgeText = res.description
+                    if (res.id === 'certificates' && resourcesList.certificates.length > 0) {
+                      liveBadgeText = `${resourcesList.certificates.length} Verified Certifications (Google, AWS, Microsoft & DeepLearning.AI)`
+                    } else if (res.id === 'salary' && resourcesList.salary.length > 0) {
+                      liveBadgeText = `2026 UAE Compensation Benchmarks (6,000 to 75,000 AED / month)`
+                    } else if (res.id === 'news' && resourcesList.news.length > 0) {
+                      liveBadgeText = `${resourcesList.news.length} Breaking Headlines & UAE AI Initiatives`
+                    }
+
                     return (
                       <div
                         className="resource-card"
@@ -2565,7 +2576,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                         <div className="resource-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', flex: 1 }}>
                           <div>
                             <div className="resource-title">{res.title}</div>
-                            <div className="resource-desc">{res.description}</div>
+                            <div className="resource-desc">{liveBadgeText}</div>
                           </div>
                           <span className="resource-link" style={{ marginTop: '0.8rem' }}>{res.linkText} <ArrowRight size={14} style={{ verticalAlign: 'middle' }} /></span>
                         </div>
