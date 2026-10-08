@@ -46,7 +46,7 @@ export function scoreJob(candidateSkillsInput, job) {
   const titleLower = (job.title || '').toLowerCase()
   let titleScore = 0
   const titleMatchedSkills = candidateSkills.filter(s => titleLower.includes(s.toLowerCase()))
-  if (titleMatchedSkills.length > 0) {
+  if (titleMatchedSkills.length > 0 && matched.length > 0) {
     titleScore = Math.min(20, 10 + (titleMatchedSkills.length * 5))
     reasons.push(`Title relevance: Your expertise matches target role title (+${titleScore}/20 pts)`)
   } else {
@@ -55,13 +55,13 @@ export function scoreJob(candidateSkillsInput, job) {
   }
 
   // 3. Experience Level Weight (max 15 pts)
-  let expScore = 12
+  let expScore = 10
   const seniorKeywords = ['senior', 'sr', 'lead', 'principal', 'manager', 'head', 'architect']
   const isSeniorJob = seniorKeywords.some(kw => titleLower.includes(kw))
   const isSeniorCandidate = candidateSkills.length >= 6
   if ((isSeniorJob && isSeniorCandidate) || (!isSeniorJob && !isSeniorCandidate)) {
     expScore = 15
-    reasons.push(`Experience level: Perfectly aligned profile seniority (+15/15 pts)`)
+    reasons.push(`Experience level: Profile seniority (+15/15 pts)`)
   } else {
     expScore = 10
     reasons.push(`Experience level: Acceptable seniority range (+10/15 pts)`)
@@ -93,8 +93,21 @@ export function scoreJob(candidateSkillsInput, job) {
     reasons.push(`Freshness: Active listing (+3/5 pts)`)
   }
 
-  // Calculate Total Score, capped at 95 max
-  const rawTotal = skillsScore + titleScore + expScore + locationScore + freshnessScore
+  // Calculate Total Score
+  let rawTotal = skillsScore + titleScore + expScore + locationScore + freshnessScore
+
+  // STRICT ATS CAP RULES:
+  // If candidate has 0 matching skills for a job with required skills, MAX score is 20 (Weak Match)
+  if (matched.length === 0 && jobRequiredSkills.length > 0) {
+    rawTotal = Math.min(20, rawTotal)
+  } else if (skillMatchRatio < 0.3) {
+    // Low skill overlap caps at 45 (Stretch Match max)
+    rawTotal = Math.min(45, rawTotal)
+  } else if (skillMatchRatio < 0.5) {
+    // Moderate skill overlap caps at 65 (Good Match max)
+    rawTotal = Math.min(65, rawTotal)
+  }
+
   const finalScore = Math.min(95, Math.max(15, rawTotal))
 
   // Determine Tier

@@ -1,4 +1,3 @@
-// Skill Alias Dictionary mapping variations to canonical names
 export const SKILL_ALIASES = {
   // Languages & Core
   'js': 'JavaScript',
@@ -13,7 +12,6 @@ export const SKILL_ALIASES = {
   'c++': 'C++',
   'cpp': 'C++',
   'golang': 'Go',
-  'go': 'Go',
   'rust': 'Rust',
   'java': 'Java',
   'php': 'PHP',
@@ -21,25 +19,29 @@ export const SKILL_ALIASES = {
   'swift': 'Swift',
   'kotlin': 'Kotlin',
 
-  // AI & Data
-  'ai': 'Artificial Intelligence',
+  // AI & Data (Cleaned of ambiguous acronyms)
   'artificial intelligence': 'Artificial Intelligence',
-  'ml': 'Machine Learning',
+  'ai engineer': 'Artificial Intelligence',
+  'ai/ml': 'Artificial Intelligence',
   'machine learning': 'Machine Learning',
-  'dl': 'Deep Learning',
   'deep learning': 'Deep Learning',
   'nlp': 'NLP',
   'natural language processing': 'NLP',
-  'cv': 'Computer Vision',
   'computer vision': 'Computer Vision',
-  'llm': 'LLM',
-  'llms': 'LLM',
+  'computer vision (cv)': 'Computer Vision',
+  'comp vision': 'Computer Vision',
   'large language models': 'LLM',
+  'large language model': 'LLM',
+  'llm architecture': 'LLM',
+  'llm engineer': 'LLM',
   'generative ai': 'Generative AI',
   'gen ai': 'Generative AI',
   'genai': 'Generative AI',
   'prompt engineering': 'Prompt Engineering',
-  'rag': 'RAG',
+  'retrieval augmented generation': 'RAG',
+  'rag architecture': 'RAG',
+  'rag pipeline': 'RAG',
+  'rag system': 'RAG',
   'langchain': 'LangChain',
   'llamaindex': 'LlamaIndex',
   'tensorflow': 'TensorFlow',
@@ -77,8 +79,8 @@ export const SKILL_ALIASES = {
   'django': 'Django',
   'fastapi': 'FastAPI',
   'flask': 'Flask',
-  'spring': 'Spring Boot',
   'spring boot': 'Spring Boot',
+  'springboot': 'Spring Boot',
   '.net': '.NET',
   'dotnet': '.NET',
   'graphql': 'GraphQL',
@@ -99,7 +101,6 @@ export const SKILL_ALIASES = {
   'azure': 'Azure',
   'gcp': 'GCP',
   'google cloud': 'GCP',
-  'google cloud platform': 'GCP',
   'docker': 'Docker',
   'k8s': 'Kubernetes',
   'kubernetes': 'Kubernetes',
@@ -119,7 +120,25 @@ export const SKILL_ALIASES = {
   'soc': 'SOC',
   'siem': 'SIEM',
   'agile': 'Agile',
-  'scrum': 'Scrum'
+  'scrum': 'Scrum',
+
+  // HR & Recruitment & Business Ops
+  'recruitment': 'Recruitment',
+  'recruiting': 'Recruitment',
+  'talent acquisition': 'Talent Acquisition',
+  'human resources': 'Human Resources',
+  'hr': 'Human Resources',
+  'sourcing': 'Talent Sourcing',
+  'headhunting': 'Headhunting',
+  'applicant tracking system': 'ATS',
+  'onboarding': 'Onboarding',
+  'payroll': 'Payroll',
+  'employee relations': 'Employee Relations',
+  'performance management': 'Performance Management',
+  'technical recruitment': 'Technical Recruiting',
+  'technical recruiter': 'Technical Recruiting',
+  'workday': 'Workday',
+  'bamboohr': 'BambooHR'
 }
 
 // Escape regex special characters safely
