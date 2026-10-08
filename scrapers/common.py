@@ -185,7 +185,8 @@ NON_TECH_BLOCKLIST = re.compile(
     # Fashion, Interior & Design (non-tech)
     r'tailor|beautician|hair stylist|fashion designer|stylist|interior designer|fit out|fitout|upholstery|'
     # Transport & Logistics (non-tech)
-    r'driver|delivery rider|car washer|mechanic|'
+    r'driver|delivery rider|car washer|mechanic|traffic|transport|transportation|transit|modelling|modeller|'
+    r'urban planner|urban planning|town planner|'
     r'logistics coordinator|logistics manager|supply chain manager|'
     r'procurement officer|procurement manager|fleet manager|'
     r'shipping coordinator|customs officer|freight|'

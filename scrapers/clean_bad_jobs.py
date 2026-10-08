@@ -4,7 +4,7 @@ clean_bad_jobs.py - Scrub Supabase database of non-job entries like dictionary d
 
 import re
 import os
-from common import get_supabase, logger, NON_JOB_TITLE_BLOCKLIST
+from common import get_supabase, logger, NON_JOB_TITLE_BLOCKLIST, NON_TECH_BLOCKLIST, classify_job_role
 
 BAD_COMPANIES = [
     'merriam-webster', 'w3schools', 'wikipedia', 'geeksforgeeks', 'mech lesson', 'scientific american'
@@ -19,7 +19,7 @@ def clean_database():
     logger.info("Fetching jobs to audit...")
     
     # Fetch all jobs
-    resp = supabase.table('jobs').select('job_hash, title, company, url').execute()
+    resp = supabase.table('jobs').select('job_hash, title, company, url, description').execute()
     jobs = resp.data or []
     
     deleted_count = 0
@@ -29,11 +29,14 @@ def clean_database():
         title_lower = title.lower()
         company = (job.get('company') or '').strip().lower()
         url = (job.get('url') or '').strip().lower()
+        description = job.get('description') or ''
         
         is_bad = False
         
-        # Check title against blocklist
-        if NON_JOB_TITLE_BLOCKLIST.search(title_lower):
+        # Check title against blocklist & role classification
+        if NON_JOB_TITLE_BLOCKLIST.search(title_lower) or NON_TECH_BLOCKLIST.search(title_lower):
+            is_bad = True
+        elif classify_job_role(title, description) == "Blocked":
             is_bad = True
             
         # Check company names
