@@ -98,6 +98,17 @@ function sourceLabel(source) {
   return labels[source] || source
 }
 
+function parseSalaryNumber(val) {
+  if (!val) return 0
+  if (typeof val === 'number') return val
+  const str = String(val)
+  const cleanStr = str.replace(/,/g, '')
+  const matches = cleanStr.match(/\d+(\.\d+)?/g)
+  if (!matches || matches.length === 0) return 0
+  const nums = matches.map(n => parseFloat(n))
+  return Math.max(...nums)
+}
+
 function applyLabel(source) {
   return `Apply on ${sourceLabel(source)}`
 }
@@ -1165,13 +1176,18 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
     }
 
     if (locationFilter !== 'All Emirates') {
-      result = result.filter(j =>
-        j.location.toLowerCase().includes(locationFilter.toLowerCase())
-      )
+      const locQ = locationFilter.toLowerCase()
+      result = result.filter(j => {
+        const loc = (j.location || '').toLowerCase()
+        if (locQ === 'remote') {
+          return loc.includes('remote') || (j.type || '').toLowerCase().includes('remote') || (j.description || '').toLowerCase().includes('remote')
+        }
+        return loc.includes(locQ)
+      })
     }
 
     if (sourceFilter !== 'all') {
-      result = result.filter(j => j.source === sourceFilter)
+      result = result.filter(j => (j.source || '').toLowerCase() === sourceFilter.toLowerCase())
     }
 
     if (categoryFilter !== 'all') {
@@ -1199,6 +1215,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       else if (timeFilter === '12h') cutoff.setTime(now.getTime() - 12 * 60 * 60 * 1000)
       else if (timeFilter === '24h') cutoff.setTime(now.getTime() - 24 * 60 * 60 * 1000)
       else if (timeFilter === '3d') cutoff.setTime(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+      else if (timeFilter === '7d') cutoff.setTime(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
       result = result.filter(j => {
         let maxMs = 0
@@ -1216,19 +1233,21 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
     }
 
     if (levelFilter !== 'all') {
-      const seniorKeywords = ['senior', 'sr', 'sr.', 'lead', 'principal', 'manager', 'director', 'head', 'chief', 'vp', 'architect']
+      const execKeywords = ['director', 'vp', 'chief', 'head of', 'cto', 'cio', 'cpo', 'executive']
+      const seniorKeywords = ['senior', 'sr', 'sr.', 'lead', 'principal', 'manager', 'architect']
       const fresherKeywords = ['fresher', 'junior', 'jr', 'jr.', 'entry', 'intern', 'internship', 'graduate', 'associate', 'trainee']
 
       result = result.filter(j => {
-        const title = j.title.toLowerCase()
+        const title = (j.title || '').toLowerCase()
         const desc = (j.description || '').toLowerCase()
+        const isExec = execKeywords.some(kw => title.includes(kw))
         const isSenior = seniorKeywords.some(kw => title.includes(kw))
         const isFresher = fresherKeywords.some(kw => title.includes(kw) || desc.includes(kw))
 
-        if (levelFilter === 'fresher') return isFresher
-        if (levelFilter === 'entry') return isFresher
-        if (levelFilter === 'senior') return isSenior
-        if (levelFilter === 'mid') return !isSenior && !isFresher
+        if (levelFilter === 'fresher' || levelFilter === 'entry') return isFresher
+        if (levelFilter === 'executive') return isExec
+        if (levelFilter === 'senior') return isSenior || isExec
+        if (levelFilter === 'mid') return !isSenior && !isFresher && !isExec
         return true
       })
     }
@@ -1248,12 +1267,12 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
         const scoreB = jobScores[b.id]?.score || 0
         return scoreB - scoreA
       } else if (sortOption === 'salary') {
-        const salA = parseFloat(a.price_text || a.salary || 0) || 0
-        const salB = parseFloat(b.price_text || b.salary || 0) || 0
+        const salA = parseSalaryNumber(a.price_text || a.salary || a.description)
+        const salB = parseSalaryNumber(b.price_text || b.salary || b.description)
         return salB - salA
       } else {
-        const dateA = new Date(a.first_seen || a.posted_at || 0).getTime()
-        const dateB = new Date(b.first_seen || b.posted_at || 0).getTime()
+        const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
+        const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
         return dateB - dateA
       }
     })
@@ -1965,6 +1984,9 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                 <option>Sharjah</option>
                 <option>Ajman</option>
                 <option>Ras Al Khaimah</option>
+                <option>Fujairah</option>
+                <option>Umm Al Quwain</option>
+                <option>Remote</option>
               </select>
             </div>
 
@@ -1991,17 +2013,19 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                 </select>
                 <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
                   <option value="all">All Levels</option>
-                  <option value="fresher">Fresher</option>
+                  <option value="fresher">Fresher / Entry Level</option>
                   <option value="mid">Mid Level</option>
                   <option value="senior">Senior Level</option>
+                  <option value="executive">Executive / Lead / Director</option>
                 </select>
                 <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
-                  <option value="all">All (Last 7 Days)</option>
+                  <option value="all">All Timeframes</option>
                   <option value="1h">Last 1 Hour</option>
                   <option value="6h">Last 6 Hours</option>
                   <option value="12h">Last 12 Hours</option>
                   <option value="24h">Last 24 Hours</option>
                   <option value="3d">Last 3 Days</option>
+                  <option value="7d">Last 7 Days</option>
                 </select>
               </div>
 
