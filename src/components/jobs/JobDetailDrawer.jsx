@@ -91,7 +91,7 @@ export function JobDetailDrawer({
   if (!isOpen || !job) return null
 
   // ATS score from engine
-  const scoreData = resumeData ? scoreJob(resumeData.skills || [], job) : null
+  const scoreData = resumeData ? scoreJob(resumeData, job) : null
 
   // Structured JD parse (Option A: uses ATS skills for Must-Have)
   const jd = parseJD(job, scoreData)
@@ -584,6 +584,13 @@ export function JobDetailDrawer({
                     </div>
                   </div>
 
+                  {scoreData?.domainMismatch && (
+                    <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
+                      <strong className="block font-bold mb-1">⚠️ Role Domain Notice:</strong>
+                      {scoreData.reasons?.[0] || 'This position belongs to a different career discipline than your profile.'}
+                    </div>
+                  )}
+
                   {/* Matched Skills */}
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
@@ -617,13 +624,34 @@ export function JobDetailDrawer({
                           </span>
                         ))}
                       </div>
-                    ) : (
+                    ) : scoreData?.matched && scoreData.matched.length > 0 ? (
                       <div className="text-xs font-semibold text-indigo-700">
                         Perfect Match! Your resume contains all detected technical requirements.
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500">
+                        No missing requirements identified.
                       </div>
                     )}
                   </div>
 
+                  {/* ATS Scoring Factors (ChatGPT-style breakdown) */}
+                  {scoreData?.reasons && scoreData.reasons.length > 0 && (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <h4 className="text-sm font-bold text-slate-900">ATS Scoring Factors</h4>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md">Smart Match Engine</span>
+                      </div>
+                      <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1.5">
+                        {scoreData.reasons.map((reason, idx) => (
+                          <div key={idx} className="text-xs text-slate-700 flex items-start gap-2 leading-relaxed">
+                            <span className="text-indigo-600 font-bold shrink-0">✓</span>
+                            <span>{reason}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* No Resume Uploaded */

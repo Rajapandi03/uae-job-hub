@@ -58,6 +58,8 @@ import {
 } from './data/jobs'
 import { parseResumeFile, getSavedResume, saveResumeState, clearSavedResume } from './components/resume/ResumeParser.js'
 import { useJobMatcher } from './matching/useJobMatcher.js'
+import { findBestJobMatches } from './matching/scoring.js'
+import { detectCandidateDomain } from './matching/skills.js'
 import { ResumeStrip } from './components/resume/ResumeStrip.jsx'
 import { JobDetailDrawer } from './components/jobs/JobDetailDrawer.jsx'
 import { parseExperience, parseSeniority, parseTechnologies } from './lib/jdParser.js'
@@ -346,10 +348,16 @@ function App() {
       setResumeData(parsedData)
       setSortOption('best')
 
+      const domainNote = parsedData.detectedDomain === 'hr'
+        ? '\n\n⚠️ **Notice**: Your CV is detected as an **HR & Recruitment** profile. Hini curates technical AI & IT Engineering positions, so non-matching technical roles will not be recommended.'
+        : parsedData.detectedDomain === 'finance'
+          ? '\n\n⚠️ **Notice**: Your CV is detected as a **Finance & Accounting** profile. Hini curates technical AI & IT Engineering positions, so non-matching technical roles will not be recommended.'
+          : '\n\nYour job feed below has been re-ordered by your highest ATS match score!'
+
       const successMsg = {
         id: Date.now(),
         sender: 'bot',
-        text: `✅ **Resume Uploaded & Parsed Successfully!**\n📄 **File**: \`${parsedData.fileName}\`\n🧠 **Detected Skills (${parsedData.skills.length})**: ${parsedData.skills.map(s => `\`${s}\``).join(', ')}\n\nYour job feed below has been re-ordered by your highest ATS match score!`,
+        text: `✅ **Resume Uploaded & Parsed Successfully!**\n📄 **File**: \`${parsedData.fileName}\`\n🧠 **Detected Skills (${parsedData.skills.length})**: ${parsedData.skills.map(s => `\`${s}\``).join(', ')}${domainNote}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
       setChatMessages(prev => [...prev, successMsg])
@@ -375,7 +383,8 @@ function App() {
     if (!resumeData) return
     const updatedData = {
       ...resumeData,
-      skills: newSkills
+      skills: newSkills,
+      detectedDomain: detectCandidateDomain(newSkills, resumeData.text || '', resumeData.fileName || '')
     }
     saveResumeState(updatedData)
     setResumeData(updatedData)
@@ -431,7 +440,7 @@ function App() {
     if (!customPrompt) setChatInput('')
     setIsAiThinking(true)
 
-    const matches = activeResumeText ? findBestJobMatches(activeResumeText, allJobs, 5) : []
+    const matches = resumeData ? findBestJobMatches(resumeData, allJobs, 5) : []
 
     let botReplyText = ""
     if (!groqApiKey.trim()) {
@@ -1120,9 +1129,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
       }))
   }, [allJobs, dbConnected, showAllCompanies])
 
-  // Web Worker Background Job Scoring Hook
-  const candidateSkills = useMemo(() => resumeData?.skills || [], [resumeData])
-  const { scores: jobScores, loading: isScoring } = useJobMatcher(candidateSkills, allJobs)
+  // Web Worker Background Job Scoring Hook (passes resumeData for domain awareness)
+  const { scores: jobScores, loading: isScoring } = useJobMatcher(resumeData, allJobs)
 
   // Compute Tier Counts for active candidate resume
   const tierCounts = useMemo(() => {
@@ -1137,13 +1145,19 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
     return counts
   }, [resumeData, jobScores])
 
-  // Top 3 Best Job Matches for highlight row
+  // Top 3 Best Job Matches for highlight row (Strict High-Confidence: Strong or Good, Score >= 60, no domain mismatch)
   const topMatches = useMemo(() => {
     if (!resumeData || !jobScores || allJobs.length === 0) return []
     const list = allJobs.map(job => ({
       job,
       scoreData: jobScores[job.id]
-    })).filter(item => item.scoreData && item.scoreData.score !== null && item.scoreData.score >= 40)
+    })).filter(item => (
+      item.scoreData &&
+      item.scoreData.score !== null &&
+      !item.scoreData.domainMismatch &&
+      (item.scoreData.tier === 'Strong' || item.scoreData.tier === 'Good') &&
+      item.scoreData.score >= 60
+    ))
 
     list.sort((a, b) => (b.scoreData.score || 0) - (a.scoreData.score || 0))
     return list.slice(0, 3)
@@ -1956,6 +1970,33 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
             </section>
           )}
 
+          {/* ===== NO RECOMMENDATIONS / DOMAIN NOTICE BANNER ===== */}
+          {resumeData && topMatches.length === 0 && (
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 my-6">
+              <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-start gap-4">
+                <div className="p-2.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl shrink-0 mt-0.5">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    {resumeData.detectedDomain === 'hr'
+                      ? 'HR & Recruitment Profile Detected'
+                      : resumeData.detectedDomain === 'finance'
+                        ? 'Finance & Accounting Profile Detected'
+                        : 'No High-Match Roles (≥60%) Found Currently'}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                    {resumeData.detectedDomain === 'hr'
+                      ? 'Your uploaded CV specializes in HR / Recruitment. Hini UAE Job Hub curates technical AI & IT Engineering positions (Software, Data, Cloud, Cybersecurity). We maintain strict role alignment and do not recommend unrelated technical roles. To see high-confidence ATS recommendations, please upload a Tech/IT CV or browse all live roles below.'
+                      : resumeData.detectedDomain === 'finance'
+                        ? 'Your uploaded CV specializes in Finance & Accounting. Hini UAE Job Hub curates technical AI & IT Engineering positions (Software, Data, Cloud, Cybersecurity). We maintain strict role alignment and do not recommend unrelated technical roles. To see high-confidence ATS recommendations, please upload a Tech/IT CV or browse all live roles below.'
+                        : 'None of the active listings currently reach high ATS compatibility (≥60%) for your detected skills. Explore all live UAE roles below or adjust your target skills in the CV banner.'}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* ===== LATEST JOBS ===== */}
           <section className="section-jobs" id="jobs-section">
             <div className="section-title">
@@ -2165,7 +2206,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                                 e.stopPropagation()
                                 openJobDrawer(job, scoreData, 'ats')
                               }}
-                              title="Click to view ATS breakdown"
+                              title={scoreData.domainMismatch ? (scoreData.reasons?.[0] || 'Role domain mismatch') : 'Click to view ATS breakdown'}
                               style={{
                                 cursor: 'pointer',
                                 shrink: 0
@@ -2178,22 +2219,28 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                                 fontWeight: '800',
                                 whiteSpace: 'nowrap',
                                 display: 'inline-block',
-                                color: scoreData.tier === 'Strong' ? '#4338ca' :
-                                  scoreData.tier === 'Good' ? '#0369a1' :
-                                    scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
-                                background: scoreData.tier === 'Strong' ? '#eef2ff' :
-                                  scoreData.tier === 'Good' ? '#f0f9ff' :
-                                    scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
-                                border: `1.5px solid ${scoreData.tier === 'Strong' ? '#c7d2fe' :
-                                  scoreData.tier === 'Good' ? '#bae6fd' :
-                                    scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
+                                color: scoreData.domainMismatch ? '#64748b' :
+                                  scoreData.tier === 'Strong' ? '#4338ca' :
+                                    scoreData.tier === 'Good' ? '#0369a1' :
+                                      scoreData.tier === 'Stretch' ? '#b45309' : '#475569',
+                                background: scoreData.domainMismatch ? '#f8fafc' :
+                                  scoreData.tier === 'Strong' ? '#eef2ff' :
+                                    scoreData.tier === 'Good' ? '#f0f9ff' :
+                                      scoreData.tier === 'Stretch' ? '#fffbeb' : '#f8fafc',
+                                border: `1.5px solid ${scoreData.domainMismatch ? '#e2e8f0' :
+                                  scoreData.tier === 'Strong' ? '#c7d2fe' :
+                                    scoreData.tier === 'Good' ? '#bae6fd' :
+                                      scoreData.tier === 'Stretch' ? '#fde68a' : '#e2e8f0'
                                   }`,
-                                boxShadow: `0 2px 6px ${scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.12)' :
-                                  scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
-                                    scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
+                                boxShadow: `0 2px 6px ${!scoreData.domainMismatch && scoreData.tier === 'Strong' ? 'rgba(99, 102, 241, 0.12)' :
+                                  !scoreData.domainMismatch && scoreData.tier === 'Good' ? 'rgba(2, 132, 199, 0.12)' :
+                                    !scoreData.domainMismatch && scoreData.tier === 'Stretch' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 0, 0, 0.03)'
                                   }`
                               }}>
-                                {scoreData.tier === 'Strong' ? 'Strong Match' : scoreData.tier === 'Good' ? 'Good Match' : scoreData.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
+                                {scoreData.domainMismatch ? 'Role Mismatch' :
+                                  scoreData.tier === 'Strong' ? 'Strong Match' :
+                                    scoreData.tier === 'Good' ? 'Good Match' :
+                                      scoreData.tier === 'Stretch' ? 'Stretch Match' : 'Low Match'}
                               </span>
                             </div>
                           ) : (

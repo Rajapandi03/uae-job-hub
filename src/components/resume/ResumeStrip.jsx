@@ -51,6 +51,21 @@ export function ResumeStrip({ resumeData, onUpdateSkills, onReplaceResume, onRem
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                   {resumeData.skills.length} Skills
                 </span>
+                {resumeData.detectedDomain && (
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                    resumeData.detectedDomain === 'hr'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : resumeData.detectedDomain === 'finance'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-slate-50 text-slate-700 border-slate-200'
+                  }`}>
+                    {resumeData.detectedDomain === 'hr'
+                      ? 'HR / Recruitment'
+                      : resumeData.detectedDomain === 'finance'
+                        ? 'Finance & Accounting'
+                        : `${resumeData.detectedDomain.toUpperCase()} Profile`}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
                 {resumeData.wordCount ? <span>{resumeData.wordCount} words</span> : null}

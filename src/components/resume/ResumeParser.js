@@ -1,6 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist'
 import mammoth from 'mammoth'
-import { extractSkills } from '../../matching/skills.js'
+import { extractSkills, extractCandidateSkills, detectCandidateDomain } from '../../matching/skills.js'
 
 // Configure PDF.js worker
 if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -76,13 +76,15 @@ export async function parseResumeFile(file) {
     throw new Error('Could not extract readable text from document. Please ensure your resume is text-selectable.')
   }
 
-  // Extract skills
-  const skills = extractSkills(cleanedText)
+  // Detect candidate domain & extract domain-aligned skills
+  const detectedDomain = detectCandidateDomain([], cleanedText, fileName)
+  const skills = extractCandidateSkills(cleanedText, detectedDomain)
 
   const resumeData = {
     fileName,
     text: cleanedText,
     skills,
+    detectedDomain,
     wordCount,
     uploadedAt: new Date().toISOString()
   }
@@ -106,9 +108,10 @@ export function getSavedResume() {
     if (!item) return null
     const parsed = JSON.parse(item)
     if (parsed && parsed.text) {
-      // Dynamic re-extraction with current clean skill definitions
-      const freshSkills = extractSkills(parsed.text)
-      parsed.skills = freshSkills
+      // Dynamic re-extraction with domain-aligned skill definitions
+      const detectedDomain = detectCandidateDomain([], parsed.text, parsed.fileName || '')
+      parsed.detectedDomain = detectedDomain
+      parsed.skills = extractCandidateSkills(parsed.text, detectedDomain)
     }
     return parsed
   } catch (err) {
