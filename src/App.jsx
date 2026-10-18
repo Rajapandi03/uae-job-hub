@@ -311,10 +311,10 @@ function App() {
 
   // State for AI Career Assistant Chatbot
   const [isChatOpen, setIsChatOpen] = useState(false)
+  // 🔒 SECURITY: groqApiKey is only read from localStorage (user-entered via Settings).
+  // The real API key lives server-side in /api/chat.js — never exposed to the browser.
   const [groqApiKey, setGroqApiKey] = useState(() => {
-    const local = localStorage.getItem('groq_api_key')
-    if (local && local.trim().length > 0) return local
-    return import.meta.env.VITE_GROQ_API_KEY || ''
+    return localStorage.getItem('groq_api_key') || ''
   })
   const [showSettings, setShowSettings] = useState(false)
   const [chatInput, setChatInput] = useState('')
@@ -443,50 +443,52 @@ function App() {
     const matches = resumeData ? findBestJobMatches(resumeData, allJobs, 5) : []
 
     let botReplyText = ""
-    if (!groqApiKey.trim()) {
-      botReplyText = `⚠️ **AI Brain Offline:** Please click the Settings gear icon (⚙️) above and enter your free Groq API key to chat with me!`
-    } else {
-      try {
-        const topJobsList = matches.map(m => ({ title: m.title, company: m.company, match_score: m.atsScore })).slice(0, 3);
-        const hasResume = activeResumeText.length > 0;
+    // 🔒 SECURITY: API call goes to /api/chat (serverless proxy) — GROQ key stays server-side.
+    // If user entered their own key in Settings, it's passed as a header fallback only.
+    try {
+      const topJobsList = matches.map(m => ({ title: m.title, company: m.company, match_score: m.atsScore })).slice(0, 3);
+      const hasResume = activeResumeText.length > 0;
 
-        const systemPrompt = `You are Hini AI, an expert UAE Tech Recruiter & Job Search Assistant.
+      const systemPrompt = `You are Hini AI, an expert UAE Tech Recruiter & Job Search Assistant.
 Rules:
 1. Talk like a friendly human recruiter. Use professional, conversational language.
 2. If the user asks general-knowledge or non-career related questions (e.g. coding help, recipes, history), you MUST politely refuse and guide them back to UAE jobs and their tech career.
 3. If they ask for the "Best jobs to apply today" or an "AI Job Search Agent", give them actionable advice based on the provided Job list or ask clarifying career questions.`
 
-        const dynamicUserPrompt = `Context: ${hasResume ? 'Candidate resume provided.' : 'No resume provided yet.'}
+      const dynamicUserPrompt = `Context: ${hasResume ? 'Candidate resume provided.' : 'No resume provided yet.'}
 Top matching jobs from database: ${JSON.stringify(topJobsList)}
 User Query: "${userText}"
 Respond directly to the user's query adhering STRICTLY to your rules. Do not just blindly summarize the resume.`
 
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqApiKey.trim()}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: dynamicUserPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 400
-          })
+      // Build request headers — user key in header as fallback if server key not set
+      const reqHeaders = { 'Content-Type': 'application/json' }
+      if (groqApiKey.trim()) reqHeaders['x-groq-key'] = groqApiKey.trim()
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: reqHeaders,
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: dynamicUserPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 400
         })
-        if (response.ok) {
-          const data = await response.json()
-          botReplyText = data.choices?.[0]?.message?.content || ""
-        } else {
-          botReplyText = `⚠️ **API Error:** Groq returned an error (HTTP ${response.status}). Check if your API key is valid and has credits.`
-        }
-      } catch (err) {
-        console.warn("Groq API error:", err)
-        botReplyText = `⚠️ **Network Error:** Could not connect to Groq API. Check your internet connection.`
+      })
+      if (response.ok) {
+        const data = await response.json()
+        botReplyText = data.choices?.[0]?.message?.content || ""
+      } else if (response.status === 401) {
+        botReplyText = `⚠️ **AI Brain Offline:** No API key configured. Please click the Settings gear icon (⚙️) and enter your free Groq API key to chat with me!`
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        botReplyText = `⚠️ **API Error:** ${errData.error || `Groq returned an error (HTTP ${response.status})`}`
       }
+    } catch (err) {
+      console.warn("Groq API error:", err)
+      botReplyText = `⚠️ **Network Error:** Could not connect to Groq API. Check your internet connection.`
     }
 
     if (!botReplyText) {

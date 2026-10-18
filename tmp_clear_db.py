@@ -1,7 +1,8 @@
 import sys
 import os
 
-BASE_DIR = r"c:\Users\Pandi\OneDrive\Desktop\itjob_uae\scrapers"
+# Use a relative path — avoids exposing local machine username/folder structure
+BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scrapers")
 sys.path.append(BASE_DIR)
 
 from common import get_supabase, logger
