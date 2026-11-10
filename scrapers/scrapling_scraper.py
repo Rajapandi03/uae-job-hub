@@ -62,6 +62,10 @@ def scrape_naukrigulf() -> list[dict]:
         "cybersecurity",
         "IT+support",
         "system+administrator",
+        # Product & Business Analysis
+        "business+analyst",
+        "product+manager",
+        "product+owner",
     ]
 
     try:
@@ -167,6 +171,10 @@ def scrape_gulftalent() -> list[dict]:
         "cybersecurity",
         "full-stack-developer",
         "python-developer",
+        # Product & Business Analysis
+        "business-analyst",
+        "product-manager",
+        "product-owner",
     ]
 
     try:

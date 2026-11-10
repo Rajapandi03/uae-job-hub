@@ -46,6 +46,10 @@ SEARCH_TERMS = [
     "cybersecurity analyst",
     "tech lead",
     "solutions architect",
+    # --- Product & Business Analysis ---
+    "business analyst",
+    "product manager",
+    "product owner",
 ]
 
 LOCATIONS = [

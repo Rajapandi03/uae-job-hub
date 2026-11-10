@@ -158,6 +158,22 @@ export const ROLE_ARCHETYPES = {
     coreSkills: ['C#', '.NET', 'ASP.NET', 'SQL Server', 'REST API', 'Azure', 'Git'],
     relatedRoles: ['fullstack_developer', 'backend_developer']
   },
+  business_analyst: {
+    id: 'business_analyst',
+    label: 'Business Analyst',
+    titleRegex: /\b(business analyst|it business analyst|technical business analyst|systems analyst|business systems analyst)\b/i,
+    domain: DOMAINS.SOFTWARE,
+    coreSkills: ['Business Analysis', 'Requirements Gathering', 'Stakeholder Management', 'SQL', 'Jira', 'Agile', 'Process Mapping'],
+    relatedRoles: ['product_manager', 'data_analyst']
+  },
+  product_manager: {
+    id: 'product_manager',
+    label: 'Product Manager / Product Owner',
+    titleRegex: /\b(product manager|product owner|associate product manager|senior product manager|technical product manager|group product manager)\b/i,
+    domain: DOMAINS.SOFTWARE,
+    coreSkills: ['Product Management', 'Product Roadmapping', 'User Stories', 'Agile', 'Scrum', 'Stakeholder Management', 'Jira'],
+    relatedRoles: ['business_analyst', 'fullstack_developer']
+  },
   hr_recruitment: {
     id: 'hr_recruitment',
     label: 'HR & Talent Acquisition Specialist',
@@ -220,6 +236,8 @@ export function detectRoleArchetype(text = '', skills = []) {
     ROLE_ARCHETYPES.mobile_developer,
     ROLE_ARCHETYPES.php_developer,
     ROLE_ARCHETYPES.dotnet_developer,
+    ROLE_ARCHETYPES.business_analyst,
+    ROLE_ARCHETYPES.product_manager,
     ROLE_ARCHETYPES.hr_recruitment,
     ROLE_ARCHETYPES.finance_accounting,
     ROLE_ARCHETYPES.python_developer,
@@ -261,6 +279,12 @@ export function detectRoleArchetype(text = '', skills = []) {
   }
   if (skillsLower.includes('accounting') || skillsLower.includes('auditing') || skillsLower.includes('vat & tax compliance')) {
     return ROLE_ARCHETYPES.finance_accounting
+  }
+  if (skillsLower.includes('product management') || skillsLower.includes('product roadmapping') || skillsLower.includes('user stories')) {
+    return ROLE_ARCHETYPES.product_manager
+  }
+  if (skillsLower.includes('business analysis') || skillsLower.includes('requirements gathering') || skillsLower.includes('stakeholder management')) {
+    return ROLE_ARCHETYPES.business_analyst
   }
 
   // Default fallback for general software developers

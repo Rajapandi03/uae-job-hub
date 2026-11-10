@@ -97,8 +97,9 @@ IT_TECH_ROLES = [
     "Cyber Security",
     "Database Administrator", "Data Architect", "ETL Developer", "Big Data Engineer",
     "Solutions Architect", "Enterprise Architect", "Technical Architect",
-    "Technical Product Manager", "IT Project Manager", "Scrum Master",
-    "Business Analyst", "Systems Analyst",
+    "Technical Product Manager", "Product Manager", "Product Owner", "Associate Product Manager",
+    "Senior Product Manager", "IT Project Manager", "Scrum Master",
+    "Business Analyst", "IT Business Analyst", "Technical Business Analyst", "Senior Business Analyst", "Systems Analyst",
     "QA Engineer", "Test Automation Engineer", "SDET",
     "Network Engineer", "Systems Administrator", "IT Support Engineer",
     "Blockchain Developer", "Robotics Software Engineer", "IoT Engineer",
@@ -234,7 +235,7 @@ AI_KEYWORDS_REGEX = re.compile(
 )
 
 IT_TECH_KEYWORDS_REGEX = re.compile(
-    r'\b(software|developer|full stack|fullstack|frontend|backend|web developer|react|node|python|java|\.net|golang|c\+\+|mobile|ios|android|flutter|devops|cloud|cybersecurity|security engineer|soc analyst|solutions architect|scrum master|qa engineer|sdet|test automation|network engineer|system administrator|it support|database administrator|data architect|etl|bi developer|systems analyst|blockchain|robotics|iot)\b',
+    r'\b(software|developer|full stack|fullstack|frontend|backend|web developer|react|node|python|java|\.net|golang|c\+\+|mobile|ios|android|flutter|devops|cloud|cybersecurity|security engineer|soc analyst|solutions architect|scrum master|qa engineer|sdet|test automation|network engineer|system administrator|it support|database administrator|data architect|etl|bi developer|systems analyst|blockchain|robotics|iot|product manager|product owner|business analyst)\b',
     re.IGNORECASE
 )
 

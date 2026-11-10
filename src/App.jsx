@@ -171,7 +171,7 @@ const INVALID_JOB_TITLE_REGEX = /\b(definition|meaning|tutorial|download|downloa
 const NON_IT_BLOCKLIST_REGEX = /\b(traffic|transport|transportation|transit|modelling|modeller|urban planner|urban planning|town planner|civil|structural|steel structure|mep|draftsman|draughtsman|drafting|drafter|autocad|cad technician|cad|survey|surveyor|surveying|quantity surveyor|land surveyor|heavy civil|highway|bridge engineer|road engineer|geotechnical|materials engineer|bim|revit|piping engineer|process engineer(?! .*data)|site engineer|site manager|construction|contracting|fabrication|welding|pipefitter|rigger|scaffolding|formwork|rebar|concrete|mason|carpenter|painter|plumber|electrician(?! .*it)|hvac|fire fighting|sprinkler|landscape|horticulture|upholstery|cabin crew|pilot|flight crew|aircraft maintenance|automobile engineer(?! .*software)|automotive engineer(?! .*software)|environmental|planning engineer|wet utilities|utilities design|utilities engineer|coastal engineer|marine surveyor|estimator|cost engineer|technical drawing|rebar detailer|steel detailer|scaffolder|fit out|fitout|driver|delivery rider|mechanic|logistics|procurement|qa\/qc|qa qc|quality inspector|quality control|quality administrator|customer support|customer service|customer care|receptionist|office administrator|secretary|teacher(?! .*coding|.*cs|.*ai)|professor(?! .*cs|.*ai)|doctor|physician|nurse|pharmacist|dentist|physiotherapist|real estate|property manager|facilities manager|building manager|drilling|petroleum|reservoir|geophysicist|well engineer|wellsite|refinery engineer|oil gas(?! .*software|.*tech)|solar engineer(?! .*software)|wind engineer|engineer internship|engineering intern|architectural consultancy|architectural|lighting designer)\b/i
 
 // Mandatory Tech & AI keywords — any job MUST contain at least one of these to be displayed
-const MANDATORY_TECH_KEYWORDS_REGEX = /\b(ai|ml|data|software|developer|full stack|fullstack|frontend|backend|cloud|devops|cyber|security|code|coding|programmer|react|node|vue|angular|python|java|c\+\+|\.net|golang|rust|php|ios|android|mobile|flutter|qa|sdet|test|tester|automation|scrum|tech|technology|it|network|infrastructure|database|dba|bi|analytics|machine learning|deep learning|nlp|computer vision|genai|generative ai|llm|system|systems|solution|solutions|platform|architect|ui|ux|product manager|scrum master|embedded|firmware|sap|oracle|salesforce|workday|tableau|power bi|snowflake|spark|hadoop|kubernetes|docker|aws|azure|gcp)\b/i
+const MANDATORY_TECH_KEYWORDS_REGEX = /\b(ai|ml|data|software|developer|full stack|fullstack|frontend|backend|cloud|devops|cyber|security|code|coding|programmer|react|node|vue|angular|python|java|c\+\+|\.net|golang|rust|php|ios|android|mobile|flutter|qa|sdet|test|tester|automation|scrum|tech|technology|it|network|infrastructure|database|dba|bi|analytics|machine learning|deep learning|nlp|computer vision|genai|generative ai|llm|system|systems|solution|solutions|platform|architect|ui|ux|product manager|product owner|business analyst|scrum master|embedded|firmware|sap|oracle|salesforce|workday|tableau|power bi|snowflake|spark|hadoop|kubernetes|docker|aws|azure|gcp)\b/i
 
 function isValidJob(job) {
   if (!job || !job.title) return false
@@ -1214,7 +1214,8 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
         cloud: /\b(cloud|devops|site reliability|sre|system administrator|network engineer|infrastructure|aws|azure)\b/i,
         security: /\b(cyber|security|information security|soc analyst|penetration tester|ethical hacker)\b/i,
         qa: /\b(qa|quality assurance|software tester|automation engineer|testing)\b/i,
-        leadership: /\b(scrum master|agile|project manager|product manager|tech lead|solutions architect|it manager|cto|head of it)\b/i,
+        product: /\b(product manager|product owner|business analyst|systems analyst|technical product manager|technical business analyst|scrum master|agile coach)\b/i,
+        leadership: /\b(scrum master|agile|project manager|product manager|product owner|business analyst|tech lead|solutions architect|it manager|cto|head of it)\b/i,
         support: /\b(it support|helpdesk|desktop support|service desk|technical support|system support)\b/i,
       }
       const pattern = CATEGORY_PATTERNS[categoryFilter]
@@ -2011,7 +2012,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
               <Search size={20} style={{ color: '#94a3b8' }} />
               <input
                 type="text"
-                placeholder="Search AI jobs by title, skill..."
+                placeholder="Search AI & Tech jobs by title, role (e.g. Business Analyst, Product Manager)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{ paddingLeft: '0.75rem' }}
@@ -2051,6 +2052,7 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                   <option value="cloud">Cloud & DevOps</option>
                   <option value="security">Cybersecurity</option>
                   <option value="qa">QA & Software Testing</option>
+                  <option value="product">Product & Business Analysis</option>
                   <option value="leadership">IT Leadership & Architecture</option>
                   <option value="support">IT Support & Systems</option>
                 </select>

@@ -136,8 +136,36 @@ export const TECH_SKILLS = {
   'siem': 'SIEM',
   'sailpoint': 'SailPoint',
   'iam': 'Identity & Access Management',
+
+  // Product Management & Business Analysis
+  'product management': 'Product Management',
+  'product manager': 'Product Management',
+  'product roadmap': 'Product Roadmapping',
+  'product roadmapping': 'Product Roadmapping',
+  'product strategy': 'Product Strategy',
+  'product owner': 'Product Owner',
+  'product backlog': 'Product Backlog',
+  'backlog grooming': 'Product Backlog',
+  'backlog refinement': 'Product Backlog',
+  'sprint planning': 'Sprint Planning',
+  'user stories': 'User Stories',
+  'user story': 'User Stories',
+  'acceptance criteria': 'Acceptance Criteria',
+  'business analysis': 'Business Analysis',
+  'business analyst': 'Business Analysis',
+  'requirements gathering': 'Requirements Gathering',
+  'requirements analysis': 'Requirements Analysis',
+  'brd': 'BRD',
+  'frd': 'FRD',
+  'stakeholder management': 'Stakeholder Management',
+  'jira': 'Jira',
+  'confluence': 'Confluence',
+  'wireframing': 'Wireframing',
+  'process mapping': 'Process Mapping',
+  'systems analysis': 'Systems Analysis',
   'agile': 'Agile',
   'scrum': 'Scrum',
+  'kanban': 'Kanban',
 }
 
 // ── HR & RECRUITMENT DOMAIN SKILLS ─────────────────────────────────────────
@@ -473,7 +501,7 @@ export function detectJobDomain(title = '') {
   if (/\b(it support|desktop support|helpdesk|service desk|it technician|technical support)\b/i.test(t)) {
     return DOMAINS.IT_SUPPORT
   }
-  if (/\b(software engineer|software developer|full stack|fullstack|frontend|front-end|backend|back-end|web developer|programmer|coder|mobile developer|ios developer|android developer|react developer|python developer|java developer|\.net developer|sailpoint developer)\b/i.test(t)) {
+  if (/\b(software engineer|software developer|full stack|fullstack|frontend|front-end|backend|back-end|web developer|programmer|coder|mobile developer|ios developer|android developer|react developer|python developer|java developer|\.net developer|sailpoint developer|product manager|product owner|business analyst|systems analyst)\b/i.test(t)) {
     return DOMAINS.SOFTWARE
   }
 
@@ -544,7 +572,7 @@ export function detectCandidateDomain(candidateSkills = [], resumeText = '', fil
 /** @internal Pick the specific tech sub-domain from the resume header */
 function _detectTechSubDomain(headerText, combined) {
   // 1. Explicit software / full-stack / web developer title in header
-  if (/\b(software engineer|software developer|full stack|fullstack|frontend|front-end|backend|back-end|web developer|programmer|coder|mobile developer|react developer|python developer|node developer|java developer|\.net developer|php developer|sailpoint developer)\b/i.test(headerText)) {
+  if (/\b(software engineer|software developer|full stack|fullstack|frontend|front-end|backend|back-end|web developer|programmer|coder|mobile developer|react developer|python developer|node developer|java developer|\.net developer|php developer|sailpoint developer|product manager|product owner|business analyst|systems analyst)\b/i.test(headerText)) {
     return DOMAINS.SOFTWARE
   }
 

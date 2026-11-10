@@ -5,3 +5,9 @@ dist/
 __pycache__/
 *.pyc
 .venv/
+tmp/
+*.xlsx
+extract_*.py
+summary_content.txt
+build_err.txt
+tmp_clear_db.py
