@@ -291,7 +291,7 @@ function App() {
 
   // State for Resume Upload & Matching Engine (key: hini_resume_v1)
   const [resumeData, setResumeData] = useState(() => getSavedResume())
-  const [sortOption, setSortOption] = useState(() => (getSavedResume() ? 'best' : 'newest'))
+  const [sortOption, setSortOption] = useState(() => (getSavedResume() ? 'best' : 'priority'))
   const [showWeakerMatches, setShowWeakerMatches] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
@@ -1287,6 +1287,15 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
         const salA = parseSalaryNumber(a.price_text || a.salary || a.description)
         const salB = parseSalaryNumber(b.price_text || b.salary || b.description)
         return salB - salA
+      } else if (sortOption === 'priority') {
+        const aiRole = /\b(ai engineer|artificial intelligence engineer|machine learning engineer|ml engineer|deep learning engineer|generative ai engineer|genai engineer|llm engineer|ai developer|applied ai engineer|nlp engineer|computer vision engineer|mlops engineer|llmops engineer|ai platform engineer)\b/i
+        const softwareRole = /\b(software engineer|software developer|full[- ]?stack developer|full[- ]?stack engineer|frontend developer|front[- ]end engineer|backend developer|back[- ]end engineer|web developer|web engineer|application developer|mobile developer|ios developer|android developer)\b/i
+        const rolePriority = (job) => aiRole.test(job.title || '') ? 0 : softwareRole.test(job.title || '') ? 1 : 2
+        const priorityDiff = rolePriority(a) - rolePriority(b)
+        if (priorityDiff !== 0) return priorityDiff
+        const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
+        const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
+        return dateB - dateA
       } else {
         const dateA = new Date(a.posted_at || a.first_seen || 0).getTime()
         const dateB = new Date(b.posted_at || b.first_seen || 0).getTime()
@@ -2089,6 +2098,21 @@ Respond directly to the user's query adhering STRICTLY to your rules. Do not jus
                 )}
 
                 <div style={{ display: 'flex', background: 'var(--bg-secondary, #f1f5f9)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <button
+                    onClick={() => setSortOption('priority')}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: '700',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: sortOption === 'priority' ? '#4f46e5' : 'transparent',
+                      color: sortOption === 'priority' ? '#ffffff' : 'var(--text-muted)'
+                    }}
+                  >
+                    AI & Software
+                  </button>
                   <button
                     onClick={() => setSortOption('best')}
                     style={{
